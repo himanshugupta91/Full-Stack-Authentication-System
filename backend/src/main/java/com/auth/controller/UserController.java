@@ -2,7 +2,7 @@ package com.auth.controller;
 
 import com.auth.dto.ChangePasswordRequest;
 import com.auth.dto.MessageResponse;
-import com.auth.service.UserService;
+import com.auth.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,11 +20,13 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/user")
-@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:3000" })
 public class UserController {
 
     @Autowired
-    private UserService userService;
+    private AuthService authService;
+
+    @Autowired
+    private com.auth.service.UserService userService;
 
     /**
      * Get user dashboard data.
@@ -34,11 +36,15 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getDashboard() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        com.auth.entity.User user = userService.getUserByEmail(auth.getName());
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Welcome to User Dashboard!");
-        response.put("user", auth.getName());
-        response.put("roles", auth.getAuthorities());
+        response.put("user", user.getName());
+        response.put("email", user.getEmail());
+        response.put("roles", user.getRoles().stream()
+                .map(role -> role.getName().name())
+                .collect(java.util.stream.Collectors.toList()));
         response.put("timestamp", java.time.LocalDateTime.now().toString());
 
         return ResponseEntity.ok(response);
@@ -52,10 +58,17 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getProfile() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        com.auth.entity.User user = userService.getUserByEmail(auth.getName());
 
         Map<String, Object> response = new HashMap<>();
-        response.put("email", auth.getName());
-        response.put("roles", auth.getAuthorities());
+        response.put("id", user.getId());
+        response.put("name", user.getName());
+        response.put("email", user.getEmail());
+        response.put("roles", user.getRoles().stream()
+                .map(role -> role.getName().name())
+                .collect(java.util.stream.Collectors.toList()));
+        response.put("createdAt", user.getCreatedAt());
+        response.put("enabled", user.isEnabled());
 
         return ResponseEntity.ok(response);
     }
@@ -70,7 +83,7 @@ public class UserController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
 
-        MessageResponse response = userService.changePassword(email, request);
+        MessageResponse response = authService.changePassword(email, request);
         return ResponseEntity.ok(response);
     }
 }

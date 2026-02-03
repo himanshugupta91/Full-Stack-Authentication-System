@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+
 const Navbar = () => {
     const { user, logout, isAuthenticated, isAdmin } = useAuth();
     const navigate = useNavigate();
@@ -11,24 +12,26 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="navbar navbar-expand-lg navbar-dark">
+        <nav className="navbar navbar-expand-lg">
             <div className="container">
                 <Link className="navbar-brand fw-bold" to="/">
                     <i className="bi bi-shield-lock me-2"></i>
                     AuthSystem
                 </Link>
 
-                <button
-                    className="navbar-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarNav"
-                >
-                    <span className="navbar-toggler-icon"></span>
-                </button>
+                <div className="d-flex align-items-center order-lg-3 ms-lg-3">
+                    <button
+                        className="navbar-toggler ms-2"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#navbarNav"
+                    >
+                        <span className="navbar-toggler-icon"></span>
+                    </button>
+                </div>
 
                 <div className="collapse navbar-collapse" id="navbarNav">
-                    <ul className="navbar-nav ms-auto">
+                    <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
                         {isAuthenticated() ? (
                             <>
                                 <li className="nav-item">

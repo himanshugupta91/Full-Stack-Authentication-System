@@ -123,27 +123,7 @@ const UserDashboard = () => {
                 </div>
             )}
 
-            <div className="row mt-4">
-                <div className="col-12">
-                    <div className="info-card">
-                        <h5><i className="bi bi-info-circle me-2"></i>Quick Actions</h5>
-                        <div className="d-flex flex-wrap gap-3 mt-3">
-                            <button className="btn btn-outline-primary">
-                                <i className="bi bi-person-gear me-2"></i>
-                                Edit Profile
-                            </button>
-                            <button className="btn btn-outline-secondary">
-                                <i className="bi bi-key me-2"></i>
-                                Change Password
-                            </button>
-                            <button className="btn btn-outline-info">
-                                <i className="bi bi-bell me-2"></i>
-                                Notifications
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
         </div>
     );
 };

@@ -1,7 +1,7 @@
 package com.auth.controller;
 
 import com.auth.dto.*;
-import com.auth.service.UserService;
+import com.auth.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -13,11 +13,10 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:3000" })
 public class AuthController {
 
     @Autowired
-    private UserService userService;
+    private AuthService authService;
 
     /**
      * Register a new user.
@@ -25,7 +24,7 @@ public class AuthController {
      */
     @PostMapping("/register")
     public ResponseEntity<MessageResponse> register(@Valid @RequestBody RegisterRequest request) {
-        MessageResponse response = userService.register(request);
+        MessageResponse response = authService.register(request);
         return ResponseEntity.ok(response);
     }
 
@@ -35,7 +34,7 @@ public class AuthController {
      */
     @PostMapping("/verify-otp")
     public ResponseEntity<MessageResponse> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
-        MessageResponse response = userService.verifyOtp(request);
+        MessageResponse response = authService.verifyOtp(request);
         return ResponseEntity.ok(response);
     }
 
@@ -45,12 +44,8 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        try {
-            AuthResponse response = userService.login(request);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage(), false));
-        }
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -59,7 +54,7 @@ public class AuthController {
      */
     @PostMapping("/reset-password")
     public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        MessageResponse response = userService.resetPassword(request);
+        MessageResponse response = authService.resetPassword(request);
         return ResponseEntity.ok(response);
     }
 
@@ -69,7 +64,7 @@ public class AuthController {
      */
     @PostMapping("/update-password")
     public ResponseEntity<MessageResponse> updatePassword(@Valid @RequestBody UpdatePasswordRequest request) {
-        MessageResponse response = userService.updatePassword(request);
+        MessageResponse response = authService.updatePassword(request);
         return ResponseEntity.ok(response);
     }
 
@@ -79,7 +74,7 @@ public class AuthController {
      */
     @PostMapping("/resend-otp")
     public ResponseEntity<MessageResponse> resendOtp(@RequestParam String email) {
-        MessageResponse response = userService.resendOtp(email);
+        MessageResponse response = authService.resendOtp(email);
         return ResponseEntity.ok(response);
     }
 }
