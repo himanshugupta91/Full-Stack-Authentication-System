@@ -1,0 +1,635 @@
+/* ========================================
+   Minimalist Clean Design System
+======================================== */
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ========================================
+   CSS Variables - Clean Light Theme
+======================================== */
+:root {
+  /* Colors */
+  --white: #ffffff;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  /* Transitions */
+  --transition: all 0.2s ease;
+}
+
+/* ========================================
+   Base Styles
+======================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--gray-50);
+  color: var(--gray-800);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========================================
+   Navbar
+======================================== */
+.navbar {
+  background: var(--white) !important;
+  border-bottom: 1px solid var(--gray-200);
+  padding: 0.75rem 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.navbar-brand {
+  color: var(--gray-900) !important;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.nav-link {
+  color: var(--gray-600) !important;
+  font-weight: 500;
+  padding: 0.5rem 1rem !important;
+  transition: var(--transition);
+}
+
+.nav-link:hover {
+  color: var(--primary) !important;
+}
+
+.navbar-toggler {
+  border: 1px solid var(--gray-300);
+}
+
+/* ========================================
+   Auth Pages
+======================================== */
+.auth-container {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.auth-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow);
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--primary);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.auth-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+
+.auth-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+}
+
+.auth-header p {
+  color: var(--gray-500);
+  font-size: 0.9rem;
+}
+
+/* ========================================
+   Forms
+======================================== */
+.form-label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  transition: var(--transition);
+}
+
+.form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+.form-control::placeholder {
+  color: var(--gray-400);
+}
+
+.input-group-text {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-300);
+  border-right: none;
+  color: var(--gray-500);
+}
+
+.input-group .form-control {
+  border-left: none;
+}
+
+/* ========================================
+   Buttons
+======================================== */
+.btn {
+  font-weight: 500;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  transition: var(--transition);
+}
+
+.btn-primary {
+  background: var(--primary);
+  border: none;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-outline-primary {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-outline-secondary {
+  background: transparent;
+  border: 1px solid var(--gray-300);
+  color: var(--gray-600);
+}
+
+.btn-outline-secondary:hover {
+  background: var(--gray-100);
+  border-color: var(--gray-400);
+}
+
+.btn-outline-danger {
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
+.btn-outline-danger:hover {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-warning {
+  background: var(--warning);
+  border: none;
+  color: white;
+}
+
+/* ========================================
+   OTP Input
+======================================== */
+.otp-container {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.otp-input {
+  width: 50px;
+  height: 56px;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  transition: var(--transition);
+}
+
+.otp-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  outline: none;
+}
+
+/* ========================================
+   Alerts
+======================================== */
+.alert {
+  border-radius: 8px;
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+.alert-danger {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.alert-success {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.alert-warning {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+/* ========================================
+   Home Page
+======================================== */
+.home-container {
+  background: var(--white);
+}
+
+.hero-section {
+  padding: 4rem 0;
+}
+
+.min-vh-75 {
+  min-height: 75vh;
+}
+
+.text-gradient {
+  color: var(--primary);
+}
+
+.feature-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.feature-card {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  padding: 1.25rem;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+}
+
+.feature-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.feature-card i {
+  font-size: 1.5rem;
+  color: var(--primary);
+}
+
+.feature-card span {
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--gray-600);
+}
+
+.features-section {
+  background: var(--gray-50);
+  border-top: 1px solid var(--gray-200);
+  padding: 4rem 0;
+}
+
+.feature-box {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.feature-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.feature-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+
+/* ========================================
+   Dashboard
+======================================== */
+.welcome-card,
+.admin-header {
+  background: var(--primary);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.welcome-card .text-muted,
+.admin-header .text-muted {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.avatar-circle {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.dashboard-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  padding: 1.25rem;
+  border-radius: 10px;
+  transition: var(--transition);
+}
+
+.dashboard-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.card-icon i {
+  font-size: 1.25rem;
+  color: white;
+}
+
+.admin-notice {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  padding: 1.25rem;
+  border-radius: 10px;
+}
+
+.info-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  padding: 1.25rem;
+  border-radius: 10px;
+}
+
+/* ========================================
+   Admin Stats
+======================================== */
+.stat-card {
+  padding: 1.25rem;
+  border-radius: 10px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon i {
+  font-size: 1.25rem;
+}
+
+.stat-content h3 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+/* ========================================
+   Tables
+======================================== */
+.users-table-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  padding: 1.25rem;
+  border-radius: 10px;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  border-top: none;
+  border-bottom: 1px solid var(--gray-200);
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 0.75rem;
+}
+
+.table td {
+  border-bottom: 1px solid var(--gray-100);
+  padding: 0.75rem;
+  vertical-align: middle;
+  color: var(--gray-700);
+}
+
+.table tbody tr:hover {
+  background: var(--gray-50);
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  background: var(--primary);
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* ========================================
+   Badges
+======================================== */
+.badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.bg-primary {
+  background: var(--primary) !important;
+}
+
+.bg-success {
+  background: var(--success) !important;
+}
+
+.bg-warning {
+  background: var(--warning) !important;
+}
+
+.bg-danger {
+  background: var(--danger) !important;
+}
+
+/* ========================================
+   Dropdown
+======================================== */
+.dropdown-menu {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  padding: 0.5rem;
+}
+
+.dropdown-item {
+  color: var(--gray-700);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.dropdown-item:hover {
+  background: var(--gray-100);
+}
+
+.dropdown-divider {
+  border-color: var(--gray-200);
+}
+
+/* ========================================
+   Links & Text
+======================================== */
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--primary-hover);
+}
+
+.text-muted {
+  color: var(--gray-500) !important;
+}
+
+.text-success {
+  color: var(--success) !important;
+}
+
+.text-danger {
+  color: var(--danger) !important;
+}
+
+.text-primary {
+  color: var(--primary) !important;
+}
+
+/* ========================================
+   Spinner
+======================================== */
+.spinner-border {
+  color: var(--primary);
+}
+
+/* ========================================
+   Demo Credentials
+======================================== */
+.demo-credentials {
+  background: var(--gray-50);
+  border: 1px dashed var(--gray-300);
+  border-radius: 8px;
+}
+
+/* ========================================
+   Responsive
+======================================== */
+@media (max-width: 768px) {
+  .auth-card {
+    padding: 1.5rem;
+  }
+
+  .otp-input {
+    width: 42px;
+    height: 48px;
+  }
+
+  .feature-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+}

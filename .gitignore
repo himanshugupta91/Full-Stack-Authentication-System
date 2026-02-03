@@ -1,0 +1,30 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Node
+node_modules/
+dist/
+npm-debug.log
+yarn-error.log
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+mvnw
+mvnw.cmd
+.mvn/
+
+# Logs
+*.log
+
+# Environment variables
+.env
