@@ -1,18 +1,17 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const { login, isAdmin } = useAuth();
+    const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
         setLoading(true);
 
         try {
@@ -23,7 +22,7 @@ const Login = () => {
                 navigate('/dashboard');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Login failed. Please try again.');
+            toast.error(err.response?.data?.message || 'Login failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -39,14 +38,6 @@ const Login = () => {
                     <h2>Welcome Back</h2>
                     <p className="text-muted">Sign in to your account</p>
                 </div>
-
-                {error && (
-                    <div className="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i className="bi bi-exclamation-triangle me-2"></i>
-                        {error}
-                        <button type="button" className="btn-close" onClick={() => setError('')}></button>
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">

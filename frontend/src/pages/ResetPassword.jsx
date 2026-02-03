@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
@@ -9,8 +10,6 @@ const ResetPassword = () => {
         newPassword: '',
         confirmPassword: '',
     });
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
     const { updatePassword } = useAuth();
     const navigate = useNavigate();
@@ -30,16 +29,14 @@ const ResetPassword = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
 
         if (formData.newPassword !== formData.confirmPassword) {
-            setError('Passwords do not match!');
+            toast.error('Passwords do not match!');
             return;
         }
 
         if (formData.newPassword.length < 6) {
-            setError('Password must be at least 6 characters!');
+            toast.error('Password must be at least 6 characters!');
             return;
         }
 
@@ -48,13 +45,13 @@ const ResetPassword = () => {
         try {
             const response = await updatePassword(token, formData.newPassword);
             if (response.success) {
-                setSuccess('Password updated successfully! Redirecting to login...');
+                toast.success('Password updated successfully! Redirecting to login...');
                 setTimeout(() => navigate('/login'), 2000);
             } else {
-                setError(response.message);
+                toast.error(response.message);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to reset password. Please try again.');
+            toast.error(err.response?.data?.message || 'Failed to reset password. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -70,21 +67,6 @@ const ResetPassword = () => {
                     <h2>Reset Password</h2>
                     <p className="text-muted">Enter your new password</p>
                 </div>
-
-                {error && (
-                    <div className="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i className="bi bi-exclamation-triangle me-2"></i>
-                        {error}
-                        <button type="button" className="btn-close" onClick={() => setError('')}></button>
-                    </div>
-                )}
-
-                {success && (
-                    <div className="alert alert-success" role="alert">
-                        <i className="bi bi-check-circle me-2"></i>
-                        {success}
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">

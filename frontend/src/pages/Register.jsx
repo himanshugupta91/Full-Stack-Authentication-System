@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -9,7 +10,6 @@ const Register = () => {
         password: '',
         confirmPassword: '',
     });
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { register } = useAuth();
     const navigate = useNavigate();
@@ -23,15 +23,14 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
 
         if (formData.password !== formData.confirmPassword) {
-            setError('Passwords do not match!');
+            toast.error('Passwords do not match!');
             return;
         }
 
         if (formData.password.length < 6) {
-            setError('Password must be at least 6 characters!');
+            toast.error('Password must be at least 6 characters!');
             return;
         }
 
@@ -40,12 +39,13 @@ const Register = () => {
         try {
             const response = await register(formData.name, formData.email, formData.password);
             if (response.success) {
+                toast.success('Registration successful! Please verify your email.');
                 navigate('/verify-otp', { state: { email: formData.email } });
             } else {
-                setError(response.message);
+                toast.error(response.message);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Registration failed. Please try again.');
+            toast.error(err.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -61,14 +61,6 @@ const Register = () => {
                     <h2>Create Account</h2>
                     <p className="text-muted">Join us today</p>
                 </div>
-
-                {error && (
-                    <div className="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i className="bi bi-exclamation-triangle me-2"></i>
-                        {error}
-                        <button type="button" className="btn-close" onClick={() => setError('')}></button>
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">

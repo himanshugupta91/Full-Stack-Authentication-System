@@ -2,11 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const VerifyOtp = () => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
     const [resending, setResending] = useState(false);
     const [countdown, setCountdown] = useState(0);
@@ -61,12 +60,10 @@ const VerifyOtp = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
 
         const otpString = otp.join('');
         if (otpString.length !== 6) {
-            setError('Please enter complete OTP');
+            toast.error('Please enter complete OTP');
             return;
         }
 
@@ -75,13 +72,13 @@ const VerifyOtp = () => {
         try {
             const response = await authAPI.verifyOtp({ email, otp: otpString });
             if (response.data.success) {
-                setSuccess('Email verified successfully! Redirecting to login...');
+                toast.success('Email verified successfully! Redirecting to login...');
                 setTimeout(() => navigate('/login'), 2000);
             } else {
-                setError(response.data.message);
+                toast.error(response.data.message);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Verification failed. Please try again.');
+            toast.error(err.response?.data?.message || 'Verification failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -91,20 +88,18 @@ const VerifyOtp = () => {
         if (countdown > 0) return;
 
         setResending(true);
-        setError('');
-        setSuccess('');
 
         try {
             const response = await authAPI.resendOtp(email);
             if (response.data.success) {
-                setSuccess('OTP sent successfully! Check your email.');
+                toast.success('OTP sent successfully! Check your email.');
                 setCountdown(60);
                 setOtp(['', '', '', '', '', '']);
             } else {
-                setError(response.data.message);
+                toast.error(response.data.message);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to resend OTP.');
+            toast.error(err.response?.data?.message || 'Failed to resend OTP.');
         } finally {
             setResending(false);
         }
@@ -123,21 +118,6 @@ const VerifyOtp = () => {
                         <strong>{email}</strong>
                     </p>
                 </div>
-
-                {error && (
-                    <div className="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i className="bi bi-exclamation-triangle me-2"></i>
-                        {error}
-                        <button type="button" className="btn-close" onClick={() => setError('')}></button>
-                    </div>
-                )}
-
-                {success && (
-                    <div className="alert alert-success" role="alert">
-                        <i className="bi bi-check-circle me-2"></i>
-                        {success}
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit}>
                     <div className="otp-container mb-4">

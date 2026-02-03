@@ -1,25 +1,22 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
     const { resetPassword } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
         setLoading(true);
 
         try {
             const response = await resetPassword(email);
-            setSuccess(response.message);
+            toast.success(response.message);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to send reset link. Please try again.');
+            toast.error(err.response?.data?.message || 'Failed to send reset link. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -35,21 +32,6 @@ const ForgotPassword = () => {
                     <h2>Forgot Password</h2>
                     <p className="text-muted">Enter your email to receive a reset link</p>
                 </div>
-
-                {error && (
-                    <div className="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i className="bi bi-exclamation-triangle me-2"></i>
-                        {error}
-                        <button type="button" className="btn-close" onClick={() => setError('')}></button>
-                    </div>
-                )}
-
-                {success && (
-                    <div className="alert alert-success" role="alert">
-                        <i className="bi bi-check-circle me-2"></i>
-                        {success}
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">

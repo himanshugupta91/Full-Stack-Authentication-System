@@ -11,11 +11,13 @@ import ResetPassword from './pages/ResetPassword';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import ChangePassword from './pages/ChangePassword';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <Toaster position="top-right" />
         <div className="app">
           <Navbar />
           <main>
