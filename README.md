@@ -48,13 +48,13 @@ This diagram illustrates the overall architecture where the Client (React App) i
 
 ```mermaid
 graph TD
-    Client[📱 React Client] -->|REST API Requests| Gateway[🛡️ API Gateway / Controller]
-    Gateway -->|Validation & Auth| Security[🔒 Spring Security Filter Chain]
-    Security -->|Authorized| Controller[🎮 Rest Controllers]
-    Controller -->|Business Logic| Service[⚙️ Service Layer]
-    Service -->|Data Access| Repository[💾 Repository Layer]
-    Repository -->|SQL Queries| Database[(🗄️ MySQL Database)]
-    Service -->|SMTP| Email[📧 Email Service (Gmail)]
+    Client["📱 React Client"] -->|"REST API Requests"| Gateway["🛡️ API Gateway / Controller"]
+    Gateway -->|"Validation & Auth"| Security["🔒 Spring Security Filter Chain"]
+    Security -->|"Authorized"| Controller["🎮 Rest Controllers"]
+    Controller -->|"Business Logic"| Service["⚙️ Service Layer"]
+    Service -->|"Data Access"| Repository["💾 Repository Layer"]
+    Repository -->|"SQL Queries"| Database[("🗄️ MySQL Database")]
+    Service -->|"SMTP"| Email["📧 Email Service (Gmail)"]
 ```
 
 ---
@@ -94,17 +94,17 @@ sequenceDiagram
 
 ```mermaid
 graph LR
-    Start([User Registration]) --> Register[Enter Details]
-    Register --> Submit[Submit Form]
-    Submit --> Backend{Valid?}
-    Backend -- No --> Error[Show Error]
-    Backend -- Yes --> DB[Save User (Disabled)]
-    DB --> Email[Send OTP Email]
-    Email --> Verify[User Enters OTP]
-    Verify --> Check{OTP Valid?}
-    Check -- No --> ReEnter[Retry / Resend]
-    Check -- Yes --> Enable[Enable Account]
-    Enable --> Login([Go to Login])
+    Start(["User Registration"]) --> Register["Enter Details"]
+    Register --> Submit["Submit Form"]
+    Submit --> Backend{"Valid?"}
+    Backend -- No --> Error["Show Error"]
+    Backend -- Yes --> DB["Save User (Disabled)"]
+    DB --> Email["Send OTP Email"]
+    Email --> Verify["User Enters OTP"]
+    Verify --> Check{"OTP Valid?"}
+    Check -- No --> ReEnter["Retry / Resend"]
+    Check -- Yes --> Enable["Enable Account"]
+    Enable --> Login(["Go to Login"])
 ```
 
 ---
