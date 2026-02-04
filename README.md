@@ -1,10 +1,11 @@
-# 🔐 Full-Stack Authentication System
+# 🛡️ Matrix Auth System
 
-A robust, production-ready authentication system built with **Spring Boot 3** and **React 18 (Vite)**. This project demonstrates secure user management, role-based access control (RBAC), and modern full-stack development practices.
+A modern, production-ready full-stack authentication system featuring a premium **Matrix-inspired Glassmorphism UI**. Built with **Spring Boot 3** and **React 18**, this project combines robust security with a stunning, high-performance frontend.
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.2-green.svg)
-![React](https://img.shields.io/badge/React-18-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-0C7779.svg?style=flat-square)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.2-green.svg?style=flat-square)
+![React](https://img.shields.io/badge/React-18-blue.svg?style=flat-square)
+![Theme](https://img.shields.io/badge/Theme-Matrix%20Glass-000000.svg?style=flat-square)
 
 ---
 
@@ -39,6 +40,30 @@ A robust, production-ready authentication system built with **Spring Boot 3** an
 | | React Router DOM 6 | Client-side routing |
 | | Bootstrap 5 | CSS Framework for responsive UI |
 | | Bootstrap Icons | Icon library |
+
+---
+
+## 🎨 UI/UX & Theming
+
+The application features a unique **Matrix Light** aesthetic designed for a premium user experience:
+
+*   **Glassmorphism**: Extensively used `backdrop-filter` blur effects for cards and overlays.
+*   **Custom Color Palette**: A sophisticated **Teal** (`#0C7779`) primary color scheme against a deep background.
+*   **Interactive Elements**: Bouncy hover effects, gradient text, and smooth page transitions.
+*   **Responsive Design**: Fully mobile-optimized layout with a floating glass navbar.
+*   **Animation**: Subtle background Matrix rain animation for visual depth.
+
+---
+
+## 📸 Screenshots
+
+| **Home Page** | **Login** |
+|:---:|:---:|
+| ![Home](screenshots/home.png) | ![Login](screenshots/login.png) |
+
+| **Register** |
+|:---:|
+| ![Register](screenshots/register.png) |
 
 ---
 
@@ -205,19 +230,39 @@ erDiagram
 
 ## 🔗 API Endpoints
 
-| Module | Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :--- | :--- |
-| **Auth** | POST | `/api/auth/register` | Register new user | ❌ |
-| | POST | `/api/auth/login` | Login & get JWT | ❌ |
-| | POST | `/api/auth/verify-otp` | Verify account OTP | ❌ |
-| | POST | `/api/auth/resend-otp` | Resend OTP email | ❌ |
-| | POST | `/api/auth/reset-password` | Request password reset | ❌ |
-| | POST | `/api/auth/update-password` | Complete password reset | ❌ |
-| **User** | GET | `/api/user/dashboard` | Get user dashboard data | ✅ (User/Admin) |
-| | GET | `/api/user/profile` | Get user profile details | ✅ (User/Admin) |
-| | POST | `/api/user/change-password` | Change current password | ✅ (User/Admin) |
-| **Admin**| GET | `/api/admin/dashboard` | Get admin stats | ✅ (Admin) |
-| | GET | `/api/admin/users` | Get list of all users | ✅ (Admin) |
+<details>
+<summary><strong>Click to view detailed API documentation</strong></summary>
+
+### 🟢 Authentication (`/api/auth`)
+
+| Method | Endpoint | Description | Access |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/register` | Register a new user account | 🌐 Public |
+| `POST` | `/login` | Authenticate user & get JWT | 🌐 Public |
+| `POST` | `/verify-otp` | Verify email OTP code | 🌐 Public |
+| `POST` | `/resend-otp` | Resend verification email | 🌐 Public |
+| `POST` | `/reset-password` | Initiate password reset | 🌐 Public |
+| `POST` | `/update-password` | complete password reset | 🌐 Public |
+
+### 🔵 User Operations (`/api/user`)
+
+| Method | Endpoint | Description | Access |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/dashboard` | Retrieve user dashboard statistics | 🔐 User |
+| `GET` | `/profile` | Get current user profile details | 🔐 User |
+| `POST` | `/change-password` | Update account password | 🔐 User |
+
+### 🔴 Administration (`/api/admin`)
+
+| Method | Endpoint | Description | Access |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/dashboard` | View system-wide statistics | 🛡️ Admin |
+| `GET` | `/users` | Retrieve paginated list of users | 🛡️ Admin |
+| `GET` | `/users/{id}` | Get specific user details | 🛡️ Admin |
+| `PUT` | `/users/{id}` | Update user roles/status | 🛡️ Admin |
+| `DELETE` | `/users/{id}` | Delete a user account | 🛡️ Admin |
+
+</details>
 
 ---
 

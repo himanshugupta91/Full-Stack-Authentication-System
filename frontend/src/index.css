@@ -3,13 +3,14 @@
 ======================================== */
 
 /* Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700&display=swap');
 
 /* ========================================
    CSS Variables - Clean Light Theme
 ======================================== */
 :root {
   /* Colors - Monochrome High Contrast */
+  /* Colors - Matrix Light Theme */
   --white: #ffffff;
   --gray-50: #fafafa;
   --gray-100: #f4f4f5;
@@ -21,16 +22,13 @@
   --gray-700: #3f3f46;
   --gray-800: #27272a;
   --gray-900: #18181b;
-  /* Zinc 900 */
 
-  --primary: #000000;
-  --primary-hover: #333333;
-  --success: #18181b;
-  /* Dark Gray for Success (Monochrome Style) */
-  --warning: #52525b;
-  /* Med Gray for Warning */
-  --danger: #000000;
-  /* Black for Danger (High Severity) */
+  --primary: #0D9263;
+  /* Matrix Green */
+  --primary-hover: #0a7d53;
+  --success: #0D9263;
+  --warning: #f59e0b;
+  --danger: #ef4444;
 
   /* Shadows */
   /* Shadows - Premium Soft Monochrome */
@@ -57,22 +55,40 @@
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--gray-50);
-  color: var(--gray-900);
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #000;
+  /* Dark for Matrix */
+  color: var(--gray-200);
+  /* Light Text */
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: white;
+  font-weight: 700;
 }
 
 /* ========================================
    Navbar
 ======================================== */
+/* ========================================
+   Navbar
+======================================== */
 .navbar {
-  background: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  /* Black Navbar */
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--gray-200);
-  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(12, 119, 121, 0.3);
+  /* Teal border */
+  padding: 0.4rem 0;
+  /* Smaller padding */
   box-shadow: var(--shadow-sm);
   position: sticky;
   top: 0;
@@ -80,24 +96,38 @@ body {
 }
 
 .navbar-brand {
-  color: var(--gray-900) !important;
+  color: white !important;
+  /* White Brand */
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
+  /* Smaller font */
 }
 
 .nav-link {
-  color: var(--gray-600) !important;
+  color: var(--gray-300) !important;
   font-weight: 500;
-  padding: 0.5rem 1rem !important;
-  transition: var(--transition);
+  padding: 0.5rem 1.25rem !important;
+  border-radius: 50px;
+  /* Pill shape hover */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-link:hover {
-  color: var(--primary) !important;
+  color: white !important;
+  background: rgba(12, 119, 121, 0.2);
+  /* Soft Teal bg */
+  box-shadow: 0 0 15px rgba(12, 119, 121, 0.3);
+  transform: translateY(-1px);
 }
 
 .navbar-toggler {
-  border: 1px solid var(--gray-300);
+  border: 1px solid var(--gray-600);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.navbar-toggler-icon {
+  filter: invert(1);
+  /* Invert to make hamburger white */
 }
 
 /* ========================================
@@ -112,13 +142,19 @@ body {
 }
 
 .auth-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
-  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.85);
+  /* Black card */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(12, 119, 121, 0.3);
+  /* Teal border */
+  border-radius: 20px;
   padding: 2.5rem;
   width: 100%;
   max-width: 420px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-xl);
+  color: white;
+  /* White text */
 }
 
 .auth-header {
@@ -129,12 +165,17 @@ body {
 .auth-icon {
   width: 60px;
   height: 60px;
-  background: var(--primary);
+  background: rgba(12, 119, 121, 0.4);
+  /* Brighter bg */
+  color: white;
+  /* White icon for max contrast */
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1rem;
+  box-shadow: 0 0 15px rgba(12, 119, 121, 0.4);
+  /* Glow effect */
 }
 
 .auth-icon i {
@@ -142,15 +183,35 @@ body {
   color: white;
 }
 
+/* ... */
+
+.card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  background: rgba(12, 119, 121, 0.3);
+}
+
+.card-icon i {
+  font-size: 1.25rem;
+  color: white;
+}
+
 .auth-header h2 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--gray-900);
+  color: white;
+  /* White Heading */
   margin-bottom: 0.25rem;
 }
 
 .auth-header p {
-  color: var(--gray-500);
+  color: var(--gray-400);
+  /* Lighter gray for subtitle */
   font-size: 0.9rem;
 }
 
@@ -160,14 +221,17 @@ body {
 .form-label {
   font-weight: 500;
   font-size: 0.875rem;
-  color: var(--gray-800);
+  color: var(--gray-200);
+  /* Light gray for dark bg */
   margin-bottom: 0.5rem;
 }
 
 .form-control {
-  background: var(--white);
-  border: 1px solid var(--gray-300);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  /* Dark transparent input */
+  border: 1px solid var(--gray-700);
+  color: white;
+  border-radius: 10px;
   padding: 0.75rem 1rem;
   font-size: 0.95rem;
   transition: var(--transition);
@@ -175,12 +239,14 @@ body {
 
 .form-control:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(12, 119, 121, 0.2);
   outline: none;
+  color: white;
 }
 
 .form-control::placeholder {
-  color: var(--gray-400);
+  color: var(--gray-500);
 }
 
 .input-group-text {
@@ -205,24 +271,29 @@ body {
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: #000000;
+  /* Black for high contrast */
   border: none;
   color: white;
+  /* "White in Black" */
 }
 
 .btn-primary:hover {
-  background: var(--primary-hover);
+  background: var(--primary);
+  /* Teal on hover */
 }
 
 .btn-outline-primary {
   background: transparent;
   border: 1px solid var(--primary);
-  color: var(--primary);
+  color: #2dd4bf;
+  /* Bright Teal for visibility */
 }
 
 .btn-outline-primary:hover {
   background: var(--primary);
   color: white;
+  box-shadow: 0 0 15px rgba(12, 119, 121, 0.4);
 }
 
 .btn-outline-secondary {
@@ -309,8 +380,16 @@ body {
 /* ========================================
    Home Page
 ======================================== */
+/* ========================================
+   Home Page
+======================================== */
 .home-container {
-  background: var(--white);
+  background: rgba(0, 0, 0, 0.4);
+  /* Slight dark tint */
+  backdrop-filter: blur(3px);
+  /* Little blur */
+  -webkit-backdrop-filter: blur(3px);
+  min-height: 100vh;
 }
 
 .hero-section {
@@ -321,86 +400,123 @@ body {
   min-height: 75vh;
 }
 
-.text-gradient {
-  color: var(--primary);
-}
-
-.feature-cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
+/* Textured Glass Effect for Cards */
 .feature-card {
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
-  padding: 1.5rem;
-  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.75rem;
+  border-radius: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  transition: var(--transition);
+  gap: 1rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* Bouncy transition */
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 .feature-card:hover {
   border-color: var(--primary);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-4px);
-  background: var(--white);
+  box-shadow: 0 15px 35px -5px rgba(12, 119, 121, 0.4);
+  transform: translateY(-8px) scale(1.03);
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.feature-card:hover::before {
+  opacity: 1;
 }
 
 .feature-card i {
-  font-size: 1.5rem;
-  color: var(--primary);
+  font-size: 2rem;
+  background: linear-gradient(135deg, #ffffff 0%, #0C7779 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(12, 119, 121, 0.5));
 }
 
 .feature-card span {
-  font-weight: 500;
-  font-size: 0.85rem;
-  color: var(--gray-600);
-}
-
-.features-section {
-  background: var(--gray-50);
-  border-top: 1px solid var(--gray-200);
-  padding: 4rem 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: white;
+  letter-spacing: 0.5px;
 }
 
 .feature-box {
-  text-align: center;
-  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  /* Subtle glass for boxes */
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 2.5rem 2rem;
+  border-radius: 24px;
+  transition: var(--transition);
+  height: 100%;
+}
+
+.feature-box:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-5px);
+  border-color: rgba(12, 119, 121, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .feature-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1rem;
+  margin: 0 auto 1.5rem;
+  font-size: 1.75rem;
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.3);
 }
 
 .feature-icon i {
-  font-size: 1.5rem;
   color: white;
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #ffffff, #2dd4bf, #0d9488);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  filter: drop-shadow(0 0 25px rgba(45, 212, 191, 0.3));
 }
 
 /* ========================================
    Dashboard
 ======================================== */
 .welcome-card,
+.welcome-card,
 .admin-header {
-  background: var(--primary);
+  background: rgba(12, 119, 121, 0.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(12, 119, 121, 0.3);
   color: white;
   padding: 1.5rem;
-  border-radius: 16px;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
 }
 
 .welcome-card .text-muted,
 .admin-header .text-muted {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
 .avatar-circle {
@@ -415,8 +531,11 @@ body {
 }
 
 .dashboard-card {
-  background: var(--white);
-  border: 1px solid var(--gray-100);
+  background: rgba(0, 0, 0, 0.85);
+  /* Black Glass */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(12, 119, 121, 0.3);
   padding: 1.5rem;
   border-radius: 16px;
   transition: var(--transition);
@@ -437,25 +556,50 @@ body {
   align-items: center;
   justify-content: center;
   margin-bottom: 0.75rem;
+  background: rgba(12, 119, 121, 0.3);
+  /* Teal tint */
 }
 
 .card-icon i {
   font-size: 1.25rem;
   color: white;
+  /* White icon */
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-card,
+.dashboard-card,
+.home-container,
+.feature-card {
+  animation: fadeIn 0.6s ease-out;
 }
 
 .admin-notice {
-  background: #fffbeb;
-  border: 1px solid #fcd34d;
+  background: rgba(255, 251, 235, 0.1);
+  border: 1px solid rgba(252, 211, 77, 0.3);
+  color: #fbbf24;
   padding: 1.25rem;
   border-radius: 10px;
 }
 
 .info-card {
-  background: var(--white);
-  border: 1px solid var(--gray-200);
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(12, 119, 121, 0.3);
   padding: 1.25rem;
   border-radius: 10px;
+  color: var(--gray-300);
 }
 
 /* ========================================
@@ -494,35 +638,57 @@ body {
    Tables
 ======================================== */
 .users-table-card {
-  background: var(--white);
-  border: 1px solid var(--gray-200);
+  background: rgba(255, 255, 255, 0.95) !important;
+  /* Bright White Card */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   padding: 1.25rem;
   border-radius: 10px;
+  color: #000000 !important;
+  /* Force Black Text */
+}
+
+/* Force black title and icons inside the light card */
+.users-table-card h4,
+.users-table-card i,
+.users-table-card span {
+  color: #000000 !important;
 }
 
 .table {
   margin-bottom: 0;
+  color: #000000 !important;
+  /* Force Black Table Text */
 }
 
 .table th {
   border-top: none;
-  border-bottom: 1px solid var(--gray-200);
-  font-weight: 600;
-  color: var(--gray-500);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  font-weight: 700;
+  color: #0d8a6a !important;
+  /* Darker Teal for Light BG */
   text-transform: uppercase;
-  font-size: 0.75rem;
-  padding: 0.75rem;
+  font-size: 0.8rem;
+  padding: 1rem;
+  letter-spacing: 0.5px;
 }
 
 .table td {
-  border-bottom: 1px solid var(--gray-100);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   padding: 0.75rem;
   vertical-align: middle;
-  color: var(--gray-700);
+  color: #000000 !important;
+  /* Force Black Cell Text */
 }
 
 .table tbody tr:hover {
-  background: var(--gray-50);
+  background: rgba(0, 0, 0, 0.05);
+  /* Darker gray for hover on white */
+}
+
+.table tbody tr:hover td {
+  color: #000000 !important;
 }
 
 .user-avatar {
@@ -550,44 +716,56 @@ body {
 
 .bg-primary {
   background: var(--primary) !important;
+  color: white !important;
+  /* Ensure visibility */
 }
 
 .bg-success {
   background: var(--success) !important;
+  color: white !important;
 }
 
 .bg-warning {
   background: var(--warning) !important;
+  color: white !important;
 }
 
 .bg-danger {
   background: var(--danger) !important;
+  color: white !important;
+}
+
+.bg-info {
+  background: #3b82f6 !important;
+  /* Bright Blue for Info */
+  color: white !important;
 }
 
 /* ========================================
    Dropdown
 ======================================== */
 .dropdown-menu {
-  background: var(--white);
-  border: 1px solid var(--gray-200);
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(12, 119, 121, 0.3);
   border-radius: 8px;
   box-shadow: var(--shadow-md);
   padding: 0.5rem;
 }
 
 .dropdown-item {
-  color: var(--gray-700);
+  color: var(--gray-200);
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
   font-size: 0.9rem;
 }
 
 .dropdown-item:hover {
-  background: var(--gray-100);
+  background: rgba(12, 119, 121, 0.2);
+  color: white;
 }
 
 .dropdown-divider {
-  border-color: var(--gray-200);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* ========================================
@@ -607,15 +785,18 @@ a:hover {
 }
 
 .text-success {
-  color: var(--success) !important;
+  color: #34d399 !important;
+  /* Bright Emerald for readability on black */
 }
 
 .text-danger {
-  color: var(--danger) !important;
+  color: #f87171 !important;
+  /* Bright Red */
 }
 
 .text-primary {
-  color: var(--primary) !important;
+  color: #2dd4bf !important;
+  /* Bright Teal */
 }
 
 /* ========================================

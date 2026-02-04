@@ -1,6 +1,9 @@
 package com.auth.controller;
 
+import com.auth.dto.AdminDashboardDto;
+import com.auth.dto.UserDto;
 import com.auth.entity.User;
+import com.auth.mapper.UserMapper;
 import com.auth.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -9,10 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * REST controller for admin dashboard.
@@ -27,12 +27,15 @@ public class AdminController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserMapper userMapper;
+
     /**
      * Get admin dashboard data.
      * GET /api/admin/dashboard
      */
     @GetMapping("/dashboard")
-    public ResponseEntity<Map<String, Object>> getDashboard() {
+    public ResponseEntity<AdminDashboardDto> getDashboard() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         long totalUsers = userRepository.count();
@@ -40,12 +43,12 @@ public class AdminController {
                 .filter(User::isEnabled)
                 .count();
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Welcome to Admin Dashboard!");
-        response.put("admin", auth.getName());
-        response.put("totalUsers", totalUsers);
-        response.put("activeUsers", activeUsers);
-        response.put("timestamp", java.time.LocalDateTime.now().toString());
+        AdminDashboardDto response = new AdminDashboardDto(
+                "Welcome to Admin Dashboard!",
+                auth.getName(),
+                totalUsers,
+                activeUsers,
+                java.time.LocalDateTime.now().toString());
 
         return ResponseEntity.ok(response);
     }
@@ -55,24 +58,9 @@ public class AdminController {
      * GET /api/admin/users
      */
     @GetMapping("/users")
-    public ResponseEntity<List<Map<String, Object>>> getAllUsers() {
+    public ResponseEntity<List<UserDto>> getAllUsers() {
         List<User> users = userRepository.findAll();
-
-        List<Map<String, Object>> userList = users.stream()
-                .map(user -> {
-                    Map<String, Object> userMap = new HashMap<>();
-                    userMap.put("id", user.getId());
-                    userMap.put("name", user.getName());
-                    userMap.put("email", user.getEmail());
-                    userMap.put("enabled", user.isEnabled());
-                    userMap.put("roles", user.getRoles().stream()
-                            .map(role -> role.getName().name())
-                            .collect(Collectors.toList()));
-                    userMap.put("createdAt", user.getCreatedAt());
-                    return userMap;
-                })
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(userList);
+        List<UserDto> userDtos = userMapper.toDtoList(users);
+        return ResponseEntity.ok(userDtos);
     }
 }

@@ -3,6 +3,7 @@ package com.auth.service;
 import com.auth.dto.*;
 import com.auth.entity.Role;
 import com.auth.entity.User;
+import com.auth.mapper.UserMapper;
 import com.auth.repository.RoleRepository;
 import com.auth.repository.UserRepository;
 import com.auth.security.JwtUtil;
@@ -11,17 +12,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Service for authentication operations.
@@ -50,6 +47,9 @@ public class AuthService {
     @Autowired
     private OtpService otpService;
 
+    @Autowired
+    private UserMapper userMapper;
+
     @Value("${otp.expiration.minutes:5}")
     private int otpExpirationMinutes;
 
@@ -64,11 +64,8 @@ public class AuthService {
         }
 
         // Create new user
-        User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
+        User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setEnabled(false);
 
         // Generate and set OTP
         String otp = otpService.generateOtp();
@@ -148,12 +145,7 @@ public class AuthService {
 
         String jwt = jwtUtil.generateToken(authentication);
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-
-        return new AuthResponse(jwt, user.getId(), user.getName(), user.getEmail(), roles);
+        return userMapper.toAuthResponse(user, jwt);
     }
 
     /**

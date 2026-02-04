@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyOtp from './pages/VerifyOtp';
+import MatrixRain from './components/MatrixRain';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import UserDashboard from './pages/UserDashboard';
@@ -19,6 +20,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <MatrixRain />
         <Toaster position="top-right" />
         <div className="app">
           <Navbar />
