@@ -3,6 +3,7 @@ package com.auth.service;
 import com.auth.dto.*;
 import com.auth.entity.Role;
 import com.auth.entity.User;
+import com.auth.exception.*;
 import com.auth.mapper.UserMapper;
 import com.auth.repository.RoleRepository;
 import com.auth.repository.UserRepository;
@@ -60,7 +61,7 @@ public class AuthService {
     public MessageResponse register(RegisterRequest request) {
         // Check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
-            return new MessageResponse("Email already registered!", false);
+            throw new UserAlreadyExistsException("Email already registered!");
         }
 
         // Create new user
@@ -105,19 +106,19 @@ public class AuthService {
                 .orElse(null);
 
         if (user == null) {
-            return new MessageResponse("User not found!", false);
+            throw new ResourceNotFoundException("User not found!");
         }
 
         if (user.isEnabled()) {
-            return new MessageResponse("Email already verified!", false);
+            throw new UserAlreadyExistsException("Email already verified!");
         }
 
         if (user.getVerificationOtp() == null || !user.getVerificationOtp().equals(request.getOtp())) {
-            return new MessageResponse("Invalid OTP!", false);
+            throw new TokenValidationException("Invalid OTP!");
         }
 
         if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
-            return new MessageResponse("OTP has expired! Please request a new one.", false);
+            throw new TokenValidationException("OTP has expired! Please request a new one.");
         }
 
         // Verify user
@@ -134,10 +135,11 @@ public class AuthService {
      */
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found!"));
+                .orElseThrow(() -> new org.springframework.security.authentication.BadCredentialsException(
+                        "Invalid email or password!"));
 
         if (!user.isEnabled()) {
-            throw new RuntimeException("Please verify your email first!");
+            throw new TokenValidationException("Please verify your email first!");
         }
 
         Authentication authentication = authenticationManager.authenticate(
@@ -186,11 +188,11 @@ public class AuthService {
                 .orElse(null);
 
         if (user == null) {
-            return new MessageResponse("Invalid or expired reset token!", false);
+            throw new TokenValidationException("Invalid or expired reset token!");
         }
 
         if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
-            return new MessageResponse("Reset token has expired! Please request a new one.", false);
+            throw new TokenValidationException("Reset token has expired! Please request a new one.");
         }
 
         // Update password
@@ -211,11 +213,11 @@ public class AuthService {
                 .orElse(null);
 
         if (user == null) {
-            return new MessageResponse("User not found!", false);
+            throw new ResourceNotFoundException("User not found!");
         }
 
         if (user.isEnabled()) {
-            return new MessageResponse("Email already verified!", false);
+            throw new UserAlreadyExistsException("Email already verified!");
         }
 
         // Generate new OTP
@@ -240,11 +242,12 @@ public class AuthService {
     @Transactional
     public MessageResponse changePassword(String email, ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
 
         // Check if current password is correct
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            return new MessageResponse("Incorrect current password!", false);
+            throw new org.springframework.security.authentication.BadCredentialsException(
+                    "Incorrect current password!");
         }
 
         // Update password

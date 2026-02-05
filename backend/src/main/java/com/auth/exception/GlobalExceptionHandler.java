@@ -38,6 +38,33 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle UserAlreadyExistsException.
+     */
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<MessageResponse> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new MessageResponse(ex.getMessage(), false));
+    }
+
+    /**
+     * Handle ResourceNotFoundException.
+     */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<MessageResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new MessageResponse(ex.getMessage(), false));
+    }
+
+    /**
+     * Handle TokenValidationException.
+     */
+    @ExceptionHandler(TokenValidationException.class)
+    public ResponseEntity<MessageResponse> handleTokenValidationException(TokenValidationException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new MessageResponse(ex.getMessage(), false));
+    }
+
+    /**
      * Handle generic runtime exceptions.
      */
     @ExceptionHandler(RuntimeException.class)

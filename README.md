@@ -285,3 +285,149 @@ erDiagram
 3.  Start dev server: `npm run dev`
 
 ---
+
+## ❓ Real-World Interview Questions (20+)
+
+Use this project to verify your full-stack knowledge. These questions touch on the specific decisions made in this codebase.
+
+### **🔐 Security & Authentication**
+
+1.  **JWT vs. Session:** Why did we choose `Stateless` session policy in `SecurityConfig.java`? What are the trade-offs compared to traditional Server-Side Sessions?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    We use <code>SessionCreationPolicy.STATELESS</code> because JWTs are self-contained. The server does not need to store session data in memory or a database, making the application easier to scale horizontally (stateless). Trade-off: We cannot easily invalidate a token before it expires (server-side sessions can just be deleted).
+    </details>
+
+2.  **CSRF Configuration:** We disabled CSRF (`csrf.disable()`) but enabled CORS. In what specific scenario is this safe? If we stored the JWT in an `HttpOnly` cookie, would we need to re-enable it?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    CSRF (Cross-Site Request Forgery) attacks rely on the browser automatically sending cookies. Since we store the JWT in <code>LocalStorage</code> and manually attach it to the header, the browser won't send it automatically for cross-site requests, making CSRF impossible. If we moved to <code>HttpOnly</code> cookies, the browser <em>would</em> send them automatically, so we would need to re-enable CSRF protection (or use SameSite=Strict cookies).
+    </details>
+
+3.  **Password Storage:** Explain why we use `BCryptPasswordEncoder`? If an attacker dumps the database, can they reverse these passwords? What is a "Salt" and does BCrypt handle it automatically?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    BCrypt is a slow hashing algorithm designed to resist brute-force attacks. It is a one-way hash, so it cannot be reversed. BCrypt automatically generates a random "salt" for every password and includes it in the final hash string, ensuring that two users with the same password have different hash values in the database.
+    </details>
+
+4.  **Filter Chain:** How does the `JwtAuthFilter` interact with the `UsernamePasswordAuthenticationFilter`? Why must it run *before* the standard authentication filter?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    The <code>JwtAuthFilter</code> intercepts every request to check for a "Bearer" token. It must run <em>before</em> the <code>UsernamePasswordAuthenticationFilter</code> so that if a valid token is present, it sets the authentication in the <code>SecurityContext</code> immediately. This allows Spring Security to skip the default login process for that request.
+    </details>
+
+5.  **Role-Based Access:** We use `@PreAuthorize("hasRole('ADMIN')")`. How does Spring Security know which user has which role? Walk through the `UserDetails` implementation.
+    <details>
+    <summary><strong>Answer</strong></summary>
+    When the <code>CustomUserDetailsService</code> loads a user from the database, it maps the user's roles to <code>SimpleGrantedAuthority</code> objects (e.g., "ROLE_ADMIN"). These authorities are returned as part of the <code>UserDetails</code> object. Spring Security then checks these authorities against the <code>@PreAuthorize</code> annotation.
+    </details>
+
+6.  **Token Expiry & Security:** If a user's token is stolen, the attacker acts as the user until expiry. How would you implement a "Logout" feature that immediately invalidates a stateless JWT? (Hint: Redis blocklist).
+    <details>
+    <summary><strong>Answer</strong></summary>
+    Since JWTs are stateless, the server doesn't know they exist. To "invalidate" one, we would store the token's ID (JTI) or signature in a fast database like Redis with a "Blocklist" key and an expiry time equal to the token's remaining life. The <code>JwtAuthFilter</code> would check this Redis blocklist for every request.
+    </details>
+
+### **☕ Spring Boot & Backend Architecture**
+
+7.  **Dependency Injection:** In `AuthController`, we use constructor/field injection for `AuthService`. What is Inversion of Control (IoC) and why is it better than `new AuthService()`?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    IoC means the Spring Container manages the lifecycle of objects (Beans). Instead of us creating dependencies with <code>new</code>, Spring provides them. This makes code loosely coupled and easier to test (we can easily inject mock services during unit testing).
+    </details>
+
+8.  **DTO Pattern:** Why do we have `RegisterRequest` and `UserDto` classes? Why not just pass the `User` Entity directly to the controller?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    Passing Entities directly exposes internal database structure (security risk) and creates tight coupling. DTOs (Data Transfer Objects) allow us to define exactly what data we accept (input) and exactly what data we return (output), often hiding sensitive fields like <code>password</code> or unnecessary relationships.
+    </details>
+
+9.  **Transactional Integrity:** If the "Save User" succeeds but the "Send Email" fails during registration, what happens? How would you use `@Transactional` to ensure data consistency?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    Without transactional management, the user would be saved but receive no OTP, leading to a "zombie" account. Annotating the service method with <code>@Transactional</code> ensures that if the email sending throws an exception, the database insert for the user is rolled back, keeping the data consistent.
+    </details>
+
+10. **Validation:** We use `@Valid` in the controller. If a user sends an invalid email format, how is the error handled? Where is the global exception handler?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    Spring throws a <code>MethodArgumentNotValidException</code>. We should have a <code>@RestControllerAdvice</code> class with an <code>@ExceptionHandler</code> to catch this exception and return a clean JSON response (e.g., "Email is invalid") instead of a 500 stack trace.
+    </details>
+
+11. **N+1 Problem:** If we have an endpoint `getAllUsers()` that also fetches their roles, how do you prevent Hibernate from executing one query for users + N queries for roles?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    This happens with <code>Lazy Loading</code>. To fix it, we use a <strong>JOIN FETCH</strong> in the JPQL query (e.g., <code>SELECT u FROM User u JOIN FETCH u.roles</code>) to retrieve the user and their roles in a single SQL query.
+    </details>
+
+### **⚛️ React & Frontend**
+
+12. **State Management:** How are we handling the user's login state? Is it persistent across page reloads? How does the `AuthContext` (or similar) work?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    We likely use React Context API (<code>AuthContext</code>) to hold the <code>user</code> object and <code>token</code>. To persist across reloads, we initialize this state by reading from <code>localStorage.getItem('token')</code> when the app starts.
+    </details>
+
+13. **Protected Routes:** How does the `ProtectedRoute` component prevent unauthenticated users from accessing `/dashboard`? Does this provide real security, or is it just UX?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    It checks if a user is authenticated (e.g., has a token). If not, it uses <code>&lt;Navigate to="/login" /&gt;</code>. This is <strong>only UX</strong>. Real security happens on the backend API; an attacker could still use Postman to call the API directly unless the backend verifies the token.
+    </details>
+
+14. **Axios Interceptors:** How would you centrally attach the JWT token to every API request without manually adding the header in every `axios.get()` call?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    We configure an <code>axios.interceptors.request.use()</code> function. This function checks <code>localStorage</code> for a token and, if found, adds <code>config.headers.Authorization = `Bearer ${token}`</code> to the request config before it leaves the browser.
+    </details>
+
+15. **React Hooks:** Explain the usage of `useEffect` in the dashboard. What happens if you forget the dependency array?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    <code>useEffect</code> is used for side effects like data fetching. If the dependency array <code>[]</code> is missing, the effect runs on <em>every render</em>, potentially causing an infinite loop if the effect updates state (which triggers a re-render).
+    </details>
+
+16. **XSS Prevention:** React escapes content by default. In what scenario would this application still be vulnerable to Cross-Site Scripting (XSS)?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    React is safe by default, but if we use <code>dangerouslySetInnerHTML</code> or evaluate user input in <code>href</code> attributes (e.g., <code>javascript:alert(1)</code>), we introduce XSS vulnerabilities. Also, if we reflect untrusted data in the initial HTML from the server before React loads.
+    </details>
+
+### **🏗️ System Design & Scalability**
+
+17. **Async Processing:** Sending emails (OTP) is slow. If 1,000 users register at once, the API will hang. How would you offload email sending to a background queue (e.g., RabbitMQ or Kafka)?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    We would implement a "Producer-Consumer" pattern. The registration endpoint publishes a message (<code>SendOtpEvent</code>) to a generic queue (RabbitMQ/Kafka) and returns "Success" immediately. A separate worker service listens to the queue and handles the slow email sending (SMTP) process asynchronously.
+    </details>
+
+18. **Database Scaling:** As the `users` table grows to 10 million rows, queries by email will become slow. How do you verify if the `email` column is indexed?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    We check the database schema or run <code>EXPLAIN ANALYZE SELECT * FROM users WHERE email = '...';</code>. In JPA, using <code>@Column(unique = true)</code> often automatically creates an index. If missing, the database would have to do a "Full Table Scan", which is O(N) and very slow.
+    </details>
+
+19. **Rate Limiting:** How would you prevent an attacker from spamming the `/api/auth/login` endpoint to brute-force passwords?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    Implement Rate Limiting (e.g., using Bucket4j in Spring or a gateway like Nginx/Redis). We would track login attempts by IP or Email. After 5 failed attempts in 1 minute, we block requests from that source for a 15-minute cooldown period.
+    </details>
+
+20. **High Availability:** If we deploy this Spring Boot app to 3 different servers behind a Load Balancer, does the JWT authentication still work? Why or why not?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    Yes, it works perfectly because JWTs are <strong>stateless</strong>. The token contains all necessary user info and is signed. Any of the 3 servers can verify the signature using the same shared "Secret Key". If we used server-side sessions, we would need "Sticky Sessions" or a shared Session Store (Redis).
+    </details>
+
+### **🐞 Debugging & DevOps**
+
+21. **CORS Errors:** A user reports a `Access-Control-Allow-Origin` error. Is this a backend or frontend issue? How do you fix it specifically in Spring Security?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    It is a browser security feature, but the configuration fix is on the <strong>Backend</strong>. The server must incorrectly configured headers. In Spring Security, we configure the <code>CorsConfigurationSource</code> bean to allowing specific origins (e.g., <code>http://localhost:5173</code>) and methods (GET, POST).
+    </details>
+
+22. **Environment Variables:** Why do we verify that `application.properties` does not contain hardcoded API keys or database passwords before committing to GitHub?
+    <details>
+    <summary><strong>Answer</strong></summary>
+    Hardcoded secrets in git history are compromised forever. Hackers scan public repos for AWS keys/DB passwords. We should use environment variables (<code>${DB_PASSWORD}</code>) or a secrets manager, and add the real <code>application.properties</code> (or <code>.env</code>) to <code>.gitignore</code>.
+    </details>
