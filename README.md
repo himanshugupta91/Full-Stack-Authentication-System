@@ -3,8 +3,9 @@
 A modern, production-ready full-stack authentication system featuring a premium **Matrix-inspired Glassmorphism UI**. Built with **Spring Boot 3** and **React 18**, this project combines robust security with a stunning, high-performance frontend.
 
 ![License](https://img.shields.io/badge/license-MIT-0C7779.svg?style=flat-square)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.2-green.svg?style=flat-square)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.10-green.svg?style=flat-square)
 ![React](https://img.shields.io/badge/React-18-blue.svg?style=flat-square)
+![Java](https://img.shields.io/badge/Java-21-orange.svg?style=flat-square)
 ![Theme](https://img.shields.io/badge/Theme-Matrix%20Glass-000000.svg?style=flat-square)
 
 ---
@@ -27,7 +28,7 @@ A modern, production-ready full-stack authentication system featuring a premium 
 
 | Category | Technology | Description |
 |----------|------------|-------------|
-| **Backend** | Spring Boot 3.2 | Core framework for REST API |
+| **Backend** | Spring Boot 3.5.10 | Core framework for REST API |
 | | Spring Security 6 | Authentication & Authorization |
 | | Spring Data JPA | ORM & Database interactions |
 | | Hibernate | JPA Implementation |
@@ -61,9 +62,9 @@ The application features a unique **Matrix Light** aesthetic designed for a prem
 |:---:|:---:|
 | ![Home](screenshots/home.png) | ![Login](screenshots/login.png) |
 
-| **Register** |
-|:---:|
-| ![Register](screenshots/register.png) |
+| **Register** | **Dashboard** |
+|:---:|:---:|
+| ![Register](screenshots/register.png) | ![Dashboard](screenshots/dashboard.png) |
 
 ---
 
@@ -230,8 +231,12 @@ erDiagram
 
 ## 🔗 API Endpoints
 
+> **📄 [View Full API Documentation](API_DOCUMENTATION.md)**
+
+For a detailed guide on how to use the API (compatible with Postman), please refer to the [API_DOCUMENTATION.md](API_DOCUMENTATION.md) file.
+
 <details>
-<summary><strong>Click to view detailed API documentation</strong></summary>
+<summary><strong>Quick Reference</strong></summary>
 
 ### 🟢 Authentication (`/api/auth`)
 
@@ -269,7 +274,7 @@ erDiagram
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Java 17+
+- **Java 21+**
 - Node.js 18+
 - MySQL 8.0+
 - Maven
