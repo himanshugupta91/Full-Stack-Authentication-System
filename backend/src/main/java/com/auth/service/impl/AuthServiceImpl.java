@@ -55,6 +55,15 @@ public class AuthServiceImpl implements AuthService {
     @Value("${otp.expiration.minutes:5}")
     private int otpExpirationMinutes;
 
+    /**
+     * Registers a new user with the provided details.
+     * Checks for existing email, encodes password, generates OTP, and sends
+     * verification email.
+     *
+     * @param request The registration request containing user details.
+     * @return MessageResponse indicating success status and message.
+     * @throws UserAlreadyExistsException if the email is already registered.
+     */
     @Override
     @Transactional
     public MessageResponse register(RegisterRequest request) {
@@ -63,11 +72,11 @@ public class AuthServiceImpl implements AuthService {
             throw new UserAlreadyExistsException("Email already registered!");
         }
 
-        // Create new user
+        // Create new user entity from request
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // Generate and set OTP
+        // Generate and set OTP for email verification
         String otp = otpService.generateOtp();
         user.setVerificationOtp(otp);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(otpExpirationMinutes));
@@ -80,17 +89,26 @@ public class AuthServiceImpl implements AuthService {
 
         userService.save(user);
 
-        // Send OTP email
+        // Send OTP email asynchronously (handled by EmailService)
         try {
             emailService.sendOtpEmail(user.getEmail(), otp);
         } catch (Exception e) {
-            // Log the error but don't fail registration
+            // Log error but allow registration to complete; user can resend OTP later
             System.err.println("Failed to send OTP email: " + e.getMessage());
         }
 
         return new MessageResponse("Registration successful! Please check your email for OTP verification.", true);
     }
 
+    /**
+     * Verifies the email address using the provided OTP.
+     *
+     * @param request The request containing email and OTP.
+     * @return MessageResponse indicating success.
+     * @throws ResourceNotFoundException  if user not found.
+     * @throws UserAlreadyExistsException if email is already verified.
+     * @throws TokenValidationException   if OTP is invalid or expired.
+     */
     @Override
     @Transactional
     public MessageResponse verifyOtp(OtpVerifyRequest request) {
@@ -113,7 +131,7 @@ public class AuthServiceImpl implements AuthService {
             throw new TokenValidationException("OTP has expired! Please request a new one.");
         }
 
-        // Verify user
+        // Activate user account
         user.setEnabled(true);
         user.setVerificationOtp(null);
         user.setOtpExpiry(null);
@@ -122,6 +140,21 @@ public class AuthServiceImpl implements AuthService {
         return new MessageResponse("Email verified successfully! You can now login.", true);
     }
 
+    /**
+     * Authenticates a user and generates a JWT token.
+     *
+     * @param request The login request containing email and password.
+     * @return AuthResponse containing user details and JWT token.
+     * @throws org.springframework.security.authentication.BadCredentialsException if
+     *                                                                             credentials
+     *                                                                             are
+     *                                                                             invalid.
+     * @throws TokenValidationException                                            if
+     *                                                                             email
+     *                                                                             is
+     *                                                                             not
+     *                                                                             verified.
+     */
     @Override
     public AuthResponse login(LoginRequest request) {
         User user = userService.findByEmail(request.getEmail())
@@ -132,14 +165,24 @@ public class AuthServiceImpl implements AuthService {
             throw new TokenValidationException("Please verify your email first!");
         }
 
+        // Authenticate with Spring Security
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
+        // Generate JWT Token
         String jwt = jwtUtil.generateToken(authentication);
 
         return userMapper.toAuthResponse(user, jwt);
     }
 
+    /**
+     * Initiates the password reset process by generating a token and sending an
+     * email.
+     *
+     * @param request The request containing the user's email.
+     * @return MessageResponse indicating the email was sent (generic message for
+     *         security).
+     */
     @Override
     @Transactional
     public MessageResponse resetPassword(ResetPasswordRequest request) {
@@ -147,14 +190,14 @@ public class AuthServiceImpl implements AuthService {
                 .orElse(null);
 
         if (user == null) {
-            // Don't reveal if email exists
+            // Security: Don't reveal if email exists or not
             return new MessageResponse("If an account exists with this email, a reset link will be sent.", true);
         }
 
-        // Generate reset token
+        // Generate secure reset token
         String resetToken = otpService.generateResetToken();
         user.setResetToken(resetToken);
-        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
+        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30)); // Token valid for 30 mins
         userService.save(user);
 
         // Send reset email
@@ -167,6 +210,13 @@ public class AuthServiceImpl implements AuthService {
         return new MessageResponse("If an account exists with this email, a reset link will be sent.", true);
     }
 
+    /**
+     * Updates the user's password using a valid reset token.
+     *
+     * @param request The request containing the reset token and new password.
+     * @return MessageResponse indicating success.
+     * @throws TokenValidationException if token is invalid or expired.
+     */
     @Override
     @Transactional
     public MessageResponse updatePassword(UpdatePasswordRequest request) {
@@ -181,7 +231,7 @@ public class AuthServiceImpl implements AuthService {
             throw new TokenValidationException("Reset token has expired! Please request a new one.");
         }
 
-        // Update password
+        // Update password and clear reset token
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
@@ -190,6 +240,14 @@ public class AuthServiceImpl implements AuthService {
         return new MessageResponse("Password updated successfully! You can now login.", true);
     }
 
+    /**
+     * Resends the OTP for email verification.
+     *
+     * @param email The email address to resend OTP to.
+     * @return MessageResponse indicating success.
+     * @throws ResourceNotFoundException  if user not found.
+     * @throws UserAlreadyExistsException if email is already verified.
+     */
     @Override
     @Transactional
     public MessageResponse resendOtp(String email) {
@@ -220,19 +278,35 @@ public class AuthServiceImpl implements AuthService {
         return new MessageResponse("OTP sent successfully! Please check your email.", true);
     }
 
+    /**
+     * Changes the authenticated user's password.
+     *
+     * @param email   The email of the authenticated user.
+     * @param request The request containing current and new password.
+     * @return MessageResponse indicating success.
+     * @throws ResourceNotFoundException                                           if
+     *                                                                             user
+     *                                                                             not
+     *                                                                             found.
+     * @throws org.springframework.security.authentication.BadCredentialsException if
+     *                                                                             current
+     *                                                                             password
+     *                                                                             is
+     *                                                                             incorrect.
+     */
     @Override
     @Transactional
     public MessageResponse changePassword(String email, ChangePasswordRequest request) {
         User user = userService.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
 
-        // Check if current password is correct
+        // Verify current password
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new org.springframework.security.authentication.BadCredentialsException(
                     "Incorrect current password!");
         }
 
-        // Update password
+        // Update with new encoded password
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userService.save(user);
 

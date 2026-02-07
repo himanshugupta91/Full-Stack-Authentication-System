@@ -50,16 +50,22 @@ const UserDashboard = () => {
                                 </p>
                             </div>
                         </div>
+                        <Link to="/change-password" className="btn btn-outline-primary ms-auto">
+                            <i className="bi bi-key me-2"></i>
+                            Change Password
+                        </Link>
                     </div>
                 </div>
             </div>
 
-            {error && (
-                <div className="alert alert-danger">
-                    <i className="bi bi-exclamation-triangle me-2"></i>
-                    {error}
-                </div>
-            )}
+            {
+                error && (
+                    <div className="alert alert-danger">
+                        <i className="bi bi-exclamation-triangle me-2"></i>
+                        {error}
+                    </div>
+                )
+            }
 
             <div className="row g-4">
                 <div className="col-md-6 col-lg-4">
@@ -102,28 +108,30 @@ const UserDashboard = () => {
                 </div>
             </div>
 
-            {isAdmin() && (
-                <div className="row mt-4">
-                    <div className="col-12">
-                        <div className="admin-notice">
-                            <div className="d-flex align-items-center">
-                                <i className="bi bi-gear-fill me-3 text-warning" style={{ fontSize: '2rem' }}></i>
-                                <div>
-                                    <h5 className="mb-1">Admin Access Available</h5>
-                                    <p className="mb-0 text-muted">You have administrator privileges.</p>
+            {
+                isAdmin() && (
+                    <div className="row mt-4">
+                        <div className="col-12">
+                            <div className="admin-notice">
+                                <div className="d-flex align-items-center">
+                                    <i className="bi bi-gear-fill me-3 text-warning" style={{ fontSize: '2rem' }}></i>
+                                    <div>
+                                        <h5 className="mb-1">Admin Access Available</h5>
+                                        <p className="mb-0 text-muted">You have administrator privileges.</p>
+                                    </div>
+                                    <Link to="/admin" className="btn btn-warning ms-auto">
+                                        <i className="bi bi-arrow-right me-2"></i>
+                                        Go to Admin Panel
+                                    </Link>
                                 </div>
-                                <Link to="/admin" className="btn btn-warning ms-auto">
-                                    <i className="bi bi-arrow-right me-2"></i>
-                                    Go to Admin Panel
-                                </Link>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
 
-        </div>
+        </div >
     );
 };
 
