@@ -5,7 +5,6 @@ import { userAPI } from '../services/api';
 
 const UserDashboard = () => {
     const { user, isAdmin } = useAuth();
-    const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -15,9 +14,9 @@ const UserDashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            const response = await userAPI.getDashboard();
-            setDashboardData(response.data);
-        } catch (err) {
+            await userAPI.getDashboard();
+            // Data is not currently used in UI, but call is made to verify token/access
+        } catch {
             setError('Failed to load dashboard data');
         } finally {
             setLoading(false);

@@ -21,7 +21,7 @@ const AdminDashboard = () => {
             ]);
             setDashboardData(dashboardRes.data);
             setUsers(usersRes.data);
-        } catch (err) {
+        } catch {
             setError('Failed to load admin data');
         } finally {
             setLoading(false);

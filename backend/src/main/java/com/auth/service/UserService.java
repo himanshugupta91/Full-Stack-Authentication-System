@@ -1,27 +1,50 @@
 package com.auth.service;
 
 import com.auth.entity.User;
-import com.auth.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 /**
- * Service for user authentication operations.
+ * Service interface for User operations.
  */
-@Service
-public class UserService {
-
-    @Autowired
-    private UserRepository userRepository;
-
+public interface UserService {
     /**
      * Get user by email.
-     * 
+     *
      * @param email User email
      * @return User object
      */
-    public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-    }
+    User getUserByEmail(String email);
+
+    /**
+     * Find user by email (returns Optional).
+     *
+     * @param email User email
+     * @return Optional User
+     */
+    Optional<User> findByEmail(String email);
+
+    /**
+     * Check if user exists by email.
+     *
+     * @param email User email
+     * @return true if exists
+     */
+    boolean existsByEmail(String email);
+
+    /**
+     * Save user entity.
+     *
+     * @param user User to save
+     * @return Saved user
+     */
+    User save(User user);
+
+    /**
+     * Find user by reset token.
+     *
+     * @param token Reset token
+     * @return Optional User
+     */
+    Optional<User> findByResetToken(String token);
 }

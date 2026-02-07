@@ -2,7 +2,9 @@ package com.auth.mapper;
 
 import com.auth.dto.AuthResponse;
 import com.auth.dto.RegisterRequest;
+import com.auth.dto.UserDashboardDto;
 import com.auth.dto.UserDto;
+import com.auth.entity.Role;
 import com.auth.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -22,22 +24,22 @@ public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    com.auth.entity.User toEntity(RegisterRequest request);
+    User toEntity(RegisterRequest request);
 
-    UserDto toDto(com.auth.entity.User user);
+    UserDto toDto(User user);
 
-    List<UserDto> toDtoList(List<com.auth.entity.User> users);
+    List<UserDto> toDtoList(List<User> users);
 
     @Mapping(source = "token", target = "token")
     @Mapping(target = "type", constant = "Bearer")
-    AuthResponse toAuthResponse(com.auth.entity.User user, String token);
+    AuthResponse toAuthResponse(User user, String token);
 
     @Mapping(source = "name", target = "user")
     @Mapping(target = "message", ignore = true)
     @Mapping(target = "timestamp", ignore = true)
-    com.auth.dto.UserDashboardDto toUserDashboardDto(com.auth.entity.User user);
+    UserDashboardDto toUserDashboardDto(User user);
 
-    default String map(com.auth.entity.Role role) {
+    default String map(Role role) {
         return role.getName().name();
     }
 }
