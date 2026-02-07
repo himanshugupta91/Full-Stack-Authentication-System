@@ -58,17 +58,14 @@ The application features a unique **Matrix Light** aesthetic designed for a prem
 
 ## 📸 Screenshots
 
-### 🌐 Public Interface
+### 🌟 Home Page
+![Home](screenshots/home.png)
 
-| **Landing Page** | **Secure Login** |
+### 📱 Interface Overview
+
+| **Secure Login** | **User Registration** |
 |:---:|:---:|
-| ![Home](screenshots/home.png) | ![Login](screenshots/login.png) |
-
-| **User Registration** |
-|:---:|
-| ![Register](screenshots/register.png) |
-
-### 🔐 Protected User Area
+| ![Login](screenshots/login.png) | ![Register](screenshots/register.png) |
 
 | **Interactive Dashboard** |
 |:---:|
