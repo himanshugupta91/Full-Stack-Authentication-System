@@ -13,6 +13,8 @@ A modern, production-ready full-stack authentication system featuring a premium 
 ## 📑 Table of Contents
 
 - [Tech Stack](#-tech-stack)
+- [UI/UX & Theming](#-uiux--theming)
+- [Screenshots](#-screenshots)
 - [High-Level System Architecture](#-high-level-system-architecture)
 - [Component Interaction Diagram](#-component-interaction-diagram)
 - [User Flow Diagrams](#-user-flow-diagrams)
@@ -21,6 +23,8 @@ A modern, production-ready full-stack authentication system featuring a premium 
 - [Security Architecture](#-security-architecture)
 - [API Endpoints](#-api-endpoints)
 - [Getting Started](#-getting-started)
+- [🗣️ How to Explain This Project in an Interview](#-how-to-explain-this-project-in-an-interview)
+- [❓ Java Spring Boot Developer Q&A](#-java-spring-boot-developer-qa)
 
 ---
 
@@ -78,6 +82,7 @@ The application features a unique **Matrix Light** aesthetic designed for a prem
 This diagram illustrates the overall architecture where the Client (React App) interacts with the Backend API (Spring Boot) through RESTful endpoints. The backend manages authentication, business logic, and database operations.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0C7779', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0A5C5E', 'lineColor': '#888888', 'secondaryColor': '#0A192F', 'tertiaryColor': '#112240', 'fontFamily': 'Inter, sans-serif'}}}%%
 graph TD
     Client["📱 React Client"] -->|"REST API Requests"| Gateway["🛡️ API Gateway / Controller"]
     Gateway -->|"Validation & Auth"| Security["🔒 Spring Security Filter Chain"]
@@ -86,6 +91,12 @@ graph TD
     Service -->|"Data Access"| Repository["💾 Repository Layer"]
     Repository -->|"SQL Queries"| Database[("🗄️ MySQL Database")]
     Service -->|"SMTP"| Email["📧 Email Service (Gmail)"]
+    
+    classDef default fill:#0C7779,stroke:#0A5C5E,stroke-width:2px,color:#fff,rx:8px,ry:8px;
+    classDef client fill:#0A192F,stroke:#0C7779,stroke-width:2px,color:#fff;
+    classDef db fill:#112240,stroke:#0C7779,stroke-width:2px,color:#fff;
+    class Client client;
+    class Database db;
 ```
 
 ---
@@ -95,6 +106,7 @@ graph TD
 Key interaction flow for **User Login**:
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0C7779', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0A5C5E', 'lineColor': '#888888', 'secondaryColor': '#0A192F', 'tertiaryColor': '#112240', 'fontFamily': 'Inter, sans-serif'}}}%%
 sequenceDiagram
     participant User
     participant Frontend as React Client
@@ -124,6 +136,7 @@ sequenceDiagram
 ### Registration & Verification Flow
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0C7779', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0A5C5E', 'lineColor': '#888888', 'secondaryColor': '#0A192F', 'tertiaryColor': '#112240', 'fontFamily': 'Inter, sans-serif'}}}%%
 graph LR
     Start(["User Registration"]) --> Register["Enter Details"]
     Register --> Submit["Submit Form"]
@@ -136,6 +149,13 @@ graph LR
     Check -- No --> ReEnter["Retry / Resend"]
     Check -- Yes --> Enable["Enable Account"]
     Enable --> Login(["Go to Login"])
+
+    classDef default fill:#0C7779,stroke:#0A5C5E,stroke-width:2px,color:#fff,rx:5px,ry:5px;
+    classDef decision fill:#0A192F,stroke:#0C7779,stroke-width:2px,color:#fff;
+    classDef startEnd fill:#112240,stroke:#0C7779,stroke-width:3px,color:#fff,rx:20px,ry:20px;
+    
+    class Backend,Check decision;
+    class Start,Login startEnd;
 ```
 
 ---
@@ -145,6 +165,7 @@ graph LR
 Core backend classes demonstrating the relationship between Controllers, Services, and Entities.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0C7779', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0A5C5E', 'lineColor': '#888888', 'secondaryColor': '#0A192F', 'tertiaryColor': '#112240', 'fontFamily': 'Inter, sans-serif'}}}%%
 classDiagram
     class AuthController {
         +register()
@@ -190,9 +211,10 @@ classDiagram
 
 ## 📊 Data Model
 
-Database schema illustrating users and roles relationship.
+Database schema illustrating the relationship between users and roles in our relational model.
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0C7779', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0A5C5E', 'lineColor': '#888888', 'secondaryColor': '#0A192F', 'tertiaryColor': '#112240', 'fontFamily': 'Inter, sans-serif'}}}%%
 erDiagram
     USERS {
         bigint id PK
@@ -252,7 +274,7 @@ For a detailed guide on how to use the API (compatible with Postman), please ref
 | `POST` | `/verify-otp` | Verify email OTP code | 🌐 Public |
 | `POST` | `/resend-otp` | Resend verification email | 🌐 Public |
 | `POST` | `/reset-password` | Initiate password reset | 🌐 Public |
-| `POST` | `/update-password` | complete password reset | 🌐 Public |
+| `POST` | `/update-password` | Complete password reset | 🌐 Public |
 
 ### 🔵 User Operations (`/api/user`)
 
@@ -296,148 +318,76 @@ For a detailed guide on how to use the API (compatible with Postman), please ref
 
 ---
 
-## ❓ Real-World Interview Questions (20+)
+## 🗣️ About Project-
 
-Use this project to verify your full-stack knowledge. These questions touch on the specific decisions made in this codebase.
+"This project is a production-ready, full-stack authentication and user management system built from scratch using Java Spring Boot 3 on the backend and React 18 on the frontend. My primary goal was to implement a robust, stateless security architecture using Spring Security 6 and JSON Web Tokens (JWT), moving away from traditional server-side sessions to ensure the application could easily scale horizontally.
+
+On the backend, I designed a clean, layered RESTful API following solid architectural principles. I utilized DTOs for strict encapsulation, Spring Data JPA for optimized interactions with a MySQL database, and implemented a global exception-handling mechanism using `@RestControllerAdvice` to guarantee consistent, readable responses to the client. Additionally, to combat spam registrations, I integrated an asynchronous email service to handle OTP-based account verification.
+
+For the frontend, I wanted to showcase my ability to create premium user experiences. I built a custom 'Matrix Glassmorphism' UI using Vite and React, heavily leveraging backdrop filters and modern CSS to create a secure, visually stunning portal. I configured Axios interceptors to seamlessly attach JWTs to headers, ensuring absolute synchronization between the React application state and the stateless backend. The biggest challenge I solved was architecting secure cross-origin communication (CORS) and implementing strict role-based access control to protect administrative routes. Ultimately, this project demonstrates my capability to take complex security and business requirements and deliver a complete, polished, and secure end-to-end application."
+
+---
+
+## ❓ Real-World Project Q&A
+
+Use these technical answers to demonstrate deep, framework-specific knowledge regarding the architectural decisions of this project.
 
 ### **🔐 Security & Authentication**
 
-1.  **JWT vs. Session:** Why did we choose `Stateless` session policy in `SecurityConfig.java`? What are the trade-offs compared to traditional Server-Side Sessions?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    We use <code>SessionCreationPolicy.STATELESS</code> because JWTs are self-contained. The server does not need to store session data in memory or a database, making the application easier to scale horizontally (stateless). Trade-off: We cannot easily invalidate a token before it expires (server-side sessions can just be deleted).
-    </details>
+1.  **JWT vs. Session: Why did we choose Stateless session policy in `SecurityConfig.java`? What are the trade-offs compared to traditional Server-Side Sessions?**
+    I implemented stateless authentication with `<SessionCreationPolicy.STATELESS>` because JWTs are self-contained. The server does not need to allocate memory for session data or require a Redis cluster for shared caching, making horizontal scaling across multiple servers effortless. The primary trade-off is that once issued, a stateless token cannot be easily invalidated before its expiration time natively, requiring custom Redis blocklists to securely handle immediate manual logouts.
 
-2.  **CSRF Configuration:** We disabled CSRF (`csrf.disable()`) but enabled CORS. In what specific scenario is this safe? If we stored the JWT in an `HttpOnly` cookie, would we need to re-enable it?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    CSRF (Cross-Site Request Forgery) attacks rely on the browser automatically sending cookies. Since we store the JWT in <code>LocalStorage</code> and manually attach it to the header, the browser won't send it automatically for cross-site requests, making CSRF impossible. If we moved to <code>HttpOnly</code> cookies, the browser <em>would</em> send them automatically, so we would need to re-enable CSRF protection (or use SameSite=Strict cookies).
-    </details>
+2.  **CSRF Configuration: We disabled CSRF (`csrf.disable()`) but enabled CORS. In what specific scenario is this safe? If we stored the JWT in an `HttpOnly` cookie, would we need to re-enable it?**
+    Disabling CSRF is only safe here because we store the JWT entirely in the frontend’s `localStorage` and manually attach it to the `Authorization` HTTP header via Axios interceptors. Browsers do not automatically attach `localStorage` data to cross-site requests, mitigating CSRF inherent risks. Conversely, if we used `HttpOnly` cookies to store the token, the browser would append it automatically to any domain request, strictly mandating that we re-enable Spring's CSRF protection mechanism.
 
-3.  **Password Storage:** Explain why we use `BCryptPasswordEncoder`? If an attacker dumps the database, can they reverse these passwords? What is a "Salt" and does BCrypt handle it automatically?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    BCrypt is a slow hashing algorithm designed to resist brute-force attacks. It is a one-way hash, so it cannot be reversed. BCrypt automatically generates a random "salt" for every password and includes it in the final hash string, ensuring that two users with the same password have different hash values in the database.
-    </details>
+3.  **Password Storage: Explain why we use `BCryptPasswordEncoder`? If an attacker dumps the database, can they reverse these passwords? What is a "Salt" and does BCrypt handle it automatically?**
+    I used `BCryptPasswordEncoder` because it leverages a deliberately slow hashing algorithm designed to heavily resist brute-force and dictionary hardware attacks. It mathematically generates a one-way hash, meaning compromised databases cannot be reversed into plain text. Crucially, BCrypt automatically generates and incorporates a unique cryptographic "salt" into every exact password hash autonomously, meaning two users with identical passwords will possess entirely different database hash signatures.
 
-4.  **Filter Chain:** How does the `JwtAuthFilter` interact with the `UsernamePasswordAuthenticationFilter`? Why must it run *before* the standard authentication filter?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    The <code>JwtAuthFilter</code> intercepts every request to check for a "Bearer" token. It must run <em>before</em> the <code>UsernamePasswordAuthenticationFilter</code> so that if a valid token is present, it sets the authentication in the <code>SecurityContext</code> immediately. This allows Spring Security to skip the default login process for that request.
-    </details>
+4.  **Filter Chain: How does the `JwtAuthFilter` interact with the `UsernamePasswordAuthenticationFilter`? Why must it run before the standard authentication filter?**
+    The `JwtAuthFilter` acts as our primary gatekeeper, surgically injected immediately before the standard `UsernamePasswordAuthenticationFilter`. It intercepts every incoming request, meticulously parses the `Bearer` token from the header, and validates its cryptographic signature. By running first, if it confirms a valid JWT, it dynamically constructs a `UsernamePasswordAuthenticationToken` and injects it straight into the `SecurityContextHolder`, entirely bypassing the heavy, database-coupled standard login filter logic for secure requests.
 
-5.  **Role-Based Access:** We use `@PreAuthorize("hasRole('ADMIN')")`. How does Spring Security know which user has which role? Walk through the `UserDetails` implementation.
-    <details>
-    <summary><strong>Answer</strong></summary>
-    When the <code>CustomUserDetailsService</code> loads a user from the database, it maps the user's roles to <code>SimpleGrantedAuthority</code> objects (e.g., "ROLE_ADMIN"). These authorities are returned as part of the <code>UserDetails</code> object. Spring Security then checks these authorities against the <code>@PreAuthorize</code> annotation.
-    </details>
+5.  **Role-Based Access: We use `@PreAuthorize("hasRole('ADMIN')")`. How does Spring Security know which user has which role? Walk through the `UserDetails` implementation.**
+    Within my custom `UserDetailsService`, upon successfully loading the user entity from the MySQL repository, I explicitly map their database `enum` roles (like `ROLE_ADMIN`) into a collection of `SimpleGrantedAuthority` objects. These authorities are subsequently embedded inside the returned `UserDetails` principal. When a restricted controller endpoint invokes `@PreAuthorize`, the Spring AOP proxy dynamically evaluates the active `SecurityContext`, matching the required annotation role against the principal's granted authorities.
 
-6.  **Token Expiry & Security:** If a user's token is stolen, the attacker acts as the user until expiry. How would you implement a "Logout" feature that immediately invalidates a stateless JWT? (Hint: Redis blocklist).
-    <details>
-    <summary><strong>Answer</strong></summary>
-    Since JWTs are stateless, the server doesn't know they exist. To "invalidate" one, we would store the token's ID (JTI) or signature in a fast database like Redis with a "Blocklist" key and an expiry time equal to the token's remaining life. The <code>JwtAuthFilter</code> would check this Redis blocklist for every request.
-    </details>
+6.  **Token Expiry & Security: If a user's token is stolen, the attacker acts as the user until expiry. How would you implement a "Logout" feature that immediately invalidates a stateless JWT?**
+    Since JWTs are definitively stateless, the Spring server contains no native memory of active tokens to revoke. To effectively construct a secure logout mechanism, I would engineer a system to surgically catch the JWT during the logout request, extract its unique `JTI` identifier, and persist it into an ultra-fast Redis "Blocklist" cache holding a TTL equal to the token's remaining lifespan. The `JwtAuthFilter` would then independently reject any token found within this blocklist.
 
 ### **☕ Spring Boot & Backend Architecture**
 
-7.  **Dependency Injection:** In `AuthController`, we use constructor/field injection for `AuthService`. What is Inversion of Control (IoC) and why is it better than `new AuthService()`?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    IoC means the Spring Container manages the lifecycle of objects (Beans). Instead of us creating dependencies with <code>new</code>, Spring provides them. This makes code loosely coupled and easier to test (we can easily inject mock services during unit testing).
-    </details>
+7.  **Dependency Injection: In `AuthController`, we use constructor/field injection for `AuthService`. What is Inversion of Control (IoC) and why is it better than `new AuthService()`?**
+    Inversion of Control means the Spring IoC Container uniquely commands the instantiation and lifecycle routing of our beans, stripping tight coupling out of the codebase. By exclusively using constructor injection over the `new` keyword, our defined classes stay agnostic to their dependencies. This guarantees robust module testability, empowering me to easily instantiate controllers and cleanly pass Mockito simulated service instances directly through their constructors during isolated unit testing.
 
-8.  **DTO Pattern:** Why do we have `RegisterRequest` and `UserDto` classes? Why not just pass the `User` Entity directly to the controller?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    Passing Entities directly exposes internal database structure (security risk) and creates tight coupling. DTOs (Data Transfer Objects) allow us to define exactly what data we accept (input) and exactly what data we return (output), often hiding sensitive fields like <code>password</code> or unnecessary relationships.
-    </details>
+8.  **DTO Pattern: Why do we have `RegisterRequest` and `UserDto` classes? Why not just pass the `User` Entity directly to the controller?**
+    Using pure JPA Entities dynamically exposes internal relational structures to the public client, risking critical over-posting vulnerabilities and strict bidirectional JSON serialization loop errors. `RegisterRequest` and `UserDto` aggressively act as distinct data transfer shields, ensuring the API precisely serializes only necessary and secured data (e.g. omitting password hashes). It safely breaks the tight architectural coupling between the explicit HTTP API contract and the underlying MySQL schema design.
 
-9.  **Transactional Integrity:** If the "Save User" succeeds but the "Send Email" fails during registration, what happens? How would you use `@Transactional` to ensure data consistency?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    Without transactional management, the user would be saved but receive no OTP, leading to a "zombie" account. Annotating the service method with <code>@Transactional</code> ensures that if the email sending throws an exception, the database insert for the user is rolled back, keeping the data consistent.
-    </details>
+9.  **Transactional Integrity: If the "Save User" succeeds but the "Send Email" fails during registration, what happens? How would you use `@Transactional` to ensure data consistency?**
+    Without protection, a failed SMTP transmission yields a "zombie" user persisted statically in the database with no means of activation. By strategically annotating the composite registration method with `@Transactional`, Spring Boot establishes a rigid operational proxy. If the email execution critically throws an unchecked runtime exception, the entire transaction manager forcibly triggers a full rollback of the initial database commit, guaranteeing the system remains in a pristine, perfectly unified state.
 
-10. **Validation:** We use `@Valid` in the controller. If a user sends an invalid email format, how is the error handled? Where is the global exception handler?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    Spring throws a <code>MethodArgumentNotValidException</code>. We should have a <code>@RestControllerAdvice</code> class with an <code>@ExceptionHandler</code> to catch this exception and return a clean JSON response (e.g., "Email is invalid") instead of a 500 stack trace.
-    </details>
+10. **Validation: We use `@Valid` in the controller. If a user sends an invalid email format, how is the error handled? Where is the global exception handler?**
+    When `@Valid` detects a DTO boundary violation (such as `@Email`), Spring implicitly aborts processing and ejects a `MethodArgumentNotValidException`. To handle this professionally, I architected a global `@RestControllerAdvice` class functioning proactively as an AOP interceptor. Its specific `@ExceptionHandler` surgically captures this validation collapse, cleanly formats the various field errors into a designated, friendly JSON payload, and returns a rigid HTTP 400 Bad Request to the frontend client.
 
-11. **N+1 Problem:** If we have an endpoint `getAllUsers()` that also fetches their roles, how do you prevent Hibernate from executing one query for users + N queries for roles?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    This happens with <code>Lazy Loading</code>. To fix it, we use a <strong>JOIN FETCH</strong> in the JPQL query (e.g., <code>SELECT u FROM User u JOIN FETCH u.roles</code>) to retrieve the user and their roles in a single SQL query.
-    </details>
-
-### **⚛️ React & Frontend**
-
-12. **State Management:** How are we handling the user's login state? Is it persistent across page reloads? How does the `AuthContext` (or similar) work?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    We likely use React Context API (<code>AuthContext</code>) to hold the <code>user</code> object and <code>token</code>. To persist across reloads, we initialize this state by reading from <code>localStorage.getItem('token')</code> when the app starts.
-    </details>
-
-13. **Protected Routes:** How does the `ProtectedRoute` component prevent unauthenticated users from accessing `/dashboard`? Does this provide real security, or is it just UX?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    It checks if a user is authenticated (e.g., has a token). If not, it uses <code>&lt;Navigate to="/login" /&gt;</code>. This is <strong>only UX</strong>. Real security happens on the backend API; an attacker could still use Postman to call the API directly unless the backend verifies the token.
-    </details>
-
-14. **Axios Interceptors:** How would you centrally attach the JWT token to every API request without manually adding the header in every `axios.get()` call?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    We configure an <code>axios.interceptors.request.use()</code> function. This function checks <code>localStorage</code> for a token and, if found, adds <code>config.headers.Authorization = `Bearer ${token}`</code> to the request config before it leaves the browser.
-    </details>
-
-15. **React Hooks:** Explain the usage of `useEffect` in the dashboard. What happens if you forget the dependency array?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    <code>useEffect</code> is used for side effects like data fetching. If the dependency array <code>[]</code> is missing, the effect runs on <em>every render</em>, potentially causing an infinite loop if the effect updates state (which triggers a re-render).
-    </details>
-
-16. **XSS Prevention:** React escapes content by default. In what scenario would this application still be vulnerable to Cross-Site Scripting (XSS)?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    React is safe by default, but if we use <code>dangerouslySetInnerHTML</code> or evaluate user input in <code>href</code> attributes (e.g., <code>javascript:alert(1)</code>), we introduce XSS vulnerabilities. Also, if we reflect untrusted data in the initial HTML from the server before React loads.
-    </details>
+11. **N+1 Problem: If we have an endpoint `getAllUsers()` that also fetches their roles, how do you prevent Hibernate from executing one query for users + N queries for roles?**
+    Hibernate's default lazy-fetching behavior for entity collections natively triggers the severe N+1 problem, generating inefficient, cascading SQL queries. I neutralized this performance chokepoint by designing custom JPQL queries wielding the `JOIN FETCH` operation (e.g., `SELECT u FROM User u JOIN FETCH u.roles`). This command rigorously instructs the database engine to aggressively materialize the user and their associated relational roles utilizing a single, consolidated `JOIN` request.
 
 ### **🏗️ System Design & Scalability**
 
-17. **Async Processing:** Sending emails (OTP) is slow. If 1,000 users register at once, the API will hang. How would you offload email sending to a background queue (e.g., RabbitMQ or Kafka)?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    We would implement a "Producer-Consumer" pattern. The registration endpoint publishes a message (<code>SendOtpEvent</code>) to a generic queue (RabbitMQ/Kafka) and returns "Success" immediately. A separate worker service listens to the queue and handles the slow email sending (SMTP) process asynchronously.
-    </details>
+17. **Async Processing: Sending emails (OTP) is slow. If 1,000 users register at once, the API will hang. How would you offload email sending to a background queue (e.g., RabbitMQ or Kafka)?**
+    I would decouple the synchronous registration thread by integrating Spring AMQP/Kafka. When a request hits, the server securely persists the user, swiftly publishes an asynchronous `OtpMailEvent` payload strictly onto a Kafka or RabbitMQ messaging topic, and instantly returns a 200 HTTP code. Isolated background micro-worker nodes continually listen to the designated queue, independently polling and executing the brutally slow SMTP email delivery tasks completely off the main thread securely.
 
-18. **Database Scaling:** As the `users` table grows to 10 million rows, queries by email will become slow. How do you verify if the `email` column is indexed?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    We check the database schema or run <code>EXPLAIN ANALYZE SELECT * FROM users WHERE email = '...';</code>. In JPA, using <code>@Column(unique = true)</code> often automatically creates an index. If missing, the database would have to do a "Full Table Scan", which is O(N) and very slow.
-    </details>
+18. **Database Scaling: As the `users` table grows to 10 million rows, queries by email will become slow. How do you verify if the `email` column is indexed?**
+    In Spring Data JPA architecture, verifying indexes occurs by heavily analyzing our `@Table` configurations or uniquely annotating properties with `@Column(unique = true)` which automatically scaffolds indexes natively. Practically, I would connect directly to the MySQL shell engine and boldly execute an `EXPLAIN ANALYZE SELECT * FROM users WHERE email='X'` query command to verify the execution planner rigorously utilizes a structured Index Lookup instead of suffering a catastrophic O(N) full table scan.
 
-19. **Rate Limiting:** How would you prevent an attacker from spamming the `/api/auth/login` endpoint to brute-force passwords?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    Implement Rate Limiting (e.g., using Bucket4j in Spring or a gateway like Nginx/Redis). We would track login attempts by IP or Email. After 5 failed attempts in 1 minute, we block requests from that source for a 15-minute cooldown period.
-    </details>
+19. **Rate Limiting: How would you prevent an attacker from spamming the `/api/auth/login` endpoint to brute-force passwords?**
+    To vigorously eradicate violent brute-force penetration vectors, I would configure a robust Rate Limiting algorithm, aggressively utilizing the `Bucket4j` library directly interfacing with an in-memory Redis cluster proxy. The implementation fiercely monitors incoming traffic strictly tracking anomalous request frequencies tied natively to the client's distinct IP address or submitted Email vector. Exceeding `5` failed iterations tightly locks out the source vector enforcing a hard `15-minute` temporal penalty comprehensively.
 
-20. **High Availability:** If we deploy this Spring Boot app to 3 different servers behind a Load Balancer, does the JWT authentication still work? Why or why not?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    Yes, it works perfectly because JWTs are <strong>stateless</strong>. The token contains all necessary user info and is signed. Any of the 3 servers can verify the signature using the same shared "Secret Key". If we used server-side sessions, we would need "Sticky Sessions" or a shared Session Store (Redis).
-    </details>
+20. **High Availability: If we deploy this Spring Boot app to 3 different servers behind a Load Balancer, does the JWT authentication still work? Why or why not?**
+    Yes, the JWT architecture fiercely excels within distributed horizontally scaled arrays precisely because tokens are inherently stateless. Each isolated independent Spring node natively possesses the universally configured cryptographic signing secret globally. Therefore, incoming request streams routed dynamically into any arbitrary active server mathematically reconstruct and rapidly validate the same encrypted token seamlessly, decisively bypassing the horrific requirement to integrate centralized Redis sticky-sessions internally.
 
 ### **🐞 Debugging & DevOps**
 
-21. **CORS Errors:** A user reports a `Access-Control-Allow-Origin` error. Is this a backend or frontend issue? How do you fix it specifically in Spring Security?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    It is a browser security feature, but the configuration fix is on the <strong>Backend</strong>. The server must incorrectly configured headers. In Spring Security, we configure the <code>CorsConfigurationSource</code> bean to allowing specific origins (e.g., <code>http://localhost:5173</code>) and methods (GET, POST).
-    </details>
+21. **CORS Errors: A user reports a `Access-Control-Allow-Origin` error. Is this a backend or frontend issue? How do you fix it specifically in Spring Security?**
+    Despite manifesting inside the frontend browser console securely, a CORS catastrophe fundamentally indicates a critical configuration deficit within the Backend architecture. To strictly repair this, I explicitly architected a `CorsConfigurationSource` Bean straight inside the `SecurityFilterChain`. The configuration precisely defines the exact whitelist (`setAllowedOrigins`) explicitly authorizing the React client's defined address, explicitly detailing the valid HTTP verbs specifically and HTTP header configurations securely.
 
-22. **Environment Variables:** Why do we verify that `application.properties` does not contain hardcoded API keys or database passwords before committing to GitHub?
-    <details>
-    <summary><strong>Answer</strong></summary>
-    Hardcoded secrets in git history are compromised forever. Hackers scan public repos for AWS keys/DB passwords. We should use environment variables (<code>${DB_PASSWORD}</code>) or a secrets manager, and add the real <code>application.properties</code> (or <code>.env</code>) to <code>.gitignore</code>.
-    </details>
+22. **Environment Variables: Why do we verify that `application.properties` does not contain hardcoded API keys or database passwords before committing to GitHub?**
+    Hardcoding extremely sensitive corporate infrastructure keys dynamically inside Git effectively compromises the system permanently globally, granting malicious web-scrapers full, immediate exploitation access physically. To neutralize this massive vulnerability, I heavily injected OS-level environment placeholders like `${DB_PASSWORD}` strictly inside the application configurations. This ensures configuration profiles are decoupled heavily to safe CI/CD deployment channels actively overriding them during Docker image compilation runs.
+
