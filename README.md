@@ -22,6 +22,7 @@ A modern, production-ready full-stack authentication system featuring a premium 
 - [Data Model](#-data-model)
 - [Security Architecture](#-security-architecture)
 - [API Endpoints](#-api-endpoints)
+- [Frontend Pages & API Mapping](#️-frontend-pages--api-mapping)
 - [Getting Started](#-getting-started)
 - [🗣️ How to Explain This Project in an Interview](#-how-to-explain-this-project-in-an-interview)
 - [❓ Java Spring Boot Developer Q&A](#-java-spring-boot-developer-qa)
@@ -295,6 +296,45 @@ For a detailed guide on how to use the API (compatible with Postman), please ref
 | `DELETE` | `/users/{id}` | Delete a user account | 🛡️ Admin |
 
 </details>
+
+---
+
+## 🖥️ Frontend Pages & API Mapping
+
+This section outlines all the frontend pages available in the React application and the specific backend API endpoints each page interacts with.
+
+### 🌐 Public Routes
+
+| Page | Path | API Service | API Endpoint | Method | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Home** | `/` | None | None | - | Static landing page with Matrix Rain animation. |
+| **Login** | `/login` | `authAPI.login` | `/auth/login` | POST | Authenticates user with email and password. |
+| **Register** | `/register` | `authAPI.register` | `/auth/register` | POST | Creates a new user account. |
+| **Verify OTP** | `/verify-otp` | `authAPI.verifyOtp`<br>`authAPI.resendOtp` | `/auth/verify-otp`<br>`/auth/resend-otp?email={email}` | POST<br>POST | Verifies user email using the 6-digit OTP code. Can also request a new OTP. |
+| **Forgot Password** | `/forgot-password` | `authAPI.resetPassword` | `/auth/reset-password` | POST | Requests a password reset link to be sent via email. |
+| **Reset Password** | `/reset-password` | `authAPI.updatePassword` | `/auth/update-password` | POST | Updates password using the token sent to the user's email. |
+
+### 🔐 Protected Routes - User
+
+These routes require authentication (a valid Bearer token).
+
+| Page | Path | API Service | API Endpoint | Method | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **User Dashboard** | `/dashboard` | `userAPI.getDashboard` | `/user/dashboard` | GET | Fetches user dashboard statistics to verify token validity. Reads user profile from Context/Local Storage. |
+| **Change Password** | `/change-password` | `userAPI.changePassword` | `/user/change-password` | POST | Allows an authenticated user to change their active password by providing current & new passwords. |
+
+### 🛡️ Protected Routes - Admin
+
+These routes require both authentication and the `ROLE_ADMIN` authority.
+
+| Page | Path | API Service | API Endpoint | Method | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Admin Dashboard** | `/admin` | `adminAPI.getDashboard`<br>`adminAPI.getUsers` | `/admin/dashboard`<br>`/admin/users` | GET<br>GET | Fetches overall system stats (total users, active users) and a list of all registered users in the platform. |
+
+### 💡 Key Notes on API Integration:
+* **Interceptors**: The application uses Axios interceptors (`src/services/api.js`) to automatically append the Bearer token to all requests if it exists in Local Storage.
+* **Error Handling**: A response interceptor handles `401 Unauthorized` responses globally by clearing the user session and redirecting to `/login`.
+* **State Management**: The application uses `AuthContext` to manage the currently authenticated user's state globally, decoupling API definitions from UI components for auth-related operations.
 
 ---
 
