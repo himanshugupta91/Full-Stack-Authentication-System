@@ -128,7 +128,7 @@ const Home = () => {
             {/* Footer */}
             <footer className="py-4 text-center text-muted border-top border-secondary border-opacity-25 mt-5">
                 <div className="container">
-                    <p className="mb-0">© 2024 Authentication System. Built with ❤️.</p>
+                    <p className="mb-0">© 2025 Authentication System.</p>
                 </div>
             </footer>
         </div>
