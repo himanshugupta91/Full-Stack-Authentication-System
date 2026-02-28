@@ -806,5 +806,3 @@ Use this routine per phase:
 This prevents large broken refactors and gives you fast feedback.
 
 ---
-
-If you want, next I can generate a second file with code skeleton templates for each class (copy-paste starter blocks) so you can implement even faster.
