@@ -1,414 +1,348 @@
-# 🛡️ Matrix Auth System
+# Matrix Auth System
 
-A modern, production-ready full-stack authentication system featuring a premium **Matrix-inspired Glassmorphism UI**. Built with **Spring Boot 3** and **React 19**, this project combines robust security with a stunning, high-performance frontend.
+Production-ready full-stack authentication system with a Matrix-inspired UI.
 
-![License](https://img.shields.io/badge/license-MIT-0C7779.svg?style=flat-square)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.10-green.svg?style=flat-square)
-![React](https://img.shields.io/badge/React-19-blue.svg?style=flat-square)
-![Java](https://img.shields.io/badge/Java-21-orange.svg?style=flat-square)
-![Theme](https://img.shields.io/badge/Theme-Matrix%20Glass-000000.svg?style=flat-square)
+- Backend: Spring Boot 3.5, Spring Security 6, JWT, OAuth2, PostgreSQL, Redis
+- Frontend: React 19, React Router 7, Vite, Axios, Bootstrap 5
+- Auth model: short-lived access token + rotated refresh token in HttpOnly cookie
 
----
+## Table of Contents
 
-## 📑 Table of Contents
+- [Overview](#overview)
+- [Core Features](#core-features)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Authentication Flow](#authentication-flow)
+- [API Summary](#api-summary)
+- [Project Structure](#project-structure)
+- [Local Setup](#local-setup)
+- [Docker Setup](#docker-setup)
+- [Configuration Reference](#configuration-reference)
+- [Security Notes](#security-notes)
+- [Admin Scaling Features](#admin-scaling-features)
+- [Frontend UX/Performance Notes](#frontend-uxperformance-notes)
+- [Testing and Validation](#testing-and-validation)
+- [Troubleshooting](#troubleshooting)
+- [Production Checklist](#production-checklist)
 
-- [Tech Stack](#-tech-stack)
-- [UI/UX & Theming](#-uiux--theming)
-- [High-Level System Architecture](#-high-level-system-architecture)
-- [Component Interaction Diagram](#-component-interaction-diagram)
-- [User Flow Diagrams](#-user-flow-diagrams)
-- [Class Diagram](#-class-diagram)
-- [Data Model](#-data-model)
-- [Security Architecture](#-security-architecture)
-- [API Endpoints](#-api-endpoints)
-- [Frontend Pages & API Mapping](#️-frontend-pages--api-mapping)
-- [Getting Started](#-getting-started)
-- [🗣️ How to Explain This Project in an Interview](#-how-to-explain-this-project-in-an-interview)
-- [❓ Java Spring Boot Developer Q&A](#-java-spring-boot-developer-qa)
+## Overview
 
----
+This project implements a complete authentication platform with:
 
-## 🛠️ Tech Stack
+- Email/password signup and login
+- Email OTP verification
+- Password reset flow
+- OAuth2 login (Google, GitHub, Apple, LinkedIn)
+- User and Admin role-based access
+- Refresh token rotation and revocation
+- Redis-backed abuse protection (rate limiting + lockouts)
+- Admin user listing with pagination/search/filtering/sorting
 
-| Category | Technology | Description |
-|----------|------------|-------------|
-| **Backend** | Spring Boot 3.5.10 | Core framework for REST API |
-| | Spring Security 6 | Authentication & Authorization |
-| | Spring Data JPA | ORM & Database interactions |
-| | Hibernate | JPA Implementation |
-| | JJWT (Java JWT) | JWT Token generation & validation |
-| | Java Mail Sender | Sending emails (OTP, Password Reset) |
-| | PostgreSQL 16 | Relational Database |
-| | Redis 7 | Rate limiting and abuse protection |
-| **Frontend** | React 19 | UI Library |
-| | Vite | Next Gen Frontend Tooling |
-| | Axios | HTTP Client |
-| | React Router DOM 7 | Client-side routing |
-| | Bootstrap 5 | CSS Framework for responsive UI |
-| | Bootstrap Icons | Icon library |
+## Core Features
 
----
+### Backend
 
-## 🎨 UI/UX & Theming
+- Spring Security filter chain with JWT authorization
+- OAuth2 login handlers with frontend callback flow
+- Access token issuance + refresh token rotation
+- Refresh token stored in secure cookie (`/api/auth` path)
+- Refresh/reset/OTP values stored as hashes (not plaintext)
+- Strong password policy enforcement: minimum 12 chars, upper/lowercase, number, symbol, no spaces, common-password blocklist, and email local-part rejection
+- Brute-force protection and rate limiting for login, OTP verify, resend OTP, and reset password
+- User and Admin dashboards
+- Admin user query with paging/filter/search
 
-The application features a unique **Matrix Light** aesthetic designed for a premium user experience:
+### Frontend
 
-*   **Glassmorphism**: Extensively used `backdrop-filter` blur effects for cards and overlays.
-*   **Custom Color Palette**: A sophisticated **Teal** (`#0C7779`) primary color scheme against a deep background.
-*   **Interactive Elements**: Bouncy hover effects, gradient text, and smooth page transitions.
-*   **Responsive Design**: Fully mobile-optimized layout with a floating glass navbar.
-*   **Animation**: Subtle background Matrix rain animation for visual depth.
+- React 19 app with protected routing
+- Role-aware route guards (`user` vs `admin`)
+- Central auth context and session bootstrap
+- Axios interceptors for Bearer token + auto-refresh
+- OAuth callback completion page (`/oauth2/callback`)
+- Bootstrap 5 + Bootstrap JS bundle integrated
+- Matrix background animation with reduced-motion support and low-power fallback
 
----
+## Tech Stack
 
-## 🏗️ High-Level System Architecture
+| Layer | Technologies |
+| --- | --- |
+| Backend | Java 21, Spring Boot 3.5.10, Spring Security 6, Spring Data JPA, Spring Validation, Spring Mail, Spring OAuth2 Client, Spring Data Redis |
+| Security | JWT (jjwt 0.12.x), BCrypt, role-based authorization, refresh cookies |
+| Database | PostgreSQL 16 |
+| Cache/Protection | Redis 7 |
+| Frontend | React 19, React Router DOM 7, Vite, Axios, Bootstrap 5, Bootstrap Icons, react-hot-toast |
+| Build/Runtime | Maven, Docker, Docker Compose |
 
-This diagram illustrates the overall architecture where the Client (React App) interacts with the Backend API (Spring Boot) through RESTful endpoints. The backend manages authentication, business logic, and database operations.
+## Architecture
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0C7779', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0A5C5E', 'lineColor': '#888888', 'secondaryColor': '#0A192F', 'tertiaryColor': '#112240', 'fontFamily': 'Inter, sans-serif'}}}%%
 graph TD
-    Client["📱 React Client"] -->|"REST API Requests"| Gateway["🛡️ API Gateway / Controller"]
-    Gateway -->|"Validation & Auth"| Security["🔒 Spring Security Filter Chain"]
-    Security -->|"Authorized"| Controller["🎮 Rest Controllers"]
-    Controller -->|"Business Logic"| Service["⚙️ Service Layer"]
-    Service -->|"Data Access"| Repository["💾 Repository Layer"]
-    Repository -->|"SQL Queries"| Database[("🗄️ PostgreSQL Database")]
-    Service -->|"SMTP"| Email["📧 Email Service (Gmail)"]
-    
-    classDef default fill:#0C7779,stroke:#0A5C5E,stroke-width:2px,color:#fff,rx:8px,ry:8px;
-    classDef client fill:#0A192F,stroke:#0C7779,stroke-width:2px,color:#fff;
-    classDef db fill:#112240,stroke:#0C7779,stroke-width:2px,color:#fff;
-    class Client client;
-    class Database db;
+    A[React Frontend] -->|REST + Cookies| B[Spring Boot API]
+    B --> C[Spring Security + JWT Filter]
+    C --> D[Auth/User/Admin Controllers]
+    D --> E[Service Layer]
+    E --> F[(PostgreSQL)]
+    E --> G[(Redis)]
+    E --> H[SMTP Provider]
+    B --> I[OAuth2 Providers]
 ```
 
----
+## Authentication Flow
 
-## 🔄 Component Interaction Diagram
+### Email/Password
 
-Key interaction flow for **User Login**:
+1. User logs in via `/api/auth/login`.
+2. Backend authenticates credentials.
+3. Backend returns `accessToken` in response body.
+4. Backend sets refresh token in HttpOnly cookie.
+5. Frontend stores access token and user payload in localStorage.
+6. On access-token expiry, frontend calls `/api/auth/refresh`.
+7. Backend rotates refresh token and returns new access token.
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0C7779', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0A5C5E', 'lineColor': '#888888', 'secondaryColor': '#0A192F', 'tertiaryColor': '#112240', 'fontFamily': 'Inter, sans-serif'}}}%%
-sequenceDiagram
-    participant User
-    participant Frontend as React Client
-    participant Controller as AuthController
-    participant Service as UserService
-    participant Repo as UserRepository
-    participant DB as PostgreSQL
+### OAuth2
 
-    User->>Frontend: Enter Credentials
-    Frontend->>Controller: POST /api/auth/login
-    Controller->>Service: login(request)
-    Service->>Repo: findByEmail(email)
-    Repo->>DB: Select User
-    DB-->>Repo: User Entity
-    Repo-->>Service: User Details
-    Service->>Service: Validate Password (BCrypt)
-    Service->>Service: Generate JWT Token
-    Service-->>Controller: AuthResponse (Token)
-    Controller-->>Frontend: 200 OK + JWT
-    Frontend->>Frontend: Store Token in LocalStorage
+1. Frontend redirects to `/oauth2/authorization/{provider}`.
+2. Provider authenticates user and redirects to backend callback.
+3. Backend provisions/loads local user.
+4. Backend issues tokens and sets refresh cookie.
+5. Backend redirects to frontend `/oauth2/callback` without access token in URL.
+6. Frontend calls refresh endpoint to finalize session.
+
+## API Summary
+
+Detailed collection: [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
+
+### Auth (`/api/auth`)
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| POST | `/register` | Register account |
+| POST | `/verify-otp` | Verify account OTP |
+| POST | `/login` | Login with email/password |
+| POST | `/refresh` | Rotate refresh token and issue new access token |
+| POST | `/logout` | Revoke refresh token |
+| POST | `/reset-password` | Request reset link/token |
+| POST | `/update-password` | Set new password using token |
+| POST | `/resend-otp?email=` | Resend verification OTP |
+
+### User (`/api/user`)
+
+| Method | Endpoint | Access |
+| --- | --- | --- |
+| GET | `/dashboard` | ROLE_USER or ROLE_ADMIN |
+| GET | `/profile` | ROLE_USER or ROLE_ADMIN |
+| POST | `/change-password` | ROLE_USER or ROLE_ADMIN |
+
+### Admin (`/api/admin`)
+
+| Method | Endpoint | Access |
+| --- | --- | --- |
+| GET | `/dashboard` | ROLE_ADMIN |
+| GET | `/users` | ROLE_ADMIN |
+
+`/api/admin/users` supports:
+
+- `page` (default `0`)
+- `size` (default `20`, max `100`)
+- `search` (name/email)
+- `enabled` (`true`/`false`)
+- `role` (`USER`, `ADMIN`, `ROLE_USER`, `ROLE_ADMIN`)
+- `sortBy` (`id`, `name`, `email`, `enabled`, `createdAt`)
+- `sortDir` (`asc`, `desc`)
+
+## Project Structure
+
+```text
+Full-Stack-Authentication-System/
+├── backend/
+│   ├── src/main/java/com/auth/
+│   │   ├── config/
+│   │   ├── controller/
+│   │   ├── dto/
+│   │   ├── entity/
+│   │   ├── exception/
+│   │   ├── repository/
+│   │   ├── security/
+│   │   └── service/
+│   ├── src/main/resources/application.properties
+│   ├── docker-compose.yaml
+│   ├── Dockerfile
+│   └── pom.xml
+├── frontend/
+│   ├── src/components/
+│   ├── src/context/
+│   ├── src/pages/
+│   ├── src/services/
+│   └── package.json
+├── API_DOCUMENTATION.md
+└── README.md
 ```
 
----
-
-## 👥 User Flow Diagrams
-
-### Registration & Verification Flow
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0C7779', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0A5C5E', 'lineColor': '#888888', 'secondaryColor': '#0A192F', 'tertiaryColor': '#112240', 'fontFamily': 'Inter, sans-serif'}}}%%
-graph LR
-    Start(["User Registration"]) --> Register["Enter Details"]
-    Register --> Submit["Submit Form"]
-    Submit --> Backend{"Valid?"}
-    Backend -- No --> Error["Show Error"]
-    Backend -- Yes --> DB["Save User (Disabled)"]
-    DB --> Email["Send OTP Email"]
-    Email --> Verify["User Enters OTP"]
-    Verify --> Check{"OTP Valid?"}
-    Check -- No --> ReEnter["Retry / Resend"]
-    Check -- Yes --> Enable["Enable Account"]
-    Enable --> Login(["Go to Login"])
-
-    classDef default fill:#0C7779,stroke:#0A5C5E,stroke-width:2px,color:#fff,rx:5px,ry:5px;
-    classDef decision fill:#0A192F,stroke:#0C7779,stroke-width:2px,color:#fff;
-    classDef startEnd fill:#112240,stroke:#0C7779,stroke-width:3px,color:#fff,rx:20px,ry:20px;
-    
-    class Backend,Check decision;
-    class Start,Login startEnd;
-```
-
----
-
-## 📐 Class Diagram
-
-Core backend classes demonstrating the relationship between Controllers, Services, and Entities.
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0C7779', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0A5C5E', 'lineColor': '#888888', 'secondaryColor': '#0A192F', 'tertiaryColor': '#112240', 'fontFamily': 'Inter, sans-serif'}}}%%
-classDiagram
-    class AuthController {
-        +register()
-        +login()
-        +verifyOtp()
-        +resetPassword()
-    }
-    class UserController {
-        +getDashboard()
-        +changePassword()
-    }
-    class AdminController {
-        +getAllUsers()
-        +getDashboard()
-    }
-
-    class UserService {
-        +register()
-        +login()
-        +changePassword()
-        +verifyOtp()
-    }
-
-    class UserRepository {
-        +findByEmail()
-        +existsByEmail()
-    }
-
-    class User {
-        -Long id
-        -String email
-        -String password
-        -Set~Role~ roles
-    }
-
-    AuthController --> UserService
-    UserController --> UserService
-    UserService --> UserRepository
-    UserRepository --> User
-```
-
----
-
-## 📊 Data Model
-
-Database schema illustrating the relationship between users and roles in our relational model.
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0C7779', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#0A5C5E', 'lineColor': '#888888', 'secondaryColor': '#0A192F', 'tertiaryColor': '#112240', 'fontFamily': 'Inter, sans-serif'}}}%%
-erDiagram
-    USERS {
-        bigint id PK
-        string email UK
-        string password
-        string name
-        boolean enabled
-        string verification_otp
-        datetime otp_expiry
-        string reset_token
-    }
-
-    ROLES {
-        bigint id PK
-        enum name "ROLE_USER, ROLE_ADMIN"
-    }
-
-    USER_ROLES {
-        bigint user_id FK
-        bigint role_id FK
-    }
-
-    USERS ||--o{ USER_ROLES : has
-    ROLES ||--o{ USER_ROLES : assigned_to
-```
-
----
-
-## 🛡️ Security Architecture
-
-1.  **JWT (JSON Web Token)**: Stateless authentication. Tokens are generated upon login and must be included in the `Authorization` header (`Bearer <token>`) for protected requests.
-2.  **BCrypt Password Hashing**: Passwords are never stored in plain text. They are hashed using BCrypt before storage.
-3.  **Role-Based Access Control (RBAC)**:
-    *   `ROLE_USER`: Access to personal dashboard and profile.
-    *   `ROLE_ADMIN`: Access to user management and system stats.
-    *   annotation `@PreAuthorize("hasRole('ADMIN')")` enforces checks.
-4.  **CORS Policy**: Configured to allow requests only from trusted frontend origins (e.g., `http://localhost:5173`).
-5.  **OTP Verification**: 6-digit random code sent via email for account activation to prevent fake registrations.
-
----
-
-## 🔗 API Endpoints
-
-> **📄 [View Full API Documentation](API_DOCUMENTATION.md)**
-
-For a detailed guide on how to use the API (compatible with Postman), please refer to the [API_DOCUMENTATION.md](API_DOCUMENTATION.md) file.
-
-<details>
-<summary><strong>Quick Reference</strong></summary>
-
-### 🟢 Authentication (`/api/auth`)
-
-| Method | Endpoint | Description | Access |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/register` | Register a new user account | 🌐 Public |
-| `POST` | `/login` | Authenticate user & get JWT | 🌐 Public |
-| `POST` | `/verify-otp` | Verify email OTP code | 🌐 Public |
-| `POST` | `/resend-otp` | Resend verification email | 🌐 Public |
-| `POST` | `/reset-password` | Initiate password reset | 🌐 Public |
-| `POST` | `/update-password` | Complete password reset | 🌐 Public |
-
-### 🔵 User Operations (`/api/user`)
-
-| Method | Endpoint | Description | Access |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/dashboard` | Retrieve user dashboard statistics | 🔐 User |
-| `GET` | `/profile` | Get current user profile details | 🔐 User |
-| `POST` | `/change-password` | Update account password | 🔐 User |
-
-### 🔴 Administration (`/api/admin`)
-
-| Method | Endpoint | Description | Access |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/dashboard` | View system-wide statistics | 🛡️ Admin |
-| `GET` | `/users` | Retrieve users with pagination, search, role/status filters | 🛡️ Admin |
-
-</details>
-
----
-
-## 🖥️ Frontend Pages & API Mapping
-
-This section outlines all the frontend pages available in the React application and the specific backend API endpoints each page interacts with.
-
-### 🌐 Public Routes
-
-| Page | Path | API Service | API Endpoint | Method | Description |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Home** | `/` | None | None | - | Static landing page with Matrix Rain animation. |
-| **Login** | `/login` | `authAPI.login` | `/auth/login` | POST | Authenticates user with email and password. |
-| **Register** | `/register` | `authAPI.register` | `/auth/register` | POST | Creates a new user account. |
-| **Verify OTP** | `/verify-otp` | `authAPI.verifyOtp`<br>`authAPI.resendOtp` | `/auth/verify-otp`<br>`/auth/resend-otp?email={email}` | POST<br>POST | Verifies user email using the 6-digit OTP code. Can also request a new OTP. |
-| **Forgot Password** | `/forgot-password` | `authAPI.resetPassword` | `/auth/reset-password` | POST | Requests a password reset link to be sent via email. |
-| **Reset Password** | `/reset-password` | `authAPI.updatePassword` | `/auth/update-password` | POST | Updates password using the token sent to the user's email. |
-
-### 🔐 Protected Routes - User
-
-These routes require authentication (a valid Bearer token).
-
-| Page | Path | API Service | API Endpoint | Method | Description |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **User Dashboard** | `/dashboard` | `userAPI.getDashboard` | `/user/dashboard` | GET | Fetches user dashboard statistics to verify token validity. Reads user profile from Context/Local Storage. |
-| **Change Password** | `/change-password` | `userAPI.changePassword` | `/user/change-password` | POST | Allows an authenticated user to change their active password by providing current & new passwords. |
-
-### 🛡️ Protected Routes - Admin
-
-These routes require both authentication and the `ROLE_ADMIN` authority.
-
-| Page | Path | API Service | API Endpoint | Method | Description |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Admin Dashboard** | `/admin` | `adminAPI.getDashboard`<br>`adminAPI.getUsers` | `/admin/dashboard`<br>`/admin/users?page=0&size=10&search=&enabled=&role=` | GET<br>GET | Fetches overall system stats and a paginated/searchable/filterable users table. |
-
-### 💡 Key Notes on API Integration:
-* **Interceptors**: The application uses Axios interceptors (`src/services/api.js`) to automatically append the Bearer token to all requests if it exists in Local Storage.
-* **Error Handling**: A response interceptor handles `401 Unauthorized` responses globally by clearing the user session and redirecting to `/login`.
-* **State Management**: The application uses `AuthContext` to manage the currently authenticated user's state globally, decoupling API definitions from UI components for auth-related operations.
-
----
-
-## 🚀 Getting Started
+## Local Setup
 
 ### Prerequisites
-- **Java 21+**
+
+- Java 21+
+- Maven 3.9+
 - Node.js 18+
+- npm 9+
 - PostgreSQL 16+
 - Redis 7+
-- Maven
 
-### Backend Setup
-1.  Navigate to `/backend`.
-2.  Copy `src/main/resources/application.properties.example` to `src/main/resources/application.properties`.
-3.  Update database, mail, JWT, and OAuth2 client credentials (Google, GitHub, Apple, LinkedIn).
-4.  Run application: `mvn spring-boot:run`
+### 1) Start PostgreSQL + Redis (recommended via Docker)
 
-### Frontend Setup
-1.  Navigate to `/frontend`.
-2.  Install dependencies: `npm install`
-3.  Start dev server: `npm run dev`
+```bash
+cd backend
+docker compose up -d postgres redis
+```
+
+### 2) Run backend
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+Backend default URL: `http://localhost:8080`
+
+### Default seeded admin (development)
+
+On startup, a default admin is seeded if not present:
+
+- Email: `admin@admin.com`
+- Password: `admin123`
+
+Change this immediately for any shared/non-local environment.
+
+### 3) Run frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend default URL: `http://localhost:5173`
+
+## Docker Setup
+
+Run full backend stack from `backend/`:
+
+```bash
+docker compose up -d --build
+```
+
+Services:
+
+- `postgres` on `5432`
+- `redis` on `6379`
+- `app` on `8080`
+
+## Configuration Reference
+
+### Backend (`backend/src/main/resources/application.properties`)
+
+Main groups used by the app:
+
+- Server and cookie settings
+- PostgreSQL datasource
+- Redis connection
+- SMTP mail settings
+- JWT settings (`jwt.secret`, expirations)
+- Frontend URL and cookie options
+- Abuse-protection and lockout thresholds
+- OAuth2 provider registrations
+
+OAuth2 login starts at:
+
+- `http://localhost:8080/oauth2/authorization/google`
+- `http://localhost:8080/oauth2/authorization/github`
+- `http://localhost:8080/oauth2/authorization/apple`
+- `http://localhost:8080/oauth2/authorization/linkedin`
+
+### Frontend env options
+
+Optional Vite variables:
+
+- `VITE_API_URL` (default `http://localhost:8080/api`)
+- `VITE_OAUTH_BASE_URL` (default `http://localhost:8080`)
+
+## Security Notes
+
+- Passwords are BCrypt-hashed.
+- Refresh/reset/OTP values are stored as hashes (SHA-256 + pepper).
+- Refresh token rotation is enforced.
+- Refresh token is sent in cookie with configurable `Secure` and `SameSite`.
+- Global exception handler standardizes API errors.
+- Login/OTP/reset endpoints include rate limiting and temporary lockouts.
+
+## Admin Scaling Features
+
+Admin users API is designed for scale:
+
+- No full-table fetch for listing
+- Pagination and bounded `size`
+- Search by name/email
+- Role and status filters
+- Safe server-side sort-field allowlist
+
+## Frontend UX/Performance Notes
+
+- Bootstrap JS bundle is loaded for navbar/dropdown/collapse behavior.
+- Matrix animation respects `prefers-reduced-motion`.
+- Matrix animation reduces FPS/work on low-memory or low-core devices.
+- Axios interceptors centralize token handling and auto-refresh.
+
+## Testing and Validation
+
+### Frontend
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
+### Backend
+
+```bash
+cd backend
+mvn test
+```
+
+### Quick integration smoke checks
+
+```bash
+# unauthenticated refresh should return 401
+curl -i -X POST http://localhost:8080/api/auth/refresh
+
+# CORS preflight from frontend origin should succeed
+curl -i -X OPTIONS http://localhost:8080/api/auth/register \
+  -H 'Origin: http://localhost:5173' \
+  -H 'Access-Control-Request-Method: POST'
+```
+
+## Troubleshooting
+
+1. `Operation not permitted` while binding ports or opening sockets:
+Ensure Docker Desktop is running and local permissions are granted.
+2. `Unable to determine Dialect without JDBC metadata`:
+Verify PostgreSQL is up and datasource credentials/URL are correct.
+3. OAuth login redirects but no frontend session:
+Confirm frontend callback route `/oauth2/callback` and cookie settings (`SameSite`, `Secure`) match environment.
+4. Navbar collapse not working:
+Ensure Bootstrap JS bundle import remains in `frontend/src/main.jsx`.
+
+## Production Checklist
+
+- Move all secrets to environment variables (DB, mail, JWT, OAuth).
+- Rotate any credentials previously committed to git history.
+- Change `spring.jpa.hibernate.ddl-auto` from `create-drop` to `validate` or managed migrations.
+- Set `auth.refresh-token.cookie-secure=true` behind HTTPS.
+- Tighten CORS to exact production frontend origin(s).
+- Use reverse proxy + `X-Forwarded-*` handling for correct client IP rate limiting.
+- Add DB migrations (Flyway/Liquibase), monitoring, and structured audit logging.
 
 ---
 
-## 🗣️ About Project-
-
-"This project is a production-ready, full-stack authentication and user management system built from scratch using Java Spring Boot 3 on the backend and React 19 on the frontend. My primary goal was to implement a robust, stateless security architecture using Spring Security 6 and JSON Web Tokens (JWT), moving away from traditional server-side sessions to ensure the application could easily scale horizontally.
-
-On the backend, I designed a clean, layered RESTful API following solid architectural principles. I utilized DTOs for strict encapsulation, Spring Data JPA for optimized interactions with a PostgreSQL database, and implemented a global exception-handling mechanism using `@RestControllerAdvice` to guarantee consistent, readable responses to the client. Additionally, to combat spam registrations, I integrated an asynchronous email service to handle OTP-based account verification.
-
-For the frontend, I wanted to showcase my ability to create premium user experiences. I built a custom 'Matrix Glassmorphism' UI using Vite and React, heavily leveraging backdrop filters and modern CSS to create a secure, visually stunning portal. I configured Axios interceptors to seamlessly attach JWTs to headers, ensuring absolute synchronization between the React application state and the stateless backend. The biggest challenge I solved was architecting secure cross-origin communication (CORS) and implementing strict role-based access control to protect administrative routes. Ultimately, this project demonstrates my capability to take complex security and business requirements and deliver a complete, polished, and secure end-to-end application."
-
----
-
-## ❓ Real-World Project Q&A
-
-Use these technical answers to demonstrate deep, framework-specific knowledge regarding the architectural decisions of this project.
-
-### **🔐 Security & Authentication**
-
-1.  **JWT vs. Session: Why did we choose Stateless session policy in `SecurityConfig.java`? What are the trade-offs compared to traditional Server-Side Sessions?**
-    I implemented stateless authentication with `<SessionCreationPolicy.STATELESS>` because JWTs are self-contained. The server does not need to allocate memory for session data or require a Redis cluster for shared caching, making horizontal scaling across multiple servers effortless. The primary trade-off is that once issued, a stateless token cannot be easily invalidated before its expiration time natively, requiring custom Redis blocklists to securely handle immediate manual logouts.
-
-2.  **CSRF Configuration: We disabled CSRF (`csrf.disable()`) but enabled CORS. In what specific scenario is this safe? If we stored the JWT in an `HttpOnly` cookie, would we need to re-enable it?**
-    Disabling CSRF is only safe here because we store the JWT entirely in the frontend’s `localStorage` and manually attach it to the `Authorization` HTTP header via Axios interceptors. Browsers do not automatically attach `localStorage` data to cross-site requests, mitigating CSRF inherent risks. Conversely, if we used `HttpOnly` cookies to store the token, the browser would append it automatically to any domain request, strictly mandating that we re-enable Spring's CSRF protection mechanism.
-
-3.  **Password Storage: Explain why we use `BCryptPasswordEncoder`? If an attacker dumps the database, can they reverse these passwords? What is a "Salt" and does BCrypt handle it automatically?**
-    I used `BCryptPasswordEncoder` because it leverages a deliberately slow hashing algorithm designed to heavily resist brute-force and dictionary hardware attacks. It mathematically generates a one-way hash, meaning compromised databases cannot be reversed into plain text. Crucially, BCrypt automatically generates and incorporates a unique cryptographic "salt" into every exact password hash autonomously, meaning two users with identical passwords will possess entirely different database hash signatures.
-
-4.  **Filter Chain: How does the `JwtAuthFilter` interact with the `UsernamePasswordAuthenticationFilter`? Why must it run before the standard authentication filter?**
-    The `JwtAuthFilter` acts as our primary gatekeeper, surgically injected immediately before the standard `UsernamePasswordAuthenticationFilter`. It intercepts every incoming request, meticulously parses the `Bearer` token from the header, and validates its cryptographic signature. By running first, if it confirms a valid JWT, it dynamically constructs a `UsernamePasswordAuthenticationToken` and injects it straight into the `SecurityContextHolder`, entirely bypassing the heavy, database-coupled standard login filter logic for secure requests.
-
-5.  **Role-Based Access: We use `@PreAuthorize("hasRole('ADMIN')")`. How does Spring Security know which user has which role? Walk through the `UserDetails` implementation.**
-    Within my custom `UserDetailsService`, upon successfully loading the user entity from the MySQL repository, I explicitly map their database `enum` roles (like `ROLE_ADMIN`) into a collection of `SimpleGrantedAuthority` objects. These authorities are subsequently embedded inside the returned `UserDetails` principal. When a restricted controller endpoint invokes `@PreAuthorize`, the Spring AOP proxy dynamically evaluates the active `SecurityContext`, matching the required annotation role against the principal's granted authorities.
-
-6.  **Token Expiry & Security: If a user's token is stolen, the attacker acts as the user until expiry. How would you implement a "Logout" feature that immediately invalidates a stateless JWT?**
-    Since JWTs are definitively stateless, the Spring server contains no native memory of active tokens to revoke. To effectively construct a secure logout mechanism, I would engineer a system to surgically catch the JWT during the logout request, extract its unique `JTI` identifier, and persist it into an ultra-fast Redis "Blocklist" cache holding a TTL equal to the token's remaining lifespan. The `JwtAuthFilter` would then independently reject any token found within this blocklist.
-
-### **☕ Spring Boot & Backend Architecture**
-
-7.  **Dependency Injection: In `AuthController`, we use constructor/field injection for `AuthService`. What is Inversion of Control (IoC) and why is it better than `new AuthService()`?**
-    Inversion of Control means the Spring IoC Container uniquely commands the instantiation and lifecycle routing of our beans, stripping tight coupling out of the codebase. By exclusively using constructor injection over the `new` keyword, our defined classes stay agnostic to their dependencies. This guarantees robust module testability, empowering me to easily instantiate controllers and cleanly pass Mockito simulated service instances directly through their constructors during isolated unit testing.
-
-8.  **DTO Pattern: Why do we have `RegisterRequest` and `UserDto` classes? Why not just pass the `User` Entity directly to the controller?**
-    Using pure JPA Entities dynamically exposes internal relational structures to the public client, risking critical over-posting vulnerabilities and strict bidirectional JSON serialization loop errors. `RegisterRequest` and `UserDto` aggressively act as distinct data transfer shields, ensuring the API precisely serializes only necessary and secured data (e.g. omitting password hashes). It safely breaks the tight architectural coupling between the explicit HTTP API contract and the underlying MySQL schema design.
-
-9.  **Transactional Integrity: If the "Save User" succeeds but the "Send Email" fails during registration, what happens? How would you use `@Transactional` to ensure data consistency?**
-    Without protection, a failed SMTP transmission yields a "zombie" user persisted statically in the database with no means of activation. By strategically annotating the composite registration method with `@Transactional`, Spring Boot establishes a rigid operational proxy. If the email execution critically throws an unchecked runtime exception, the entire transaction manager forcibly triggers a full rollback of the initial database commit, guaranteeing the system remains in a pristine, perfectly unified state.
-
-10. **Validation: We use `@Valid` in the controller. If a user sends an invalid email format, how is the error handled? Where is the global exception handler?**
-    When `@Valid` detects a DTO boundary violation (such as `@Email`), Spring implicitly aborts processing and ejects a `MethodArgumentNotValidException`. To handle this professionally, I architected a global `@RestControllerAdvice` class functioning proactively as an AOP interceptor. Its specific `@ExceptionHandler` surgically captures this validation collapse, cleanly formats the various field errors into a designated, friendly JSON payload, and returns a rigid HTTP 400 Bad Request to the frontend client.
-
-11. **N+1 Problem: If we have an endpoint `getAllUsers()` that also fetches their roles, how do you prevent Hibernate from executing one query for users + N queries for roles?**
-    Hibernate's default lazy-fetching behavior for entity collections natively triggers the severe N+1 problem, generating inefficient, cascading SQL queries. I neutralized this performance chokepoint by designing custom JPQL queries wielding the `JOIN FETCH` operation (e.g., `SELECT u FROM User u JOIN FETCH u.roles`). This command rigorously instructs the database engine to aggressively materialize the user and their associated relational roles utilizing a single, consolidated `JOIN` request.
-
-### **🏗️ System Design & Scalability**
-
-17. **Async Processing: Sending emails (OTP) is slow. If 1,000 users register at once, the API will hang. How would you offload email sending to a background queue (e.g., RabbitMQ or Kafka)?**
-    I would decouple the synchronous registration thread by integrating Spring AMQP/Kafka. When a request hits, the server securely persists the user, swiftly publishes an asynchronous `OtpMailEvent` payload strictly onto a Kafka or RabbitMQ messaging topic, and instantly returns a 200 HTTP code. Isolated background micro-worker nodes continually listen to the designated queue, independently polling and executing the brutally slow SMTP email delivery tasks completely off the main thread securely.
-
-18. **Database Scaling: As the `users` table grows to 10 million rows, queries by email will become slow. How do you verify if the `email` column is indexed?**
-    In Spring Data JPA architecture, verifying indexes occurs by heavily analyzing our `@Table` configurations or uniquely annotating properties with `@Column(unique = true)` which automatically scaffolds indexes natively. Practically, I would connect directly to the MySQL shell engine and boldly execute an `EXPLAIN ANALYZE SELECT * FROM users WHERE email='X'` query command to verify the execution planner rigorously utilizes a structured Index Lookup instead of suffering a catastrophic O(N) full table scan.
-
-19. **Rate Limiting: How would you prevent an attacker from spamming the `/api/auth/login` endpoint to brute-force passwords?**
-    To vigorously eradicate violent brute-force penetration vectors, I would configure a robust Rate Limiting algorithm, aggressively utilizing the `Bucket4j` library directly interfacing with an in-memory Redis cluster proxy. The implementation fiercely monitors incoming traffic strictly tracking anomalous request frequencies tied natively to the client's distinct IP address or submitted Email vector. Exceeding `5` failed iterations tightly locks out the source vector enforcing a hard `15-minute` temporal penalty comprehensively.
-
-20. **High Availability: If we deploy this Spring Boot app to 3 different servers behind a Load Balancer, does the JWT authentication still work? Why or why not?**
-    Yes, the JWT architecture fiercely excels within distributed horizontally scaled arrays precisely because tokens are inherently stateless. Each isolated independent Spring node natively possesses the universally configured cryptographic signing secret globally. Therefore, incoming request streams routed dynamically into any arbitrary active server mathematically reconstruct and rapidly validate the same encrypted token seamlessly, decisively bypassing the horrific requirement to integrate centralized Redis sticky-sessions internally.
-
-### **🐞 Debugging & DevOps**
-
-21. **CORS Errors: A user reports a `Access-Control-Allow-Origin` error. Is this a backend or frontend issue? How do you fix it specifically in Spring Security?**
-    Despite manifesting inside the frontend browser console securely, a CORS catastrophe fundamentally indicates a critical configuration deficit within the Backend architecture. To strictly repair this, I explicitly architected a `CorsConfigurationSource` Bean straight inside the `SecurityFilterChain`. The configuration precisely defines the exact whitelist (`setAllowedOrigins`) explicitly authorizing the React client's defined address, explicitly detailing the valid HTTP verbs specifically and HTTP header configurations securely.
-
-22. **Environment Variables: Why do we verify that `application.properties` does not contain hardcoded API keys or database passwords before committing to GitHub?**
-    Hardcoding extremely sensitive corporate infrastructure keys dynamically inside Git effectively compromises the system permanently globally, granting malicious web-scrapers full, immediate exploitation access physically. To neutralize this massive vulnerability, I heavily injected OS-level environment placeholders like `${DB_PASSWORD}` strictly inside the application configurations. This ensures configuration profiles are decoupled heavily to safe CI/CD deployment channels actively overriding them during Docker image compilation runs.
+If you want, I can also generate a matching `.env.example` and `application.properties.example` so onboarding is one command and no secrets are kept in tracked config files.
