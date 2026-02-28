@@ -12,6 +12,7 @@ import ResetPassword from './pages/ResetPassword';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import ChangePassword from './pages/ChangePassword';
+import OAuthCallback from './pages/OAuthCallback';
 import { Toaster } from 'react-hot-toast';
 
 
@@ -33,6 +34,7 @@ function App() {
               <Route path="/verify-otp" element={<VerifyOtp />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/oauth2/callback" element={<OAuthCallback />} />
 
               {/* Protected Routes - User */}
               <Route

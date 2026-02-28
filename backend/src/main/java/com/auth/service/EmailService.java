@@ -1,22 +1,31 @@
 package com.auth.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Service for sending emails (OTP verification, password reset).
  */
 @Service
+@RequiredArgsConstructor
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    private final JavaMailSender mailSender;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
+
+    @Value("${otp.expiration.minutes:5}")
+    private int otpExpirationMinutes;
+
+    @Value("${app.frontend-reset-password-url:http://localhost:5173/reset-password}")
+    private String resetPasswordUrl;
 
     /**
      * Send OTP verification email.
@@ -27,7 +36,7 @@ public class EmailService {
         message.setTo(toEmail);
         message.setSubject("Email Verification OTP");
         message.setText("Your OTP for email verification is: " + otp +
-                "\n\nThis OTP will expire in 5 minutes." +
+                "\n\nThis OTP will expire in " + otpExpirationMinutes + " minutes." +
                 "\n\nIf you didn't request this, please ignore this email.");
 
         mailSender.send(message);
@@ -37,7 +46,7 @@ public class EmailService {
      * Send password reset email with token link.
      */
     public void sendPasswordResetEmail(String toEmail, String resetToken) {
-        String resetLink = "http://localhost:5173/reset-password?token=" + resetToken;
+        String resetLink = resetPasswordUrl + "?token=" + URLEncoder.encode(resetToken, StandardCharsets.UTF_8);
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);

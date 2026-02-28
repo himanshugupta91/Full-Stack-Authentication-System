@@ -1,98 +1,171 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const OAUTH_BASE_URL = import.meta.env.VITE_OAUTH_BASE_URL || 'http://localhost:8080';
 
-// Create axios instance with default config
-// Create axios instance with default config
+export const ACCESS_TOKEN_KEY = 'accessToken';
+export const USER_KEY = 'user';
+
+export const OAUTH_PROVIDERS = [
+  { id: 'google', label: 'Google', iconClass: 'bi bi-google' },
+  { id: 'github', label: 'GitHub', iconClass: 'bi bi-github' },
+  { id: 'apple', label: 'Apple', iconClass: 'bi bi-apple' },
+  { id: 'linkedin', label: 'LinkedIn', iconClass: 'bi bi-linkedin' },
+];
+
+export const getOAuthAuthorizationUrl = (providerId) =>
+  `${OAUTH_BASE_URL}/oauth2/authorization/${providerId}`;
+
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-/**
- * Request Interceptor
- * Automatically adds the Bearer token from localStorage to every request.
- */
+const readStoredUser = () => {
+  const raw = localStorage.getItem(USER_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+export const clearAuthStorage = () => {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+};
+
+export const saveAuthPayload = (payload) => {
+  if (!payload?.accessToken) {
+    return;
+  }
+
+  localStorage.setItem(ACCESS_TOKEN_KEY, payload.accessToken);
+
+  const user = {
+    id: payload.id,
+    name: payload.name,
+    email: payload.email,
+    roles: payload.roles || [],
+  };
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+};
+
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+const subscribeTokenRefresh = (callback) => {
+  refreshSubscribers.push(callback);
+};
+
+const notifyTokenRefreshed = (newToken) => {
+  refreshSubscribers.forEach((callback) => callback(newToken));
+  refreshSubscribers = [];
+};
+
+const shouldSkipRefresh = (url = '') => {
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/logout') ||
+    url.includes('/auth/register') ||
+    url.includes('/auth/verify-otp') ||
+    url.includes('/auth/reset-password') ||
+    url.includes('/auth/update-password')
+  );
+};
+
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-/**
- * Response Interceptor
- * Handles global responses. If a 401 Unauthorized is received, logs the user out.
- */
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+    const status = error.response?.status;
+
+    if (!originalRequest || status !== 401 || originalRequest._retry || shouldSkipRefresh(originalRequest.url)) {
+      if (status === 401 && shouldSkipRefresh(originalRequest?.url)) {
+        clearAuthStorage();
+      }
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        subscribeTokenRefresh((newToken) => {
+          if (!newToken) {
+            reject(error);
+            return;
+          }
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          resolve(api(originalRequest));
+        });
+      });
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      const refreshResponse = await api.post('/auth/refresh');
+      saveAuthPayload(refreshResponse.data);
+      notifyTokenRefreshed(refreshResponse.data.accessToken);
+
+      originalRequest.headers = originalRequest.headers || {};
+      originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.accessToken}`;
+      return api(originalRequest);
+    } catch (refreshError) {
+      clearAuthStorage();
+      notifyTokenRefreshed(null);
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   }
 );
 
-/**
- * Authentication API Service
- * Handles all public authentication-related endpoints.
- */
 export const authAPI = {
-  /** Register a new user account */
   register: (data) => api.post('/auth/register', data),
-
-  /** Verify email using OTP */
   verifyOtp: (data) => api.post('/auth/verify-otp', data),
-
-  /** Login with email and password */
   login: (data) => api.post('/auth/login', data),
-
-  /** Request a password reset link via email */
+  refresh: () => api.post('/auth/refresh'),
   resetPassword: (data) => api.post('/auth/reset-password', data),
-
-  /** Update password using a reset token */
   updatePassword: (data) => api.post('/auth/update-password', data),
-
-  /** Resend OTP for verification */
   resendOtp: (email) => api.post(`/auth/resend-otp?email=${email}`),
+  logout: () => api.post('/auth/logout'),
 };
 
-/**
- * User API Service
- * Handles protected user-related endpoints.
- */
 export const userAPI = {
-  /** Get user dashboard data */
   getDashboard: () => api.get('/user/dashboard'),
-
-  /** Get user profile details */
   getProfile: () => api.get('/user/profile'),
-
-  /** Change current user's password */
   changePassword: (data) => api.post('/user/change-password', data),
 };
 
-/**
- * Admin API Service
- * Handles protected admin-only endpoints.
- */
 export const adminAPI = {
-  /** Get admin dashboard statistics */
   getDashboard: () => api.get('/admin/dashboard'),
-
-  /** Get list of all registered users */
-  getUsers: () => api.get('/admin/users'),
+  getUsers: (params = {}) => api.get('/admin/users', { params }),
 };
+
+export const getStoredUser = readStoredUser;
 
 export default api;

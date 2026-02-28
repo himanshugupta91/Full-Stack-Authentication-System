@@ -15,6 +15,7 @@ public class MessageResponse {
     private String message;
     private boolean success;
 
+    /** Creates a successful response with only a message payload. */
     public MessageResponse(String message) {
         this.message = message;
         this.success = true;

@@ -5,42 +5,71 @@ const MatrixRain = () => {
 
     useEffect(() => {
         const canvas = canvasRef.current;
+        if (!canvas) {
+            return;
+        }
+
         const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            return;
+        }
 
-        // Set canvas size
-        const setCanvasSize = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        };
-        setCanvasSize();
+        const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const reducedMotion = reducedMotionQuery.matches;
 
-        // Matrix characters (Katakana + Latin)
+        // Keep a static background when reduced motion is requested.
+        if (reducedMotion) {
+            const setStaticCanvas = () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.88)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            };
+
+            setStaticCanvas();
+            window.addEventListener('resize', setStaticCanvas);
+            return () => window.removeEventListener('resize', setStaticCanvas);
+        }
+
+        const deviceMemory = navigator.deviceMemory || 4;
+        const cpuCores = navigator.hardwareConcurrency || 4;
+        const lowPowerDevice = deviceMemory <= 2 || cpuCores <= 4;
+        const fontSize = lowPowerDevice ? 18 : 16;
+        const targetFps = lowPowerDevice ? 16 : 30;
+        const resetChance = lowPowerDevice ? 0.99 : 0.975;
+
         const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
         const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         const nums = '0123456789';
         const alphabet = katakana + latin + nums;
 
-        const fontSize = 16;
-        const columns = Math.floor(canvas.width / fontSize);
+        let drops = [];
+        let animationFrameId = null;
+        let lastFrameTime = 0;
 
-        // Array of drops - one per column
-        const drops = [];
-        for (let x = 0; x < columns; x++) {
-            drops[x] = Math.random() * canvas.height / fontSize; // Start at random positions
-        }
+        const initializeDrops = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const columns = Math.floor(canvas.width / fontSize);
+            drops = Array.from({ length: columns }, () => Math.random() * canvas.height / fontSize);
+        };
 
-        const draw = () => {
-            // Black BG for the trail effect
+        const draw = (timestamp) => {
+            const minimumFrameTime = 1000 / targetFps;
+            if (timestamp - lastFrameTime < minimumFrameTime) {
+                animationFrameId = window.requestAnimationFrame(draw);
+                return;
+            }
+            lastFrameTime = timestamp;
+
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = '#0F0'; // Green text
             ctx.font = fontSize + 'px monospace';
 
-            for (let i = 0; i < drops.length; i++) {
+            for (let i = 0; i < drops.length; i += 1) {
                 const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-
-                // Randomly brighter characters for the "glitch" effect
                 if (Math.random() > 0.95) {
                     ctx.fillStyle = '#FFF';
                 } else {
@@ -49,28 +78,44 @@ const MatrixRain = () => {
 
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
 
-                // Sending the drop back to the top randomly after it has crossed the screen
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                if (drops[i] * fontSize > canvas.height && Math.random() > resetChance) {
                     drops[i] = 0;
                 }
 
-                // Incrementing Y coordinate
-                drops[i]++;
+                drops[i] += 1;
+            }
+
+            animationFrameId = window.requestAnimationFrame(draw);
+        };
+
+        initializeDrops();
+        animationFrameId = window.requestAnimationFrame(draw);
+
+        const handleResize = () => {
+            initializeDrops();
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.hidden && animationFrameId) {
+                window.cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+                return;
+            }
+
+            if (!document.hidden && !animationFrameId) {
+                animationFrameId = window.requestAnimationFrame(draw);
             }
         };
 
-        const interval = setInterval(draw, 33);
-
-        const handleResize = () => {
-            setCanvasSize();
-            // Optional: reset drops or handle resize more gracefully
-        };
-
         window.addEventListener('resize', handleResize);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
-            clearInterval(interval);
+            if (animationFrameId) {
+                window.cancelAnimationFrame(animationFrameId);
+            }
             window.removeEventListener('resize', handleResize);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, []);
 
@@ -81,11 +126,11 @@ const MatrixRain = () => {
                 position: 'fixed',
                 top: 0,
                 left: 0,
-                zIndex: -1, // Behind everything
+                zIndex: -1,
                 width: '100%',
                 height: '100%',
-                background: 'white',
-                pointerEvents: 'none' // Click-through
+                background: 'transparent',
+                pointerEvents: 'none'
             }}
         />
     );

@@ -14,6 +14,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class AuthApplication {
 
+    /** Starts the Spring Boot authentication application. */
     public static void main(String[] args) {
         SpringApplication.run(AuthApplication.class, args);
     }

@@ -15,6 +15,7 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
+    /** Registers allowed origins, methods, and headers for browser-to-backend requests. */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

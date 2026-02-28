@@ -3,12 +3,14 @@ package com.auth.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 /**
@@ -20,8 +22,9 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
+    @Getter
     @Value("${jwt.expiration}")
-    private long jwtExpiration;
+    private long accessTokenExpiration;
 
     /**
      * Generate JWT token from authentication object.
@@ -38,7 +41,8 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .claim("tokenType", "access")
+                .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -70,11 +74,34 @@ public class JwtUtil {
         }
     }
 
-    /**
-     * Get signing key from secret.
-     */
+    /** Builds the JWT signing key from configured secret using Base64, Base64URL, or raw text fallback. */
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        byte[] keyBytes = decodeSecret(jwtSecret);
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("jwt.secret must be at least 32 bytes for HS256 signing.");
+        }
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
+    /** Decodes secret value from Base64/Base64URL and falls back to UTF-8 bytes for plain text secrets. */
+    private byte[] decodeSecret(String secret) {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("jwt.secret is missing or blank.");
+        }
+
+        String normalizedSecret = secret.trim();
+
+        try {
+            return Decoders.BASE64.decode(normalizedSecret);
+        } catch (RuntimeException ignored) {
+            // Fallback to Base64URL or plain text for local/dev setups.
+        }
+
+        try {
+            return Decoders.BASE64URL.decode(normalizedSecret);
+        } catch (RuntimeException ignored) {
+            return normalizedSecret.getBytes(StandardCharsets.UTF_8);
+        }
+    }
+
 }

@@ -4,10 +4,10 @@ import com.auth.dto.ChangePasswordRequest;
 import com.auth.dto.MessageResponse;
 import com.auth.dto.UserDashboardDto;
 import com.auth.dto.UserDto;
-import com.auth.mapper.UserMapper;
 import com.auth.service.AuthService;
+import com.auth.service.UserPortalService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -20,16 +20,12 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/user")
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private AuthService authService;
+    private final AuthService authService;
 
-    @Autowired
-    private com.auth.service.UserService userService;
-
-    @Autowired
-    private UserMapper userMapper;
+    private final UserPortalService userPortalService;
 
     /**
      * Get user dashboard data.
@@ -39,13 +35,7 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<UserDashboardDto> getDashboard() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        com.auth.entity.User user = userService.getUserByEmail(auth.getName());
-
-        UserDashboardDto response = userMapper.toUserDashboardDto(user);
-        response.setMessage("Welcome to User Dashboard!");
-        response.setTimestamp(java.time.LocalDateTime.now().toString());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(userPortalService.getDashboard(auth.getName()));
     }
 
     /**
@@ -56,9 +46,7 @@ public class UserController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<UserDto> getProfile() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        com.auth.entity.User user = userService.getUserByEmail(auth.getName());
-        UserDto userDto = userMapper.toDto(user);
-        return ResponseEntity.ok(userDto);
+        return ResponseEntity.ok(userPortalService.getProfile(auth.getName()));
     }
 
     /**

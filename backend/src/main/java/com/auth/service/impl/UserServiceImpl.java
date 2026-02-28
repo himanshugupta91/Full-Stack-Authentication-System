@@ -3,7 +3,7 @@ package com.auth.service.impl;
 import com.auth.entity.User;
 import com.auth.repository.UserRepository;
 import com.auth.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,10 +13,10 @@ import java.util.Optional;
  * Implementation of UserService.
  */
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     /**
      * Retrieves a user by their email address.
@@ -76,5 +76,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public Optional<User> findByResetToken(String token) {
         return userRepository.findByResetToken(token);
+    }
+
+    /** Finds a user associated with a persisted refresh token. */
+    @Override
+    public Optional<User> findByRefreshToken(String token) {
+        return userRepository.findByRefreshToken(token);
     }
 }

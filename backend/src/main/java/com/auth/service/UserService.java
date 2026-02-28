@@ -47,4 +47,12 @@ public interface UserService {
      * @return Optional User
      */
     Optional<User> findByResetToken(String token);
+
+    /**
+     * Find user by refresh token.
+     *
+     * @param token Refresh token
+     * @return Optional User
+     */
+    Optional<User> findByRefreshToken(String token);
 }

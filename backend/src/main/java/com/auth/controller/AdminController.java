@@ -2,17 +2,14 @@ package com.auth.controller;
 
 import com.auth.dto.AdminDashboardDto;
 import com.auth.dto.UserDto;
-import com.auth.entity.User;
-import com.auth.mapper.UserMapper;
-import com.auth.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.auth.service.AdminService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * REST controller for admin dashboard.
@@ -22,13 +19,10 @@ import java.util.List;
 @RequestMapping("/api/admin")
 @CrossOrigin(origins = { "http://localhost:5173", "http://localhost:3000" })
 @PreAuthorize("hasRole('ADMIN')")
+@RequiredArgsConstructor
 public class AdminController {
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private UserMapper userMapper;
+    private final AdminService adminService;
 
     /**
      * Get admin dashboard data.
@@ -37,30 +31,22 @@ public class AdminController {
     @GetMapping("/dashboard")
     public ResponseEntity<AdminDashboardDto> getDashboard() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-
-        long totalUsers = userRepository.count();
-        long activeUsers = userRepository.findAll().stream()
-                .filter(User::isEnabled)
-                .count();
-
-        AdminDashboardDto response = new AdminDashboardDto(
-                "Welcome to Admin Dashboard!",
-                auth.getName(),
-                totalUsers,
-                activeUsers,
-                java.time.LocalDateTime.now().toString());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(adminService.getDashboard(auth.getName()));
     }
 
     /**
-     * Get all users list.
+     * Get users list with pagination/filtering/search.
      * GET /api/admin/users
      */
     @GetMapping("/users")
-    public ResponseEntity<List<UserDto>> getAllUsers() {
-        List<User> users = userRepository.findAll();
-        List<UserDto> userDtos = userMapper.toDtoList(users);
-        return ResponseEntity.ok(userDtos);
+    public ResponseEntity<Page<UserDto>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(required = false) String role,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        return ResponseEntity.ok(adminService.getUsers(page, size, search, enabled, role, sortBy, sortDir));
     }
 }

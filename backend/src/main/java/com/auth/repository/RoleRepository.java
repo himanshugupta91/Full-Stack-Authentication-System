@@ -12,5 +12,6 @@ import java.util.Optional;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
+    /** Finds a role by enum-backed role name. */
     Optional<Role> findByName(Role.RoleName name);
 }

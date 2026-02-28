@@ -4,7 +4,8 @@ import com.auth.entity.Role;
 import com.auth.entity.User;
 import com.auth.repository.RoleRepository;
 import com.auth.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -16,17 +17,20 @@ import java.util.Set;
  * Data initializer to create default roles and admin user on startup.
  */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class DataInitializer implements CommandLineRunner {
 
-    @Autowired
-    private RoleRepository roleRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
+    private final UserRepository userRepository;
+
+
+    private final PasswordEncoder passwordEncoder;
+
+    /** Seeds default roles and a local admin account if they are missing at startup. */
     @Override
     public void run(String... args) throws Exception {
         // Create roles if they don't exist
@@ -58,7 +62,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setRoles(adminRoles);
 
             userRepository.save(admin);
-            System.out.println("Default admin user created: admin@admin.com / admin123");
+            log.info("Default admin user created: admin@admin.com");
         }
     }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { adminAPI } from '../services/api';
 
@@ -8,24 +8,63 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [searchInput, setSearchInput] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [roleFilter, setRoleFilter] = useState('all');
+    const [page, setPage] = useState(0);
+    const [size, setSize] = useState(10);
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError('');
 
-    const fetchData = async () => {
+        const userQueryParams = { page, size };
+        if (searchTerm) {
+            userQueryParams.search = searchTerm;
+        }
+        if (statusFilter !== 'all') {
+            userQueryParams.enabled = statusFilter === 'active';
+        }
+        if (roleFilter !== 'all') {
+            userQueryParams.role = roleFilter;
+        }
+
         try {
             const [dashboardRes, usersRes] = await Promise.all([
                 adminAPI.getDashboard(),
-                adminAPI.getUsers(),
+                adminAPI.getUsers(userQueryParams),
             ]);
+
             setDashboardData(dashboardRes.data);
-            setUsers(usersRes.data);
+            setUsers(usersRes.data?.content || []);
+            setTotalPages(usersRes.data?.totalPages || 0);
+            setTotalElements(usersRes.data?.totalElements || 0);
         } catch {
             setError('Failed to load admin data');
         } finally {
             setLoading(false);
         }
+    }, [page, size, searchTerm, statusFilter, roleFilter]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const handleApplyFilters = (event) => {
+        event.preventDefault();
+        setPage(0);
+        setSearchTerm(searchInput.trim());
+    };
+
+    const handleClearFilters = () => {
+        setSearchInput('');
+        setSearchTerm('');
+        setStatusFilter('all');
+        setRoleFilter('all');
+        setPage(0);
     };
 
     if (loading) {
@@ -121,13 +160,73 @@ const AdminDashboard = () => {
                         <div className="d-flex justify-content-between align-items-center mb-4">
                             <h4 className="mb-0">
                                 <i className="bi bi-people me-2"></i>
-                                All Users
+                                Users ({totalElements})
                             </h4>
                             <button className="btn btn-outline-primary btn-sm" onClick={fetchData}>
                                 <i className="bi bi-arrow-clockwise me-1"></i>
                                 Refresh
                             </button>
                         </div>
+
+                        <form className="row g-2 mb-3" onSubmit={handleApplyFilters}>
+                            <div className="col-lg-5">
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Search by name or email"
+                                    value={searchInput}
+                                    onChange={(event) => setSearchInput(event.target.value)}
+                                />
+                            </div>
+                            <div className="col-lg-2">
+                                <select
+                                    className="form-select"
+                                    value={statusFilter}
+                                    onChange={(event) => {
+                                        setStatusFilter(event.target.value);
+                                        setPage(0);
+                                    }}
+                                >
+                                    <option value="all">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="pending">Pending</option>
+                                </select>
+                            </div>
+                            <div className="col-lg-2">
+                                <select
+                                    className="form-select"
+                                    value={roleFilter}
+                                    onChange={(event) => {
+                                        setRoleFilter(event.target.value);
+                                        setPage(0);
+                                    }}
+                                >
+                                    <option value="all">All Roles</option>
+                                    <option value="USER">User</option>
+                                    <option value="ADMIN">Admin</option>
+                                </select>
+                            </div>
+                            <div className="col-lg-1">
+                                <select
+                                    className="form-select"
+                                    value={size}
+                                    onChange={(event) => {
+                                        setSize(Number(event.target.value));
+                                        setPage(0);
+                                    }}
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={50}>50</option>
+                                </select>
+                            </div>
+                            <div className="col-lg-2 d-flex gap-2">
+                                <button type="submit" className="btn btn-primary w-100">Apply</button>
+                                <button type="button" className="btn btn-outline-secondary w-100" onClick={handleClearFilters}>
+                                    Clear
+                                </button>
+                            </div>
+                        </form>
 
                         <div className="table-responsive">
                             <table className="table table-hover">
@@ -184,6 +283,26 @@ const AdminDashboard = () => {
                                 <p className="mt-2">No users found</p>
                             </div>
                         )}
+
+                        <div className="d-flex justify-content-between align-items-center mt-3">
+                            <button
+                                className="btn btn-outline-primary btn-sm"
+                                onClick={() => setPage((currentPage) => Math.max(currentPage - 1, 0))}
+                                disabled={page === 0}
+                            >
+                                Previous
+                            </button>
+                            <span className="small text-muted">
+                                Page {totalPages === 0 ? 0 : page + 1} of {Math.max(totalPages, 1)}
+                            </span>
+                            <button
+                                className="btn btn-outline-primary btn-sm"
+                                onClick={() => setPage((currentPage) => currentPage + 1)}
+                                disabled={totalPages === 0 || page + 1 >= totalPages}
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

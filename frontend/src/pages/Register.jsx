@@ -29,8 +29,8 @@ const Register = () => {
             return;
         }
 
-        if (formData.password.length < 6) {
-            toast.error('Password must be at least 6 characters!');
+        if (formData.password.length < 12) {
+            toast.error('Password must be at least 12 characters.');
             return;
         }
 
@@ -113,10 +113,10 @@ const Register = () => {
                                 value={formData.password}
                                 onChange={handleChange}
                                 required
-                                minLength={6}
+                                minLength={12}
                             />
                         </div>
-                        <small className="text-muted">Must be at least 6 characters</small>
+                        <small className="text-muted">Minimum 12 chars with uppercase, lowercase, number, and symbol</small>
                     </div>
 
                     <div className="mb-4">

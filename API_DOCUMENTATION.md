@@ -7,6 +7,9 @@ Base URL: `http://localhost:8080/api`
 ## Authentication (`/auth`)
 
 These endpoints are public and do not require a JWT token (except for update-password which requires a reset token).
+Sensitive authentication endpoints include abuse protection and may return:
+- `429 Too Many Requests` (rate limit exceeded, with `Retry-After` header)
+- `423 Locked` (temporary account/OTP lock after repeated failures)
 
 ### 1. Register User
 **POST** `/auth/register`
@@ -18,7 +21,7 @@ Creates a new user account and sends an OTP for verification.
 {
   "name": "John Doe",
   "email": "john@example.com",
-  "password": "securepassword123"
+  "password": "StrongPass#2026"
 }
 ```
 
@@ -54,27 +57,64 @@ Verifies the user's email address using the OTP sent to their email.
 ### 3. Login
 **POST** `/auth/login`
 
-Authenticates a user and returns a JWT token.
+Authenticates a user and returns a short-lived access token.
+Also sets a long-lived refresh token in a secure HTTP-only cookie.
 
 **Request Body:**
 ```json
 {
   "email": "john@example.com",
-  "password": "securepassword123"
+  "password": "StrongPass#2026"
 }
 ```
 
 **Response (200 OK):**
 ```json
 {
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "tokenType": "Bearer",
+  "accessTokenExpiresInMs": 900000,
+  "refreshTokenExpiresInMs": 604800000,
+  "id": 2,
   "name": "John Doe",
   "email": "john@example.com",
-  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
   "roles": ["ROLE_USER"]
 }
 ```
 
-### 4. Forgot Password (Reset Request)
+### 4. Refresh Access Token
+**POST** `/auth/refresh`
+
+Uses refresh token cookie to rotate refresh token and issue a new access token.
+
+**Response (200 OK):**
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+  "tokenType": "Bearer",
+  "accessTokenExpiresInMs": 900000,
+  "refreshTokenExpiresInMs": 604800000,
+  "id": 2,
+  "name": "John Doe",
+  "email": "john@example.com",
+  "roles": ["ROLE_USER"]
+}
+```
+
+### 5. Logout
+**POST** `/auth/logout`
+
+Invalidates refresh token and clears refresh cookie.
+
+**Response (200 OK):**
+```json
+{
+  "message": "Logged out successfully.",
+  "success": true
+}
+```
+
+### 6. Forgot Password (Reset Request)
 **POST** `/auth/reset-password`
 
 Initiates the password reset process by sending a reset link (token) to the user's email.
@@ -94,7 +134,7 @@ Initiates the password reset process by sending a reset link (token) to the user
 }
 ```
 
-### 5. Update Password
+### 7. Update Password
 **POST** `/auth/update-password`
 
 Completes the password recovery process using a valid reset token.
@@ -103,7 +143,7 @@ Completes the password recovery process using a valid reset token.
 ```json
 {
   "token": "valid-reset-token-uuid",
-  "newPassword": "newsecurepassword123"
+  "newPassword": "NewStrongPass#2026"
 }
 ```
 
@@ -115,7 +155,7 @@ Completes the password recovery process using a valid reset token.
 }
 ```
 
-### 6. Resend OTP
+### 8. Resend OTP
 **POST** `/auth/resend-otp?email=john@example.com`
 
 Resends the verification OTP if the previous one expired or was lost.
@@ -136,7 +176,7 @@ Resends the verification OTP if the previous one expired or was lost.
 
 Requires Authentication header: `Authorization: Bearer <token>`
 
-### 7. Get User Dashboard
+### 9. Get User Dashboard
 **GET** `/user/dashboard`
 
 Returns dashboard data for the authenticated user.
@@ -150,7 +190,7 @@ Returns dashboard data for the authenticated user.
 }
 ```
 
-### 8. Get User Profile
+### 10. Get User Profile
 **GET** `/user/profile`
 
 Returns profile details of the authenticated user.
@@ -166,7 +206,7 @@ Returns profile details of the authenticated user.
 }
 ```
 
-### 9. Change Password
+### 11. Change Password
 **POST** `/user/change-password`
 
 Allows a logged-in user to change their password.
@@ -175,7 +215,7 @@ Allows a logged-in user to change their password.
 ```json
 {
   "currentPassword": "oldpassword123",
-  "newPassword": "newpassword123"
+  "newPassword": "NewStrongPass#2026"
 }
 ```
 
@@ -193,7 +233,7 @@ Allows a logged-in user to change their password.
 
 Requires Authentication header: `Authorization: Bearer <token>` (User must have `ROLE_ADMIN`)
 
-### 10. Get Admin Dashboard
+### 12. Get Admin Dashboard
 **GET** `/admin/dashboard`
 
 Returns specific data for the admin dashboard.
@@ -207,25 +247,48 @@ Returns specific data for the admin dashboard.
 }
 ```
 
-### 11. Get All Users
+### 13. Get Users (Paginated + Search/Filter)
 **GET** `/admin/users`
 
-Returns a list of all registered users in the system.
+Returns paginated users with optional search and filters.
+
+**Query Parameters (optional):**
+- `page` (default `0`)
+- `size` (default `20`, max `100`)
+- `search` (matches name/email)
+- `enabled` (`true` or `false`)
+- `role` (`USER`, `ADMIN`, `ROLE_USER`, `ROLE_ADMIN`)
+- `sortBy` (`id`, `name`, `email`, `enabled`, `createdAt`)
+- `sortDir` (`asc` or `desc`)
 
 **Response (200 OK):**
 ```json
-[
-  {
-    "id": 1,
-    "name": "Admin User",
-    "email": "admin@admin.com",
-    "roles": ["ROLE_USER", "ROLE_ADMIN"]
-  },
-  {
-    "id": 2,
-    "name": "John Doe",
-    "email": "john@example.com",
-    "roles": ["ROLE_USER"]
-  }
-]
+{
+  "content": [
+    {
+      "id": 1,
+      "name": "Admin User",
+      "email": "admin@admin.com",
+      "roles": ["ROLE_USER", "ROLE_ADMIN"],
+      "enabled": true
+    }
+  ],
+  "number": 0,
+  "size": 10,
+  "totalElements": 1,
+  "totalPages": 1
+}
 ```
+
+---
+
+## OAuth2 Login Entry Points
+
+Browser-based OAuth2 login endpoints:
+- `GET /oauth2/authorization/google`
+- `GET /oauth2/authorization/github`
+- `GET /oauth2/authorization/apple`
+- `GET /oauth2/authorization/linkedin`
+
+On success, backend redirects to frontend `/oauth2/callback` and sets refresh token cookie.
+Frontend then calls `POST /api/auth/refresh` to obtain a fresh access token.

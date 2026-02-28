@@ -1,6 +1,13 @@
 package com.auth.service;
 
-import com.auth.dto.*;
+import com.auth.dto.AuthTokens;
+import com.auth.dto.LoginRequest;
+import com.auth.dto.OtpVerifyRequest;
+import com.auth.dto.RegisterRequest;
+import com.auth.dto.ResetPasswordRequest;
+import com.auth.dto.UpdatePasswordRequest;
+import com.auth.dto.MessageResponse;
+import com.auth.dto.ChangePasswordRequest;
 
 /**
  * Service interface for authentication operations.
@@ -19,7 +26,7 @@ public interface AuthService {
     /**
      * Login user and return JWT token.
      */
-    AuthResponse login(LoginRequest request);
+    AuthTokens login(LoginRequest request);
 
     /**
      * Request password reset email.

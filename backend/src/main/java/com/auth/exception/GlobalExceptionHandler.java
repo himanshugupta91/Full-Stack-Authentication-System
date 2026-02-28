@@ -1,6 +1,7 @@
 package com.auth.exception;
 
 import com.auth.dto.MessageResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -61,6 +62,30 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TokenValidationException.class)
     public ResponseEntity<MessageResponse> handleTokenValidationException(TokenValidationException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new MessageResponse(ex.getMessage(), false));
+    }
+
+    /**
+     * Handle temporary account lockout errors.
+     */
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<MessageResponse> handleAccountLockedException(AccountLockedException ex) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, ex.getRetryAfterSeconds())));
+        return ResponseEntity.status(HttpStatus.LOCKED)
+                .headers(headers)
+                .body(new MessageResponse(ex.getMessage(), false));
+    }
+
+    /**
+     * Handle request-rate limit violations.
+     */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<MessageResponse> handleRateLimitExceededException(RateLimitExceededException ex) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, ex.getRetryAfterSeconds())));
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .headers(headers)
                 .body(new MessageResponse(ex.getMessage(), false));
     }
 

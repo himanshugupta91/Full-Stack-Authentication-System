@@ -7,25 +7,19 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * DTO for authentication response containing JWT token and user details.
+ * DTO for authentication response containing access token metadata and user details.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthResponse {
 
-    private String token;
-    private String type = "Bearer";
+    private String accessToken;
+    private String tokenType = "Bearer";
+    private long accessTokenExpiresInMs;
+    private long refreshTokenExpiresInMs;
     private Long id;
     private String name;
     private String email;
     private List<String> roles;
-
-    public AuthResponse(String token, Long id, String name, String email, List<String> roles) {
-        this.token = token;
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.roles = roles;
-    }
 }

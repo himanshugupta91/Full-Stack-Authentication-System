@@ -48,6 +48,27 @@ public class User {
     @Column(name = "reset_token_expiry")
     private LocalDateTime resetTokenExpiry;
 
+    @Column(name = "refresh_token", length = 512)
+    private String refreshToken;
+
+    @Column(name = "refresh_token_expiry")
+    private LocalDateTime refreshTokenExpiry;
+
+    @Column(name = "failed_login_attempts", nullable = false)
+    private int failedLoginAttempts = 0;
+
+    @Column(name = "account_locked_until")
+    private LocalDateTime accountLockedUntil;
+
+    @Column(name = "failed_otp_attempts", nullable = false)
+    private int failedOtpAttempts = 0;
+
+    @Column(name = "otp_locked_until")
+    private LocalDateTime otpLockedUntil;
+
+    @Column(name = "auth_provider")
+    private String authProvider;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -58,12 +79,14 @@ public class User {
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
+    /** Initializes create/update timestamps before first persistence. */
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
 
+    /** Updates the modification timestamp before each entity update. */
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();

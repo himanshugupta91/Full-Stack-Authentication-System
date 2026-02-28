@@ -1,86 +1,118 @@
-import { createContext, useContext, useState } from 'react';
-import { authAPI } from '../services/api';
+import { createContext, useContext, useEffect, useState } from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import {
+  ACCESS_TOKEN_KEY,
+  authAPI,
+  clearAuthStorage,
+  getStoredUser,
+  saveAuthPayload,
+} from '../services/api';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(() => {
-        const storedUser = localStorage.getItem('user');
-        return storedUser ? JSON.parse(storedUser) : null;
-    });
-    const [loading] = useState(false);
+  const [user, setUser] = useState(() => getStoredUser());
+  const [loading, setLoading] = useState(true);
 
-    const login = async (email, password) => {
-        const response = await authAPI.login({ email, password });
-        const userData = response.data;
+  useEffect(() => {
+    const bootstrapSession = async () => {
+      const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+      const storedUser = getStoredUser();
 
-        localStorage.setItem('token', userData.token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        setUser(userData);
+      if (token && storedUser) {
+        setUser(storedUser);
+        setLoading(false);
+        return;
+      }
 
-        return userData;
-    };
-
-    const register = async (name, email, password) => {
-        const response = await authAPI.register({ name, email, password });
-        return response.data;
-    };
-
-    const verifyOtp = async (email, otp) => {
-        const response = await authAPI.verifyOtp({ email, otp });
-        return response.data;
-    };
-
-    const resetPassword = async (email) => {
-        const response = await authAPI.resetPassword({ email });
-        return response.data;
-    };
-
-    const updatePassword = async (token, newPassword) => {
-        const response = await authAPI.updatePassword({ token, newPassword });
-        return response.data;
-    };
-
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+      try {
+        const response = await authAPI.refresh();
+        saveAuthPayload(response.data);
+        setUser(getStoredUser());
+      } catch {
+        clearAuthStorage();
         setUser(null);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const isAdmin = () => {
-        return user?.roles?.includes('ROLE_ADMIN');
-    };
+    bootstrapSession();
+  }, []);
 
-    const isAuthenticated = () => {
-        return !!user && !!localStorage.getItem('token');
-    };
+  const login = async (email, password) => {
+    const response = await authAPI.login({ email, password });
+    saveAuthPayload(response.data);
+    const currentUser = getStoredUser();
+    setUser(currentUser);
+    return response.data;
+  };
 
-    return (
-        <AuthContext.Provider
-            value={{
-                user,
-                loading,
-                login,
-                register,
-                verifyOtp,
-                resetPassword,
-                updatePassword,
-                logout,
-                isAdmin,
-                isAuthenticated,
-            }}
-        >
-            {loading ? <LoadingSpinner /> : children}
-        </AuthContext.Provider>
-    );
+  const completeOAuthLogin = async () => {
+    const response = await authAPI.refresh();
+    saveAuthPayload(response.data);
+    const currentUser = getStoredUser();
+    setUser(currentUser);
+    return currentUser;
+  };
+
+  const register = async (name, email, password) => {
+    const response = await authAPI.register({ name, email, password });
+    return response.data;
+  };
+
+  const verifyOtp = async (email, otp) => {
+    const response = await authAPI.verifyOtp({ email, otp });
+    return response.data;
+  };
+
+  const resetPassword = async (email) => {
+    const response = await authAPI.resetPassword({ email });
+    return response.data;
+  };
+
+  const updatePassword = async (token, newPassword) => {
+    const response = await authAPI.updatePassword({ token, newPassword });
+    return response.data;
+  };
+
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch {
+      // Ignore logout errors and clear local state.
+    } finally {
+      clearAuthStorage();
+      setUser(null);
+    }
+  };
+
+  const isAdmin = () => user?.roles?.includes('ROLE_ADMIN');
+
+  const isAuthenticated = () => !!user && !!localStorage.getItem(ACCESS_TOKEN_KEY);
+
+  const value = {
+    user,
+    loading,
+    login,
+    completeOAuthLogin,
+    register,
+    verifyOtp,
+    resetPassword,
+    updatePassword,
+    logout,
+    isAdmin,
+    isAuthenticated,
+  };
+
+  return <AuthContext.Provider value={value}>{loading ? <LoadingSpinner /> : children}</AuthContext.Provider>;
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

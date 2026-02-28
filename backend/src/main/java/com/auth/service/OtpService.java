@@ -3,7 +3,7 @@ package com.auth.service;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
-import java.util.UUID;
+import java.util.Base64;
 
 /**
  * Service for generating OTP codes and reset tokens.
@@ -25,6 +25,8 @@ public class OtpService {
      * Generate a unique password reset token.
      */
     public String generateResetToken() {
-        return UUID.randomUUID().toString();
+        byte[] randomBytes = new byte[32];
+        random.nextBytes(randomBytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
 }

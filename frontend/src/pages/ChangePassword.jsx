@@ -44,8 +44,8 @@ const ChangePassword = () => {
         }
 
         // Validation: Check password length
-        if (formData.newPassword.length < 6) {
-            toast.error("New password must be at least 6 characters long.");
+        if (formData.newPassword.length < 12) {
+            toast.error('New password must be at least 12 characters long.');
             setLoading(false);
             return;
         }
@@ -119,8 +119,10 @@ const ChangePassword = () => {
                                 value={formData.newPassword}
                                 onChange={handleChange}
                                 required
+                                minLength={12}
                             />
                         </div>
+                        <small className="text-muted">Minimum 12 chars with uppercase, lowercase, number, and symbol</small>
                     </div>
 
                     <div className="mb-4">
