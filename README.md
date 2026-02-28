@@ -1,10 +1,10 @@
 # 🛡️ Matrix Auth System
 
-A modern, production-ready full-stack authentication system featuring a premium **Matrix-inspired Glassmorphism UI**. Built with **Spring Boot 3** and **React 18**, this project combines robust security with a stunning, high-performance frontend.
+A modern, production-ready full-stack authentication system featuring a premium **Matrix-inspired Glassmorphism UI**. Built with **Spring Boot 3** and **React 19**, this project combines robust security with a stunning, high-performance frontend.
 
 ![License](https://img.shields.io/badge/license-MIT-0C7779.svg?style=flat-square)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.10-green.svg?style=flat-square)
-![React](https://img.shields.io/badge/React-18-blue.svg?style=flat-square)
+![React](https://img.shields.io/badge/React-19-blue.svg?style=flat-square)
 ![Java](https://img.shields.io/badge/Java-21-orange.svg?style=flat-square)
 ![Theme](https://img.shields.io/badge/Theme-Matrix%20Glass-000000.svg?style=flat-square)
 
@@ -14,7 +14,6 @@ A modern, production-ready full-stack authentication system featuring a premium 
 
 - [Tech Stack](#-tech-stack)
 - [UI/UX & Theming](#-uiux--theming)
-- [Screenshots](#-screenshots)
 - [High-Level System Architecture](#-high-level-system-architecture)
 - [Component Interaction Diagram](#-component-interaction-diagram)
 - [User Flow Diagrams](#-user-flow-diagrams)
@@ -39,11 +38,12 @@ A modern, production-ready full-stack authentication system featuring a premium 
 | | Hibernate | JPA Implementation |
 | | JJWT (Java JWT) | JWT Token generation & validation |
 | | Java Mail Sender | Sending emails (OTP, Password Reset) |
-| | MySQL 8.0 | Relational Database |
-| **Frontend** | React 18 | UI Library |
+| | PostgreSQL 16 | Relational Database |
+| | Redis 7 | Rate limiting and abuse protection |
+| **Frontend** | React 19 | UI Library |
 | | Vite | Next Gen Frontend Tooling |
 | | Axios | HTTP Client |
-| | React Router DOM 6 | Client-side routing |
+| | React Router DOM 7 | Client-side routing |
 | | Bootstrap 5 | CSS Framework for responsive UI |
 | | Bootstrap Icons | Icon library |
 
@@ -61,23 +61,6 @@ The application features a unique **Matrix Light** aesthetic designed for a prem
 
 ---
 
-## 📸 Screenshots
-
-### 🌟 Home Page
-![Home](screenshots/home.png)
-
-### 📱 Interface Overview
-
-| **Secure Login** | **User Registration** |
-|:---:|:---:|
-| ![Login](screenshots/login.png) | ![Register](screenshots/register.png) |
-
-| **Interactive Dashboard** |
-|:---:|
-| ![Dashboard](screenshots/dashboard.png) |
-
----
-
 ## 🏗️ High-Level System Architecture
 
 This diagram illustrates the overall architecture where the Client (React App) interacts with the Backend API (Spring Boot) through RESTful endpoints. The backend manages authentication, business logic, and database operations.
@@ -90,7 +73,7 @@ graph TD
     Security -->|"Authorized"| Controller["🎮 Rest Controllers"]
     Controller -->|"Business Logic"| Service["⚙️ Service Layer"]
     Service -->|"Data Access"| Repository["💾 Repository Layer"]
-    Repository -->|"SQL Queries"| Database[("🗄️ MySQL Database")]
+    Repository -->|"SQL Queries"| Database[("🗄️ PostgreSQL Database")]
     Service -->|"SMTP"| Email["📧 Email Service (Gmail)"]
     
     classDef default fill:#0C7779,stroke:#0A5C5E,stroke-width:2px,color:#fff,rx:8px,ry:8px;
@@ -114,7 +97,7 @@ sequenceDiagram
     participant Controller as AuthController
     participant Service as UserService
     participant Repo as UserRepository
-    participant DB as MySQL
+    participant DB as PostgreSQL
 
     User->>Frontend: Enter Credentials
     Frontend->>Controller: POST /api/auth/login
@@ -290,10 +273,7 @@ For a detailed guide on how to use the API (compatible with Postman), please ref
 | Method | Endpoint | Description | Access |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/dashboard` | View system-wide statistics | 🛡️ Admin |
-| `GET` | `/users` | Retrieve paginated list of users | 🛡️ Admin |
-| `GET` | `/users/{id}` | Get specific user details | 🛡️ Admin |
-| `PUT` | `/users/{id}` | Update user roles/status | 🛡️ Admin |
-| `DELETE` | `/users/{id}` | Delete a user account | 🛡️ Admin |
+| `GET` | `/users` | Retrieve users with pagination, search, role/status filters | 🛡️ Admin |
 
 </details>
 
@@ -329,7 +309,7 @@ These routes require both authentication and the `ROLE_ADMIN` authority.
 
 | Page | Path | API Service | API Endpoint | Method | Description |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Admin Dashboard** | `/admin` | `adminAPI.getDashboard`<br>`adminAPI.getUsers` | `/admin/dashboard`<br>`/admin/users` | GET<br>GET | Fetches overall system stats (total users, active users) and a list of all registered users in the platform. |
+| **Admin Dashboard** | `/admin` | `adminAPI.getDashboard`<br>`adminAPI.getUsers` | `/admin/dashboard`<br>`/admin/users?page=0&size=10&search=&enabled=&role=` | GET<br>GET | Fetches overall system stats and a paginated/searchable/filterable users table. |
 
 ### 💡 Key Notes on API Integration:
 * **Interceptors**: The application uses Axios interceptors (`src/services/api.js`) to automatically append the Bearer token to all requests if it exists in Local Storage.
@@ -343,13 +323,15 @@ These routes require both authentication and the `ROLE_ADMIN` authority.
 ### Prerequisites
 - **Java 21+**
 - Node.js 18+
-- MySQL 8.0+
+- PostgreSQL 16+
+- Redis 7+
 - Maven
 
 ### Backend Setup
 1.  Navigate to `/backend`.
-2.  Update `src/main/resources/application.properties` with your MySQL and Mail credentials.
-3.  Run application: `mvn spring-boot:run`
+2.  Copy `src/main/resources/application.properties.example` to `src/main/resources/application.properties`.
+3.  Update database, mail, JWT, and OAuth2 client credentials (Google, GitHub, Apple, LinkedIn).
+4.  Run application: `mvn spring-boot:run`
 
 ### Frontend Setup
 1.  Navigate to `/frontend`.
@@ -360,9 +342,9 @@ These routes require both authentication and the `ROLE_ADMIN` authority.
 
 ## 🗣️ About Project-
 
-"This project is a production-ready, full-stack authentication and user management system built from scratch using Java Spring Boot 3 on the backend and React 18 on the frontend. My primary goal was to implement a robust, stateless security architecture using Spring Security 6 and JSON Web Tokens (JWT), moving away from traditional server-side sessions to ensure the application could easily scale horizontally.
+"This project is a production-ready, full-stack authentication and user management system built from scratch using Java Spring Boot 3 on the backend and React 19 on the frontend. My primary goal was to implement a robust, stateless security architecture using Spring Security 6 and JSON Web Tokens (JWT), moving away from traditional server-side sessions to ensure the application could easily scale horizontally.
 
-On the backend, I designed a clean, layered RESTful API following solid architectural principles. I utilized DTOs for strict encapsulation, Spring Data JPA for optimized interactions with a MySQL database, and implemented a global exception-handling mechanism using `@RestControllerAdvice` to guarantee consistent, readable responses to the client. Additionally, to combat spam registrations, I integrated an asynchronous email service to handle OTP-based account verification.
+On the backend, I designed a clean, layered RESTful API following solid architectural principles. I utilized DTOs for strict encapsulation, Spring Data JPA for optimized interactions with a PostgreSQL database, and implemented a global exception-handling mechanism using `@RestControllerAdvice` to guarantee consistent, readable responses to the client. Additionally, to combat spam registrations, I integrated an asynchronous email service to handle OTP-based account verification.
 
 For the frontend, I wanted to showcase my ability to create premium user experiences. I built a custom 'Matrix Glassmorphism' UI using Vite and React, heavily leveraging backdrop filters and modern CSS to create a secure, visually stunning portal. I configured Axios interceptors to seamlessly attach JWTs to headers, ensuring absolute synchronization between the React application state and the stateless backend. The biggest challenge I solved was architecting secure cross-origin communication (CORS) and implementing strict role-based access control to protect administrative routes. Ultimately, this project demonstrates my capability to take complex security and business requirements and deliver a complete, polished, and secure end-to-end application."
 
@@ -430,4 +412,3 @@ Use these technical answers to demonstrate deep, framework-specific knowledge re
 
 22. **Environment Variables: Why do we verify that `application.properties` does not contain hardcoded API keys or database passwords before committing to GitHub?**
     Hardcoding extremely sensitive corporate infrastructure keys dynamically inside Git effectively compromises the system permanently globally, granting malicious web-scrapers full, immediate exploitation access physically. To neutralize this massive vulnerability, I heavily injected OS-level environment placeholders like `${DB_PASSWORD}` strictly inside the application configurations. This ensures configuration profiles are decoupled heavily to safe CI/CD deployment channels actively overriding them during Docker image compilation runs.
-
