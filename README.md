@@ -25,11 +25,11 @@
 
 ## About the Project
 
-Matrix Auth System is a full-stack authentication and authorization platform built for real-world user management use cases.  
-The backend is built with Spring Boot layered architecture (Controller, Service, Repository, Entity, DTO, Security).  
-The frontend is built with React 19 and Vite, with role-aware routing and token lifecycle handling.  
-The system supports email/password authentication, OTP verification, password reset, refresh-token rotation, and OAuth2 login.  
-Security and abuse protection are first-class concerns, implemented with Redis-backed rate limiting and account lock strategies.  
+Matrix Auth System is a full-stack authentication and authorization platform built for real-world user management use cases.
+The backend is built with Spring Boot layered architecture (Controller, Service, Repository, Entity, DTO, Security).
+The frontend is built with React 19 and Vite, with role-aware routing and token lifecycle handling.
+The system supports email/password authentication, OTP verification, password reset, refresh-token rotation, and OAuth2 login.
+Security and abuse protection are first-class concerns, implemented with Redis-backed rate limiting and account lock strategies.
 This project is structured to be interview-ready, production-oriented, and easy to extend for enterprise features.
 
 ---
@@ -224,25 +224,332 @@ classDiagram
 
 ## Sequence Diagram
 
-### Login + Refresh Cookie Flow
+### 1) Registration + OTP Verification + Resend Flow
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant AuthController
-    participant AuthService
-    participant AuthTokenService
-    participant UserRepository
-    participant DB
+    autonumber
+    actor User
+    participant FE as React Frontend
+    participant AC as AuthController
+    participant AAS as AuthAbuseProtectionService
+    participant APS as AuthPolicyService
+    participant AS as AuthService
+    participant Otp as OtpService
+    participant THS as TokenHashService
+    participant UR as UserRepository
+    participant REDIS as Redis
+    participant DB as PostgreSQL
+    participant MAIL as EmailService
 
-    Client->>AuthController: POST /api/auth/login
-    AuthController->>AuthService: login(request)
-    AuthService->>UserRepository: findByEmail(email)
-    UserRepository->>DB: SELECT user
-    DB-->>UserRepository: User
-    AuthService->>AuthTokenService: issueTokens(user)
-    AuthTokenService-->>AuthController: AuthTokens
-    AuthController-->>Client: 200 + accessToken + Set-Cookie(refreshToken)
+    User->>FE: Submit register form (name, email, password)
+    FE->>AC: POST /api/auth/register
+    AC->>AAS: checkRateLimit(register, ip+email)
+    AAS->>REDIS: INCR + EXPIRE window key
+    REDIS-->>AAS: count in window
+    alt rate limit exceeded
+        AAS-->>AC: throw RateLimitExceededException
+        AC-->>FE: 429 Too Many Requests + Retry-After
+    else allowed
+        AC->>APS: validatePasswordPolicy(password, email)
+        alt password invalid
+            APS-->>AC: throw ValidationException
+            AC-->>FE: 400 validation message
+        else password valid
+            AC->>AS: register(request)
+            AS->>UR: existsByEmail(email)
+            UR->>DB: SELECT count(*)
+            DB-->>UR: exists? true/false
+            alt email already exists
+                AS-->>AC: throw UserAlreadyExistsException
+                AC-->>FE: 409 Conflict
+            else email available
+                AS->>Otp: generateOtp()
+                Otp-->>AS: otpCode + expiry
+                AS->>THS: hashOpaqueToken(otpCode)
+                THS-->>AS: otpHash
+                AS->>UR: save(disabled user + otpHash + otpExpiry)
+                UR->>DB: INSERT user
+                DB-->>UR: persisted
+                AS->>MAIL: sendOtp(email, otpCode)
+                MAIL-->>AS: delivery accepted
+                AS-->>AC: MessageResponse("OTP sent")
+                AC-->>FE: 200 OK
+            end
+        end
+    end
+
+    User->>FE: Submit OTP
+    FE->>AC: POST /api/auth/verify-otp
+    AC->>AAS: checkRateLimit(verifyOtp, ip+email)
+    AAS->>REDIS: INCR + EXPIRE verify key
+    REDIS-->>AAS: attempt count
+    AC->>AS: verifyOtp(request)
+    AS->>UR: findByEmail(email)
+    UR->>DB: SELECT user
+    DB-->>UR: user row
+    AS->>THS: matchesHash(rawOtp, storedOtpHash)
+    alt invalid otp or expired
+        AS->>AAS: onOtpFailure(email)
+        AAS->>DB: increment failedOtpAttempts / lock if threshold hit
+        AS-->>AC: throw InvalidOtpException
+        AC-->>FE: 400/423 with retry guidance
+    else valid otp
+        AS->>AAS: clearOtpFailureState(email)
+        AS->>UR: save(enabled=true, clear otp fields)
+        UR->>DB: UPDATE user
+        DB-->>UR: updated
+        AS-->>AC: MessageResponse("Account verified")
+        AC-->>FE: 200 OK
+    end
+
+    User->>FE: Request OTP resend
+    FE->>AC: POST /api/auth/resend-otp?email=
+    AC->>AAS: checkRateLimit(resendOtp, ip+email)
+    AAS->>REDIS: INCR + EXPIRE resend key
+    REDIS-->>AAS: count
+    AC->>AS: resendOtp(email)
+    AS->>UR: findByEmail(email)
+    UR->>DB: SELECT user
+    DB-->>UR: user row
+    AS->>Otp: generateOtp()
+    AS->>THS: hashOpaqueToken(otpCode)
+    AS->>UR: save(new otpHash + otpExpiry)
+    UR->>DB: UPDATE user
+    AS->>MAIL: sendOtp(email, otpCode)
+    AC-->>FE: 200 OTP resent
+```
+
+### 2) Login + Refresh Rotation + Logout Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant FE as React Frontend
+    participant AC as AuthController
+    participant AAS as AuthAbuseProtectionService
+    participant AS as AuthService
+    participant AM as AuthenticationManager
+    participant UR as UserRepository
+    participant ATS as AuthTokenService
+    participant THS as TokenHashService
+    participant RCS as RefreshTokenCookieService
+    participant REDIS as Redis
+    participant DB as PostgreSQL
+
+    User->>FE: Submit email + password
+    FE->>AC: POST /api/auth/login
+    AC->>AAS: checkRateLimit(login, ip+email)
+    AAS->>REDIS: INCR + EXPIRE login key
+    REDIS-->>AAS: count
+    AC->>AS: login(request)
+    AS->>AAS: ensureAccountNotLocked(email)
+    AAS->>DB: read lock state
+    alt account locked
+        AAS-->>AS: AccountLockedException
+        AS-->>AC: propagate exception
+        AC-->>FE: 423 Locked + Retry-After
+    else not locked
+        AS->>AM: authenticate(email, password)
+        alt credentials invalid
+            AS->>AAS: onLoginFailure(email)
+            AAS->>DB: increment failed attempts / set lockedUntil
+            AS-->>AC: BadCredentialsException
+            AC-->>FE: 401 Unauthorized
+        else credentials valid
+            AM-->>AS: Authentication success
+            AS->>AAS: clearLoginFailureState(email)
+            AS->>UR: findByEmail(email)
+            UR->>DB: SELECT user + roles
+            DB-->>UR: user row
+            AS->>ATS: issueAccessToken(user, roles)
+            ATS-->>AS: accessToken
+            AS->>ATS: generateRefreshTokenValue()
+            ATS-->>AS: rawRefreshToken + expiry
+            AS->>THS: hashOpaqueToken(rawRefreshToken)
+            THS-->>AS: refreshHash
+            AS->>UR: save(refreshHash + refreshExpiry)
+            UR->>DB: UPDATE user
+            AS->>RCS: buildHttpOnlyCookie(rawRefreshToken, expiry)
+            RCS-->>AC: Set-Cookie header value
+            AS-->>AC: AuthResponse(accessToken, user info)
+            AC-->>FE: 200 + access token body + HttpOnly refresh cookie
+        end
+    end
+
+    Note over FE,AC: Access token expires
+    FE->>AC: POST /api/auth/refresh (cookie auto-sent)
+    AC->>AS: refreshAccessToken(refreshTokenFromCookie/body)
+    AS->>UR: findByRefreshTokenExpiryAfter(now)
+    UR->>DB: SELECT candidate user
+    DB-->>UR: user row
+    AS->>THS: matchesHash(rawRefreshToken, storedRefreshHash)
+    alt refresh invalid/expired
+        AS->>UR: clearRefreshTokenFields()
+        UR->>DB: UPDATE user
+        AS-->>AC: InvalidTokenException
+        AC-->>FE: 401 Unauthorized
+    else refresh valid
+        AS->>ATS: issueAccessToken(user, roles)
+        AS->>ATS: generateRefreshTokenValue() for rotation
+        AS->>THS: hashOpaqueToken(newRefreshToken)
+        AS->>UR: save(newRefreshHash + newExpiry)
+        UR->>DB: UPDATE user
+        AS->>RCS: buildHttpOnlyCookie(newRefreshToken)
+        AS-->>AC: new access token
+        AC-->>FE: 200 + rotated refresh cookie
+    end
+
+    User->>FE: Click logout
+    FE->>AC: POST /api/auth/logout
+    AC->>AS: logout(refreshToken)
+    AS->>UR: find user by refresh hash match
+    UR->>DB: SELECT user
+    DB-->>UR: user row
+    AS->>UR: clearRefreshTokenFields()
+    UR->>DB: UPDATE user
+    AS->>RCS: buildExpiredCookie()
+    AC-->>FE: 200 + Set-Cookie(maxAge=0)
+```
+
+### 3) Forgot Password + Update Password Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant FE as React Frontend
+    participant AC as AuthController
+    participant AAS as AuthAbuseProtectionService
+    participant APS as AuthPolicyService
+    participant AS as AuthService
+    participant THS as TokenHashService
+    participant UR as UserRepository
+    participant MAIL as EmailService
+    participant REDIS as Redis
+    participant DB as PostgreSQL
+
+    User->>FE: Enter email for reset
+    FE->>AC: POST /api/auth/reset-password
+    AC->>AAS: checkRateLimit(resetRequest, ip+email)
+    AAS->>REDIS: INCR + EXPIRE reset key
+    REDIS-->>AAS: count
+    AC->>AS: resetPassword(email)
+    AS->>UR: findByEmail(email)
+    UR->>DB: SELECT user
+    DB-->>UR: user row / null
+    alt user exists
+        AS->>AS: generateRawResetToken()
+        AS->>THS: hashOpaqueToken(resetToken)
+        AS->>UR: save(resetHash + resetExpiry)
+        UR->>DB: UPDATE user
+        AS->>MAIL: sendResetLinkOrCode(email, resetToken)
+    else user missing
+        AS->>AS: no-op to avoid user enumeration
+    end
+    AC-->>FE: 200 generic response
+
+    User->>FE: Submit new password + reset token
+    FE->>AC: POST /api/auth/update-password
+    AC->>AAS: checkRateLimit(updatePassword, ip+email)
+    AAS->>REDIS: INCR + EXPIRE update key
+    REDIS-->>AAS: count
+    AC->>APS: validatePasswordPolicy(newPassword, email)
+    AC->>AS: updatePassword(token, newPassword)
+    AS->>UR: findByResetTokenExpiryAfter(now)
+    UR->>DB: SELECT candidate user
+    DB-->>UR: user row
+    AS->>THS: matchesHash(rawToken, storedResetHash)
+    alt token invalid/expired
+        AS-->>AC: InvalidTokenException
+        AC-->>FE: 400/401
+    else token valid
+        AS->>AS: encodePassword(BCrypt)
+        AS->>UR: save(newPasswordHash, clear reset fields, clear refresh fields)
+        UR->>DB: UPDATE user
+        AC-->>FE: 200 Password updated
+    end
+```
+
+### 4) OAuth2 Login (No Access Token in Callback URL)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant FE as React Frontend
+    participant AC as AuthController
+    participant SP as Spring Security OAuth2
+    participant OP as OAuth Provider
+    participant OSH as OAuth2AuthenticationSuccessHandler
+    participant AS as AuthService
+    participant ATS as AuthTokenService
+    participant THS as TokenHashService
+    participant UR as UserRepository
+    participant RCS as RefreshTokenCookieService
+    participant DB as PostgreSQL
+
+    User->>FE: Click "Continue with Google/GitHub"
+    FE->>SP: GET /oauth2/authorization/{provider}
+    SP->>OP: Redirect user to provider auth page
+    OP-->>SP: Callback with authorization code
+    SP->>OP: Exchange code for provider user info
+    OP-->>SP: user profile (email, name, providerId)
+    SP->>OSH: onAuthenticationSuccess(authentication)
+    OSH->>AS: resolveOrCreateOAuthUser(profile)
+    AS->>UR: findByEmail(email)
+    UR->>DB: SELECT user
+    DB-->>UR: user row / null
+    alt first login
+        AS->>UR: save(new enabled user + ROLE_USER + provider)
+        UR->>DB: INSERT user
+    else existing user
+        AS->>UR: update provider metadata if needed
+        UR->>DB: UPDATE user
+    end
+    OSH->>ATS: issueAccessToken(user)
+    OSH->>ATS: generateRefreshTokenValue()
+    OSH->>THS: hashOpaqueToken(refreshToken)
+    OSH->>UR: save(refreshHash + expiry)
+    UR->>DB: UPDATE user
+    OSH->>RCS: buildHttpOnlyCookie(refreshToken)
+    OSH-->>FE: Redirect to frontend callback route (no token in query)
+    FE->>AC: POST /api/auth/refresh (cookie present)
+    AC->>AS: refreshAccessToken(cookieRefreshToken)
+    AS-->>AC: AuthResponse(accessToken)
+    AC-->>FE: Access token in response body
+```
+
+### 5) Admin Users Pagination + Filter + Search Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin
+    participant FE as React Frontend
+    participant JWT as JwtAuthFilter
+    participant ADC as AdminController
+    participant ADS as AdminService
+    participant SPEC as UserSpecificationBuilder
+    participant UR as UserRepository(JpaSpecificationExecutor)
+    participant DB as PostgreSQL
+
+    Admin->>FE: Open admin users page
+    FE->>JWT: GET /api/admin/users?page=0&size=20&search=john&enabled=true&role=ADMIN&sortBy=createdAt&sortDir=desc
+    JWT-->>ADC: Authenticated principal with ROLE_ADMIN
+    ADC->>ADS: getUsers(pageable, filters)
+    ADS->>ADS: validatePageSize(max=100)
+    ADS->>ADS: normalizeRole(USER/ADMIN -> ROLE_*)
+    ADS->>SPEC: build(search, enabled, role)
+    SPEC-->>ADS: JPA Specification<User>
+    ADS->>UR: findAll(specification, pageable)
+    UR->>DB: SELECT ... FROM users JOIN roles WHERE filters ORDER BY ... LIMIT ... OFFSET ...
+    DB-->>UR: page rows + total count
+    UR-->>ADS: Page<User>
+    ADS->>ADS: map entities to UserDto page
+    ADS-->>ADC: Paged response
+    ADC-->>FE: 200 with content, page, size, totalElements, totalPages
 ```
 
 ---
@@ -458,19 +765,19 @@ npm run build
 
 ### Security reminder
 
-Do not keep mail/JWT/OAuth secrets in committed config for production.  
+Do not keep mail/JWT/OAuth secrets in committed config for production.
 Use environment variables or external secret managers.
 
 ---
 
 ## How to Explain This Project in an Interview
 
-This is a full-stack authentication platform designed with production security and maintainability in mind.  
-On the backend, I used Spring Boot layered architecture and kept controllers thin by placing business rules in services.  
-I implemented JWT-based stateless auth with refresh-token rotation, secure cookie handling, and token hashing at rest.  
-I added abuse protection with Redis-backed rate limits and temporary lockouts for login, OTP, and password reset endpoints.  
-For admin scalability, I designed paginated and filterable user APIs using JPA Specifications.  
-On the frontend, I integrated role-protected routes, centralized auth context, and automatic token refresh handling.  
+This is a full-stack authentication platform designed with production security and maintainability in mind.
+On the backend, I used Spring Boot layered architecture and kept controllers thin by placing business rules in services.
+I implemented JWT-based stateless auth with refresh-token rotation, secure cookie handling, and token hashing at rest.
+I added abuse protection with Redis-backed rate limits and temporary lockouts for login, OTP, and password reset endpoints.
+For admin scalability, I designed paginated and filterable user APIs using JPA Specifications.
+On the frontend, I integrated role-protected routes, centralized auth context, and automatic token refresh handling.
 Overall, this project demonstrates secure API design, clean architecture, and practical end-to-end delivery.
 
 ---
@@ -478,165 +785,163 @@ Overall, this project demonstrates secure API design, clean architecture, and pr
 ## Java Spring Boot Developer — 20 Q&A
 
 ### Q1. Why did you keep business logic in services and not controllers?
-I keep controllers limited to transport concerns such as request mapping, DTO binding, and HTTP status output.  
-This makes business logic reusable from multiple entry points and easier to unit test in isolation.  
-It also prevents controller classes from becoming fragile when requirements grow.  
-In real projects, cross-cutting logic like retries, lock checks, and transaction boundaries belongs in services.  
-When logic lives in services, architecture reviews and onboarding become faster because flow is consistent.  
+I keep controllers limited to transport concerns such as request mapping, DTO binding, and HTTP status output.
+This makes business logic reusable from multiple entry points and easier to unit test in isolation.
+It also prevents controller classes from becoming fragile when requirements grow.
+In real projects, cross-cutting logic like retries, lock checks, and transaction boundaries belongs in services.
+When logic lives in services, architecture reviews and onboarding become faster because flow is consistent.
 This approach reduced regression risk when I moved admin filtering logic out of `AdminController`.
 
 ### Q2. How do you handle login securely in this project?
-I authenticate credentials using Spring Security’s `AuthenticationManager` and never compare plaintext manually.  
-Passwords are stored with BCrypt, so even a database leak does not reveal real passwords directly.  
-After successful auth, I issue short-lived access tokens and separate refresh tokens.  
-Refresh tokens are stored hashed in DB and delivered in HttpOnly cookies.  
-I also clear failure counters on success to avoid accidental lock persistence.  
+I authenticate credentials using Spring Security’s `AuthenticationManager` and never compare plaintext manually.
+Passwords are stored with BCrypt, so even a database leak does not reveal real passwords directly.
+After successful auth, I issue short-lived access tokens and separate refresh tokens.
+Refresh tokens are stored hashed in DB and delivered in HttpOnly cookies.
+I also clear failure counters on success to avoid accidental lock persistence.
 This balances UX and security while keeping stateless access control for APIs.
 
 ### Q3. Why use refresh token rotation instead of static refresh tokens?
-Static refresh tokens increase replay risk if one token is leaked and remains valid for long periods.  
-Rotation replaces refresh tokens on each refresh call, reducing window of misuse.  
-In this system, old refresh token hashes are replaced with a new hash and new expiry.  
-If token validation fails, refresh state is cleared and user must re-authenticate.  
-This approach is widely used in production auth systems for stronger session protection.  
+Static refresh tokens increase replay risk if one token is leaked and remains valid for long periods.
+Rotation replaces refresh tokens on each refresh call, reducing window of misuse.
+In this system, old refresh token hashes are replaced with a new hash and new expiry.
+If token validation fails, refresh state is cleared and user must re-authenticate.
+This approach is widely used in production auth systems for stronger session protection.
 It is especially useful when frontend and backend are separated across origins.
 
 ### Q4. How do you prevent brute-force attacks?
-I implemented endpoint-level rate limits via Redis counters and windowed thresholds.  
-Separate keys are used for IP and email dimensions to reduce bypass vectors.  
-I also track failed login and OTP attempts on user records for temporary lockouts.  
-When thresholds are exceeded, API returns `429` or `423` with `Retry-After`.  
-These controls protect both infrastructure and user accounts from credential stuffing.  
+I implemented endpoint-level rate limits via Redis counters and windowed thresholds.
+Separate keys are used for IP and email dimensions to reduce bypass vectors.
+I also track failed login and OTP attempts on user records for temporary lockouts.
+When thresholds are exceeded, API returns `429` or `423` with `Retry-After`.
+These controls protect both infrastructure and user accounts from credential stuffing.
 The thresholds are externalized in properties so tuning does not need code changes.
 
 ### Q5. Why hash reset/OTP/refresh tokens before storing them?
-Storing raw tokens means anyone with DB read access can immediately hijack flows.  
-I hash these opaque tokens with SHA-256 plus server-side pepper before persistence.  
-Validation hashes incoming token and compares using constant-time operations.  
-This follows the same principle as password hashing: never store reusable secrets in plaintext.  
-It significantly reduces blast radius in partial data compromise scenarios.  
+Storing raw tokens means anyone with DB read access can immediately hijack flows.
+I hash these opaque tokens with SHA-256 plus server-side pepper before persistence.
+Validation hashes incoming token and compares using constant-time operations.
+This follows the same principle as password hashing: never store reusable secrets in plaintext.
+It significantly reduces blast radius in partial data compromise scenarios.
 This was a deliberate hardening step for reset and refresh flows.
 
 ### Q6. How do you ensure admin user listing scales?
-The admin list endpoint uses pagination with bounded page size and server-side filtering.  
-I used `JpaSpecificationExecutor` to compose dynamic query criteria cleanly.  
-Search is done on name/email; role and enabled status are optional filters.  
-Sort fields are allowlisted to prevent invalid/unindexed sort behavior.  
-This avoids `findAll()` memory blowups and keeps response times predictable.  
+The admin list endpoint uses pagination with bounded page size and server-side filtering.
+I used `JpaSpecificationExecutor` to compose dynamic query criteria cleanly.
+Search is done on name/email; role and enabled status are optional filters.
+Sort fields are allowlisted to prevent invalid/unindexed sort behavior.
+This avoids `findAll()` memory blowups and keeps response times predictable.
 It also supports UI pagination and filter chips without overfetching.
 
 ### Q7. Why use DTOs even when entities already exist?
-Entities represent persistence shape, but API contracts should remain stable and explicit.  
-DTOs prevent exposing internal columns such as hashed tokens or lock counters.  
-They also keep validation constraints close to request boundaries.  
-When database schema evolves, DTO contracts can remain backward compatible.  
-This separation reduces accidental data leaks and coupling between layers.  
+Entities represent persistence shape, but API contracts should remain stable and explicit.
+DTOs prevent exposing internal columns such as hashed tokens or lock counters.
+They also keep validation constraints close to request boundaries.
+When database schema evolves, DTO contracts can remain backward compatible.
+This separation reduces accidental data leaks and coupling between layers.
 In this project, `UserDto` and `AuthResponse` are examples of that boundary.
 
 ### Q8. How do you handle global errors consistently?
-I use a centralized exception handler with `@ControllerAdvice`.  
-Each known exception maps to a clear HTTP status and a `MessageResponse` body.  
-Validation, bad credentials, token errors, rate limits, and lockouts are handled separately.  
-For rate and lock cases, response includes `Retry-After` header for client behavior.  
-This prevents ad-hoc error handling duplicated across controllers.  
+I use a centralized exception handler with `@ControllerAdvice`.
+Each known exception maps to a clear HTTP status and a `MessageResponse` body.
+Validation, bad credentials, token errors, rate limits, and lockouts are handled separately.
+For rate and lock cases, response includes `Retry-After` header for client behavior.
+This prevents ad-hoc error handling duplicated across controllers.
 It gives frontend a consistent error contract for all APIs.
 
 ### Q9. What is the purpose of `CustomUserDetailsService`?
-Spring Security needs a `UserDetailsService` to load identities and authorities.  
-My implementation loads user by email and maps roles to granted authorities.  
-It bridges domain user model and Spring Security’s authentication pipeline.  
-Without this mapping, role-based checks in security config and `@PreAuthorize` fail.  
-It also centralizes normalization and not-found behavior in one place.  
+Spring Security needs a `UserDetailsService` to load identities and authorities.
+My implementation loads user by email and maps roles to granted authorities.
+It bridges domain user model and Spring Security’s authentication pipeline.
+Without this mapping, role-based checks in security config and `@PreAuthorize` fail.
+It also centralizes normalization and not-found behavior in one place.
 This keeps auth stack aligned with repository data.
 
 ### Q10. How do OAuth2 logins integrate with local accounts?
-On OAuth callback, I extract provider identity and resolve reliable email/name attributes.  
-If user exists, I update provider metadata and enable account if needed.  
-If user does not exist, I provision a local account with ROLE_USER.  
-Then I issue the same internal access/refresh tokens used by password login.  
-This creates a unified downstream authorization model regardless of auth provider.  
+On OAuth callback, I extract provider identity and resolve reliable email/name attributes.
+If user exists, I update provider metadata and enable account if needed.
+If user does not exist, I provision a local account with ROLE_USER.
+Then I issue the same internal access/refresh tokens used by password login.
+This creates a unified downstream authorization model regardless of auth provider.
 It simplifies frontend because all post-login flows are identical.
 
 ### Q11. Why not send access token in OAuth callback URL?
-Tokens in query strings leak through browser history, server logs, and referrers.  
-Instead, callback redirects without token material in URL.  
-Frontend then calls refresh endpoint and gets access token through controlled channel.  
-Refresh token remains in HttpOnly cookie and cannot be read by JS directly.  
-This design reduces accidental credential disclosure in normal operations.  
+Tokens in query strings leak through browser history, server logs, and referrers.
+Instead, callback redirects without token material in URL.
+Frontend then calls refresh endpoint and gets access token through controlled channel.
+Refresh token remains in HttpOnly cookie and cannot be read by JS directly.
+This design reduces accidental credential disclosure in normal operations.
 It’s a practical security improvement over naive OAuth callback implementations.
 
 ### Q12. How is password policy enforced in real behavior?
-Policy is enforced in service layer during registration, reset update, and password change.  
-Rules include length, character classes, whitespace rejection, and blocklist checks.  
-I also reject passwords containing email local-part to reduce guessability.  
-Because checks are centralized, all entry points apply same policy consistently.  
-Clients receive clear validation messages when policy fails.  
+Policy is enforced in service layer during registration, reset update, and password change.
+Rules include length, character classes, whitespace rejection, and blocklist checks.
+I also reject passwords containing email local-part to reduce guessability.
+Because checks are centralized, all entry points apply same policy consistently.
+Clients receive clear validation messages when policy fails.
 This prevents weak passwords from entering system through alternate flows.
 
 ### Q13. How do you test this backend manually end-to-end?
-I use a phase-based manual test plan: baseline, auth, reset, admin, abuse, CORS, OAuth.  
-Each step uses concrete curl commands and explicit expected status codes.  
-I validate cookie behavior, retry headers, and role-restricted endpoints separately.  
-For admin APIs, I test pagination bounds and invalid filter/sort combinations.  
-For abuse controls, I verify transition from `401` to `429`/`423`.  
+I use a phase-based manual test plan: baseline, auth, reset, admin, abuse, CORS, OAuth.
+Each step uses concrete curl commands and explicit expected status codes.
+I validate cookie behavior, retry headers, and role-restricted endpoints separately.
+For admin APIs, I test pagination bounds and invalid filter/sort combinations.
+For abuse controls, I verify transition from `401` to `429`/`423`.
 This catches integration issues that unit tests alone may miss.
 
 ### Q14. What transactions are important in this project?
-Critical state-changing operations are annotated with `@Transactional`.  
-Examples include token rotation, password reset updates, and account verification steps.  
-This ensures partial updates do not leave inconsistent user state.  
-If an exception occurs mid-flow, DB changes roll back atomically.  
-I keep read-heavy methods non-transactional unless consistency demands otherwise.  
+Critical state-changing operations are annotated with `@Transactional`.
+Examples include token rotation, password reset updates, and account verification steps.
+This ensures partial updates do not leave inconsistent user state.
+If an exception occurs mid-flow, DB changes roll back atomically.
+I keep read-heavy methods non-transactional unless consistency demands otherwise.
 The goal is correctness first, then performance-aware scope.
 
 ### Q15. Why use Redis here instead of DB counters for rate limiting?
-Redis offers low-latency atomic increment and TTL semantics ideal for rate windows.  
-DB-based counters under heavy traffic create write contention and cleanup overhead.  
-With Redis, key expiry naturally handles window reset.  
-I can also namespace keys by endpoint, IP, and email dimensions cleanly.  
-If Redis is unavailable, current implementation fails open to avoid auth outage.  
+Redis offers low-latency atomic increment and TTL semantics ideal for rate windows.
+DB-based counters under heavy traffic create write contention and cleanup overhead.
+With Redis, key expiry naturally handles window reset.
+I can also namespace keys by endpoint, IP, and email dimensions cleanly.
+If Redis is unavailable, current implementation fails open to avoid auth outage.
 That behavior can be adjusted per environment risk tolerance.
 
 ### Q16. How do you protect routes by role?
-Security config defines route-level constraints for `/api/user/**` and `/api/admin/**`.  
-At method level, I also use `@PreAuthorize` for explicit authorization checks.  
-JWT filter populates `SecurityContext` with authorities from user roles.  
-Role strings are standardized (`ROLE_USER`, `ROLE_ADMIN`) for consistency.  
-Unauthorized access returns `403` while unauthenticated returns `401`.  
+Security config defines route-level constraints for `/api/user/**` and `/api/admin/**`.
+At method level, I also use `@PreAuthorize` for explicit authorization checks.
+JWT filter populates `SecurityContext` with authorities from user roles.
+Role strings are standardized (`ROLE_USER`, `ROLE_ADMIN`) for consistency.
+Unauthorized access returns `403` while unauthenticated returns `401`.
 This dual-layer model reduces accidental exposure during future endpoint additions.
 
 ### Q17. How would you make this production-ready beyond local setup?
-First, move secrets to env vars or secret manager and rotate any exposed credentials.  
-Second, replace `ddl-auto=create-drop` with migration tooling like Flyway.  
-Third, enforce HTTPS and `cookie-secure=true` in production deployments.  
-Fourth, add observability: metrics, structured logs, distributed tracing, alerts.  
-Fifth, add integration/security tests in CI and stricter static checks.  
+First, move secrets to env vars or secret manager and rotate any exposed credentials.
+Second, replace `ddl-auto=create-drop` with migration tooling like Flyway.
+Third, enforce HTTPS and `cookie-secure=true` in production deployments.
+Fourth, add observability: metrics, structured logs, distributed tracing, alerts.
+Fifth, add integration/security tests in CI and stricter static checks.
 These steps convert a solid dev system into operationally reliable software.
 
 ### Q18. How do you handle CORS safely with credentials?
-CORS allows only trusted frontend origins, not wildcard, when credentials are enabled.  
-I explicitly allow required methods and headers and expose needed headers only.  
-Credentialed requests require exact origin matching by browser policy.  
-This is crucial because refresh cookie flow depends on `withCredentials=true`.  
-Misconfigured CORS causes login/refresh failures that look like auth bugs.  
+CORS allows only trusted frontend origins, not wildcard, when credentials are enabled.
+I explicitly allow required methods and headers and expose needed headers only.
+Credentialed requests require exact origin matching by browser policy.
+This is crucial because refresh cookie flow depends on `withCredentials=true`.
+Misconfigured CORS causes login/refresh failures that look like auth bugs.
 So I always validate preflight behavior early in manual testing.
 
 ### Q19. Why layered architecture for this project instead of quick monolith style?
-Layered architecture gives predictable boundaries and easier team collaboration.  
-New developers can quickly locate logic in controller/service/repository paths.  
-Refactors like moving business logic from controllers become safe and incremental.  
-Testing strategy is cleaner: unit test services, integration test controllers/repositories.  
-It also keeps technical debt lower as features like MFA or audit trails are added.  
+Layered architecture gives predictable boundaries and easier team collaboration.
+New developers can quickly locate logic in controller/service/repository paths.
+Refactors like moving business logic from controllers become safe and incremental.
+Testing strategy is cleaner: unit test services, integration test controllers/repositories.
+It also keeps technical debt lower as features like MFA or audit trails are added.
 For interview projects, this strongly demonstrates engineering discipline.
 
 ### Q20. What was the hardest real issue you solved here?
-A major issue was keeping security hardening aligned with frontend usability.  
-Token rotation, cookie path/samesite handling, and OAuth callback flow had to work together.  
-At the same time, abuse protection needed strong limits without locking legitimate users too early.  
-I solved this by centralizing policy in services and externalizing thresholds in properties.  
-Then I validated behavior using a strict manual phase plan and endpoint smoke checks.  
+A major issue was keeping security hardening aligned with frontend usability.
+Token rotation, cookie path/samesite handling, and OAuth callback flow had to work together.
+At the same time, abuse protection needed strong limits without locking legitimate users too early.
+I solved this by centralizing policy in services and externalizing thresholds in properties.
+Then I validated behavior using a strict manual phase plan and endpoint smoke checks.
 The result is a backend that is both secure and practical for real user traffic.
 
 ---
-
-If you want, I can also generate matching `README_INTERVIEW_SHORT.md` and `README_TECHNICAL_DEEP_DIVE.md` versions (short recruiter version + deep engineer version).
