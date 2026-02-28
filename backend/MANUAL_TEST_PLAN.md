@@ -642,5 +642,3 @@ Mark each as PASS/FAIL:
 13. OAuth2 callback flow (if configured)
 
 ---
-
-If you want, I can also create a Postman collection JSON and environment file matching this exact plan.
