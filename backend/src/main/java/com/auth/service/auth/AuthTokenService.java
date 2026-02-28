@@ -1,4 +1,4 @@
-package com.auth.service;
+package com.auth.service.auth;
 
 import com.auth.dto.AuthResponse;
 import com.auth.dto.AuthTokens;
@@ -6,6 +6,7 @@ import com.auth.entity.User;
 import com.auth.exception.TokenValidationException;
 import com.auth.security.JwtUtil;
 import com.auth.service.UserService;
+import com.auth.service.support.TokenHashService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,9 +1,10 @@
-package com.auth.service;
+package com.auth.service.auth;
 
 import com.auth.entity.User;
 import com.auth.exception.AccountLockedException;
 import com.auth.exception.RateLimitExceededException;
 import com.auth.service.UserService;
+import com.auth.service.support.RateLimitService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

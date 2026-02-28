@@ -15,11 +15,12 @@
 11. [Activity Diagram](#activity-diagram)
 12. [4.4 Database Design — ER Diagram](#44-database-design--er-diagram)
 13. [4.5 User Interface Design](#45-user-interface-design)
-14. [API Endpoints](#api-endpoints)
-15. [Project Structure](#project-structure)
-16. [Getting Started](#getting-started)
-17. [How to Explain This Project in an Interview](#how-to-explain-this-project-in-an-interview)
-18. [Java Spring Boot Developer — 20 Q&A](#java-spring-boot-developer--20-qa)
+14. [Screenshots](#screenshots)
+15. [API Endpoints](#api-endpoints)
+16. [Project Structure](#project-structure)
+17. [Getting Started](#getting-started)
+18. [How to Explain This Project in an Interview](#how-to-explain-this-project-in-an-interview)
+19. [Java Spring Boot Developer — 20 Q&A](#java-spring-boot-developer--20-qa)
 
 ---
 
@@ -635,6 +636,21 @@ Frontend design goals and implementation choices:
 5. Responsive layout with Bootstrap components and utility classes.
 6. Aesthetic layer: Matrix rain animation with reduced-motion fallback for accessibility.
 7. Mobile stability: Bootstrap JS bundle is loaded for navbar collapse/dropdowns.
+
+---
+
+## Screenshots
+
+### Authentication Flow
+
+![Registration](screenshots/Screenshot%202026-02-28%20at%204.25.26%E2%80%AFPM.png)
+![OTP Verification](screenshots/Screenshot%202026-02-28%20at%204.25.36%E2%80%AFPM.png)
+![Login](screenshots/Screenshot%202026-02-28%20at%204.25.44%E2%80%AFPM.png)
+
+### Dashboard Views
+
+![User Dashboard](screenshots/Screenshot%202026-02-28%20at%204.27.39%E2%80%AFPM.png)
+![Admin Dashboard](screenshots/Screenshot%202026-02-28%20at%204.28.17%E2%80%AFPM.png)
 
 ---
 

@@ -9,7 +9,7 @@ import com.auth.dto.RegisterRequest;
 import com.auth.dto.ResetPasswordRequest;
 import com.auth.dto.TokenRefreshRequest;
 import com.auth.dto.UpdatePasswordRequest;
-import com.auth.service.AuthTokenService;
+import com.auth.service.auth.AuthTokenService;
 import com.auth.service.AuthService;
 import com.auth.dto.MessageResponse;
 import jakarta.servlet.http.Cookie;

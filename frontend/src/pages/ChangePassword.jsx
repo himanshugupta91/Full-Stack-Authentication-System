@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_HINT, validatePassword } from '../utils/passwordPolicy';
 
 /**
  * ChangePassword Component
@@ -18,7 +19,7 @@ const ChangePassword = () => {
     });
     const [loading, setLoading] = useState(false);
 
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -43,9 +44,9 @@ const ChangePassword = () => {
             return;
         }
 
-        // Validation: Check password length
-        if (formData.newPassword.length < 12) {
-            toast.error('New password must be at least 12 characters long.');
+        const passwordError = validatePassword(formData.newPassword, user?.email);
+        if (passwordError) {
+            toast.error(passwordError);
             setLoading(false);
             return;
         }
@@ -119,10 +120,10 @@ const ChangePassword = () => {
                                 value={formData.newPassword}
                                 onChange={handleChange}
                                 required
-                                minLength={12}
+                                minLength={PASSWORD_MIN_LENGTH}
                             />
                         </div>
-                        <small className="text-muted">Minimum 12 chars with uppercase, lowercase, number, and symbol</small>
+                        <small className="text-muted">{PASSWORD_POLICY_HINT}</small>
                     </div>
 
                     <div className="mb-4">

@@ -2,8 +2,8 @@ package com.auth.security;
 
 import com.auth.dto.AuthTokens;
 import com.auth.entity.User;
-import com.auth.service.AuthTokenService;
-import com.auth.service.OAuth2UserProvisioningService;
+import com.auth.service.auth.AuthTokenService;
+import com.auth.service.auth.OAuth2UserProvisioningService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

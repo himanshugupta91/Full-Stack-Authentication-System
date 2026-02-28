@@ -1,4 +1,4 @@
-package com.auth.service;
+package com.auth.service.auth;
 
 import com.auth.entity.Role;
 import com.auth.entity.User;

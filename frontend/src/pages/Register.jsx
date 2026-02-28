@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_HINT, validatePassword } from '../utils/passwordPolicy';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -29,8 +30,9 @@ const Register = () => {
             return;
         }
 
-        if (formData.password.length < 12) {
-            toast.error('Password must be at least 12 characters.');
+        const passwordError = validatePassword(formData.password, formData.email);
+        if (passwordError) {
+            toast.error(passwordError);
             return;
         }
 
@@ -113,10 +115,10 @@ const Register = () => {
                                 value={formData.password}
                                 onChange={handleChange}
                                 required
-                                minLength={12}
+                                minLength={PASSWORD_MIN_LENGTH}
                             />
                         </div>
-                        <small className="text-muted">Minimum 12 chars with uppercase, lowercase, number, and symbol</small>
+                        <small className="text-muted">{PASSWORD_POLICY_HINT}</small>
                     </div>
 
                     <div className="mb-4">
