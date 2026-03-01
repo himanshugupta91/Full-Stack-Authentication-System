@@ -287,17 +287,17 @@ sequenceDiagram
     Note over User,MAIL: Registration
     User->>FE: Submit register form
     FE->>API: POST /api/auth/register
-    API->>REDIS: Rate-limit check (ip + email)
+    API->>REDIS: Rate-limit check
     alt rate limit exceeded
         API-->>FE: 429 Too Many Requests
     else allowed
-        API->>SVC: validatePolicy + register()
+    API->>SVC: validatePolicy and register()
         alt email exists
             SVC-->>API: 409 Conflict
         else email available
             SVC->>DB: Save disabled user + hashed OTP
             SVC->>MAIL: Send OTP email
-            SVC-->>API: 200 "OTP sent"
+            SVC-->>API: 200 OTP sent
         end
     end
     API-->>FE: Response
@@ -306,14 +306,14 @@ sequenceDiagram
     User->>FE: Submit OTP code
     FE->>API: POST /api/auth/verify-otp
     API->>REDIS: Rate-limit check
-    API->>SVC: verifyOtp()
+    API->>SVC: verifyOtp
     SVC->>DB: Load user + compare hashed OTP
     alt invalid or expired
         SVC->>DB: Increment failedOtpAttempts
         SVC-->>API: 400 / 423 Locked
     else valid
         SVC->>DB: Enable user + clear OTP fields
-        SVC-->>API: 200 "Account verified"
+        SVC-->>API: 200 Account verified
     end
     API-->>FE: Response
 
@@ -321,10 +321,10 @@ sequenceDiagram
     User->>FE: Request resend
     FE->>API: POST /api/auth/resend-otp
     API->>REDIS: Rate-limit check
-    API->>SVC: resendOtp()
+    API->>SVC: resendOtp
     SVC->>DB: Update user with new hashed OTP
     SVC->>MAIL: Send new OTP
-    API-->>FE: 200 "OTP resent"
+    API-->>FE: 200 OTP resent
 ```
 
 ### 2) Login + Refresh Rotation + Logout Flow
@@ -342,13 +342,13 @@ sequenceDiagram
     Note over User,REDIS: Login
     User->>FE: Submit email + password
     FE->>API: POST /api/auth/login
-    API->>REDIS: Rate-limit check (ip + email)
-    API->>SVC: login()
+    API->>REDIS: Rate-limit check
+    API->>SVC: login
     SVC->>DB: Check account lock state
     alt account locked
         SVC-->>API: 423 Locked + Retry-After
     else not locked
-        SVC->>SVC: AuthenticationManager.authenticate()
+        SVC->>SVC: AuthenticationManager authenticate
         alt credentials invalid
             SVC->>DB: Increment failed attempts / lock
             SVC-->>API: 401 Unauthorized
@@ -356,14 +356,14 @@ sequenceDiagram
             SVC->>DB: Clear failure state + load roles
             SVC->>SVC: Issue JWT access token
             SVC->>DB: Save hashed refresh token
-            SVC-->>API: AuthResponse + Set-Cookie (HttpOnly)
+            SVC-->>API: AuthResponse + Set-Cookie HttpOnly
         end
     end
     API-->>FE: Response
 
     Note over FE,REDIS: Token Refresh (rotation)
-    FE->>API: POST /api/auth/refresh (cookie auto-sent)
-    API->>SVC: refreshAccessToken()
+    FE->>API: POST /api/auth/refresh
+    API->>SVC: refreshAccessToken
     SVC->>DB: Match hashed refresh token
     alt invalid / expired
         SVC->>DB: Clear refresh fields
@@ -378,7 +378,7 @@ sequenceDiagram
     Note over User,REDIS: Logout
     User->>FE: Click logout
     FE->>API: POST /api/auth/logout
-    API->>SVC: logout()
+    API->>SVC: logout
     SVC->>DB: Clear refresh token fields
     SVC-->>API: 200 + Set-Cookie maxAge=0
     API-->>FE: Logged out
@@ -401,7 +401,7 @@ sequenceDiagram
     User->>FE: Enter email for reset
     FE->>API: POST /api/auth/reset-password
     API->>REDIS: Rate-limit check
-    API->>SVC: resetPassword(email)
+    API->>SVC: resetPassword email
     SVC->>DB: Find user by email
     alt user exists
         SVC->>DB: Save hashed reset token + expiry
@@ -415,7 +415,7 @@ sequenceDiagram
     User->>FE: Enter new password + token
     FE->>API: POST /api/auth/update-password
     API->>REDIS: Rate-limit check
-    API->>SVC: validatePolicy + updatePassword()
+    API->>SVC: validatePolicy and updatePassword
     SVC->>DB: Match hashed reset token
     alt token invalid / expired
         SVC-->>API: 400 / 401
@@ -447,15 +447,15 @@ sequenceDiagram
     OP-->>SEC: email, name, providerId
 
     Note over SEC,DB: Token Issuance (Success Handler)
-    SEC->>SVC: resolveOrCreateOAuthUser(profile)
-    SVC->>DB: Find or create user + assign ROLE_USER
+    SEC->>SVC: resolveOrCreateOAuthUser profile
+    SVC->>DB: Find or create user and assign ROLE_USER
     SVC->>DB: Save hashed refresh token
     SVC-->>SEC: User resolved
-    SEC-->>FE: Redirect (no token in URL) + HttpOnly cookie
+    SEC-->>FE: Redirect to frontend with HttpOnly cookie
 
     Note over FE,DB: Access Token Retrieval
-    FE->>SEC: POST /api/auth/refresh (cookie auto-sent)
-    SEC->>SVC: refreshAccessToken()
+    FE->>SEC: POST /api/auth/refresh
+    SEC->>SVC: refreshAccessToken
     SVC-->>SEC: AuthResponse with accessToken
     SEC-->>FE: Access token in response body
 ```
@@ -471,17 +471,17 @@ sequenceDiagram
     participant SVC as AdminService
     participant DB as PostgreSQL
 
-    Admin->>FE: Open admin users page (with filters)
-    FE->>API: GET /api/admin/users?page=0&size=20&search=john&role=ADMIN
+    Admin->>FE: Open admin users page with filters
+    FE->>API: GET /api/admin/users
     Note right of API: JWT filter authenticates ROLE_ADMIN
-    API->>SVC: getUsers(pageable, filters)
-    SVC->>SVC: Validate page size + normalize role
+    API->>SVC: getUsers pageable filters
+    SVC->>SVC: Validate page size and normalize role
     SVC->>SVC: Build JPA Specification
-    SVC->>DB: SELECT … WHERE filters ORDER BY … LIMIT … OFFSET …
-    DB-->>SVC: Page rows + total count
-    SVC->>SVC: Map entities → UserDto
+    SVC->>DB: SELECT with filters ORDER BY LIMIT OFFSET
+    DB-->>SVC: Page rows and total count
+    SVC->>SVC: Map entities to UserDto
     SVC-->>API: Paged response
-    API-->>FE: 200 {content, page, size, totalElements, totalPages}
+    API-->>FE: 200 JSON with content page size totalElements
 ```
 
 </details>
