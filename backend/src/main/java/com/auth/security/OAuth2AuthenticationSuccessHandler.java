@@ -4,6 +4,7 @@ import com.auth.dto.AuthTokens;
 import com.auth.entity.User;
 import com.auth.service.auth.AuthTokenService;
 import com.auth.service.auth.OAuth2UserProvisioningService;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -37,6 +38,17 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
+    private String oauthCallbackUrl;
+
+    @PostConstruct
+    void initializeRedirectTarget() {
+        oauthCallbackUrl = UriComponentsBuilder
+                .fromUriString(frontendUrl)
+                .path(OAUTH2_CALLBACK_PATH)
+                .build(true)
+                .toUriString();
+    }
+
     /** Provisions local user data and redirects to frontend callback with a fresh access token. */
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -51,12 +63,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         response.addHeader(HttpHeaders.SET_COOKIE,
                 refreshTokenCookieService.buildRefreshTokenCookie(tokenResult.refreshToken()));
 
-        String targetUrl = UriComponentsBuilder
-                .fromUriString(frontendUrl + OAUTH2_CALLBACK_PATH)
-                .build(true)
-                .toUriString();
-
         clearAuthenticationAttributes(request);
-        getRedirectStrategy().sendRedirect(request, response, targetUrl);
+        getRedirectStrategy().sendRedirect(request, response, oauthCallbackUrl);
     }
 }

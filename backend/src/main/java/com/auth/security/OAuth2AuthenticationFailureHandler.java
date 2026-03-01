@@ -1,5 +1,6 @@
 package com.auth.security;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,9 +23,21 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
     private static final String LOGIN_PATH = "/login";
     private static final String OAUTH_ERROR_QUERY_PARAM = "oauthError";
     private static final String FALLBACK_ERROR_MESSAGE = "OAuth login failed.";
+    private static final int MAX_ERROR_MESSAGE_LENGTH = 240;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
+
+    private String frontendLoginUrl;
+
+    @PostConstruct
+    void initializeRedirectTarget() {
+        frontendLoginUrl = UriComponentsBuilder
+                .fromUriString(frontendUrl)
+                .path(LOGIN_PATH)
+                .build(true)
+                .toUriString();
+    }
 
     /** Redirects failed OAuth2 attempts back to frontend login with the error message. */
     @Override
@@ -41,7 +54,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
                 rootCause.getMessage());
 
         String targetUrl = UriComponentsBuilder
-                .fromUriString(frontendUrl + LOGIN_PATH)
+                .fromUriString(frontendLoginUrl)
                 .queryParam(OAUTH_ERROR_QUERY_PARAM, errorMessage)
                 .build()
                 .encode()
@@ -52,10 +65,13 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
     private String resolveErrorMessage(AuthenticationException exception) {
         String message = exception.getMessage();
-        if (message == null) {
+        if (message == null || message.isBlank()) {
             return FALLBACK_ERROR_MESSAGE;
         }
-        return message;
+        if (message.length() <= MAX_ERROR_MESSAGE_LENGTH) {
+            return message;
+        }
+        return message.substring(0, MAX_ERROR_MESSAGE_LENGTH);
     }
 
     private Throwable resolveRootCause(AuthenticationException exception) {

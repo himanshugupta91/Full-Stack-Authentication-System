@@ -9,7 +9,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -41,33 +40,16 @@ public class OAuth2UserProvisioningService {
     private final PasswordEncoder passwordEncoder;
 
     /** Loads an existing OAuth user or creates a local enabled user profile when first seen. */
-    @Transactional
     public User loadOrCreateUser(OAuth2AuthenticationToken authenticationToken, OAuth2User oauth2User) {
-        String provider = authenticationToken.getAuthorizedClientRegistrationId();
+        String provider = normalize(authenticationToken.getAuthorizedClientRegistrationId());
         Map<String, Object> attributes = oauth2User.getAttributes();
 
-        String email = extractEmail(provider, attributes);
+        String email = normalize(extractEmail(provider, attributes));
         String name = extractDisplayName(attributes, email);
 
         Optional<User> existingUser = userService.findByEmail(email);
         if (existingUser.isPresent()) {
-            User user = existingUser.get();
-            boolean changed = false;
-
-            if (!user.isEnabled()) {
-                user.setEnabled(true);
-                changed = true;
-            }
-
-            if (!hasText(user.getAuthProvider())) {
-                user.setAuthProvider(provider);
-                changed = true;
-            }
-
-            if (changed) {
-                user = userService.save(user);
-            }
-            return user;
+            return updateExistingUserIfNeeded(existingUser.get(), provider, name);
         }
 
         User newUser = new User();
@@ -84,15 +66,40 @@ public class OAuth2UserProvisioningService {
         return userService.save(newUser);
     }
 
+    /** Updates existing OAuth-linked users only when persistence changes are required. */
+    private User updateExistingUserIfNeeded(User user, String provider, String displayName) {
+        boolean changed = false;
+
+        if (!user.isEnabled()) {
+            user.setEnabled(true);
+            changed = true;
+        }
+
+        if (!hasText(user.getAuthProvider()) && hasText(provider)) {
+            user.setAuthProvider(provider);
+            changed = true;
+        }
+
+        if (!hasText(user.getName()) && hasText(displayName)) {
+            user.setName(displayName);
+            changed = true;
+        }
+
+        if (!changed) {
+            return user;
+        }
+        return userService.save(user);
+    }
+
     /** Extracts a reliable email from provider attributes with provider-specific fallback logic. */
     private String extractEmail(String provider, Map<String, Object> attributes) {
-        String email = toString(attributes.get(EMAIL_ATTRIBUTE));
+        String email = normalize(toString(attributes.get(EMAIL_ATTRIBUTE)));
         if (hasText(email)) {
             return email;
         }
 
         if (GITHUB_PROVIDER.equals(provider)) {
-            String login = toString(attributes.get(LOGIN_ATTRIBUTE));
+            String login = normalize(toString(attributes.get(LOGIN_ATTRIBUTE)));
             if (hasText(login)) {
                 return login + GITHUB_NO_REPLY_SUFFIX;
             }
@@ -104,16 +111,16 @@ public class OAuth2UserProvisioningService {
     /** Resolves a display name from known OAuth profile attributes. */
     private String extractDisplayName(Map<String, Object> attributes, String email) {
         String name = firstNonBlank(
-                toString(attributes.get(NAME_ATTRIBUTE)),
-                toString(attributes.get(PREFERRED_USERNAME_ATTRIBUTE)),
-                toString(attributes.get(LOGIN_ATTRIBUTE)));
+                normalize(toString(attributes.get(NAME_ATTRIBUTE))),
+                normalize(toString(attributes.get(PREFERRED_USERNAME_ATTRIBUTE))),
+                normalize(toString(attributes.get(LOGIN_ATTRIBUTE))));
 
         if (name != null) {
             return name;
         }
 
-        String givenName = toString(attributes.get(GIVEN_NAME_ATTRIBUTE));
-        String familyName = toString(attributes.get(FAMILY_NAME_ATTRIBUTE));
+        String givenName = normalize(toString(attributes.get(GIVEN_NAME_ATTRIBUTE)));
+        String familyName = normalize(toString(attributes.get(FAMILY_NAME_ATTRIBUTE)));
         String combinedName = firstNonBlank(
                 joinWithSpace(givenName, familyName),
                 givenName,
@@ -157,6 +164,13 @@ public class OAuth2UserProvisioningService {
             return null;
         }
         return String.valueOf(value);
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.trim();
     }
 
     private boolean hasText(String value) {
