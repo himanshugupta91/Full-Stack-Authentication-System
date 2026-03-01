@@ -19,6 +19,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -29,8 +30,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-
-    private static final String LOGOUT_SUCCESS_MESSAGE = "Logged out successfully.";
 
     private final AuthService authService;
 
@@ -66,7 +65,8 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse httpResponse) {
         AuthTokens authTokens = authService.login(request);
         setRefreshTokenCookie(httpResponse, authTokens.refreshToken());
-        return ResponseEntity.ok(authTokens.response());
+        AuthResponse authResponse = authTokens.response();
+        return ResponseEntity.ok(authResponse);
     }
 
     /**
@@ -82,7 +82,8 @@ public class AuthController {
 
         AuthTokens authTokens = authTokenService.refreshTokens(refreshToken);
         setRefreshTokenCookie(httpResponse, authTokens.refreshToken());
-        return ResponseEntity.ok(authTokens.response());
+        AuthResponse authResponse = authTokens.response();
+        return ResponseEntity.ok(authResponse);
     }
 
     /**
@@ -98,7 +99,8 @@ public class AuthController {
         authTokenService.revokeRefreshToken(refreshToken);
 
         httpResponse.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookieService.clearRefreshTokenCookie());
-        return ResponseEntity.ok(new MessageResponse(LOGOUT_SUCCESS_MESSAGE, true));
+        MessageResponse response = new MessageResponse("Logged out successfully.", true);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -133,13 +135,15 @@ public class AuthController {
 
     /** Resolves refresh token from request body first, then from configured cookie. */
     private String resolveRefreshToken(HttpServletRequest request, TokenRefreshRequest body) {
-        if (body != null && hasText(body.getRefreshToken())) {
-            return body.getRefreshToken();
+        if (body != null && StringUtils.hasText(body.getRefreshToken())) {
+            String requestBodyToken = body.getRefreshToken();
+            return requestBodyToken;
         }
-        return extractTokenFromCookies(request);
+        String cookieToken = findRefreshTokenInCookies(request);
+        return cookieToken;
     }
 
-    private String extractTokenFromCookies(HttpServletRequest request) {
+    private String findRefreshTokenInCookies(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
             return null;
@@ -149,7 +153,7 @@ public class AuthController {
         for (Cookie cookie : cookies) {
             if (refreshCookieName.equals(cookie.getName())) {
                 String cookieValue = cookie.getValue();
-                if (hasText(cookieValue)) {
+                if (StringUtils.hasText(cookieValue)) {
                     return cookieValue;
                 }
             }
@@ -160,9 +164,5 @@ public class AuthController {
 
     private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookieService.buildRefreshTokenCookie(refreshToken));
-    }
-
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
     }
 }

@@ -21,13 +21,15 @@ public class RateLimitService {
     /** Consumes one request token and returns allowance metadata. */
     public RateLimitDecision consume(String key, long limit, Duration window) {
         if (limit <= 0 || window == null || window.isNegative() || window.isZero()) {
-            return new RateLimitDecision(true, -1, 0, limit);
+            RateLimitDecision allowedDecision = new RateLimitDecision(true, -1, 0, limit);
+            return allowedDecision;
         }
 
         try {
             Long currentCount = redisTemplate.opsForValue().increment(key);
             if (currentCount == null) {
-                return new RateLimitDecision(true, -1, 0, limit);
+                RateLimitDecision allowedDecision = new RateLimitDecision(true, -1, 0, limit);
+                return allowedDecision;
             }
 
             if (currentCount == 1) {
@@ -37,11 +39,13 @@ public class RateLimitService {
             Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);
             long retryAfterSeconds = ttl == null || ttl < 0 ? window.getSeconds() : ttl;
             boolean allowed = currentCount <= limit;
-            return new RateLimitDecision(allowed, retryAfterSeconds, currentCount, limit);
+            RateLimitDecision decision = new RateLimitDecision(allowed, retryAfterSeconds, currentCount, limit);
+            return decision;
         } catch (Exception exception) {
             // Fail open on Redis outages to avoid full auth downtime.
             log.warn("Rate limiting unavailable for key={}", key, exception);
-            return new RateLimitDecision(true, -1, 0, limit);
+            RateLimitDecision allowedDecision = new RateLimitDecision(true, -1, 0, limit);
+            return allowedDecision;
         }
     }
 

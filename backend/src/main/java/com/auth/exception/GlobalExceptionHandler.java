@@ -10,8 +10,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Global exception handler for REST controllers.
@@ -108,27 +110,14 @@ public class GlobalExceptionHandler {
     }
 
     private String buildValidationErrorMessage(List<FieldError> fieldErrors) {
-        StringBuilder messageBuilder = new StringBuilder();
-        boolean firstMessageAdded = false;
+        String message = fieldErrors.stream()
+                .map(FieldError::getDefaultMessage)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.joining(", "));
 
-        for (FieldError fieldError : fieldErrors) {
-            String defaultMessage = fieldError.getDefaultMessage();
-            if (defaultMessage == null || defaultMessage.isBlank()) {
-                continue;
-            }
-
-            if (firstMessageAdded) {
-                messageBuilder.append(", ");
-            }
-
-            messageBuilder.append(defaultMessage);
-            firstMessageAdded = true;
-        }
-
-        if (!firstMessageAdded) {
+        if (!StringUtils.hasText(message)) {
             return "Validation failed.";
         }
-
-        return messageBuilder.toString();
+        return message;
     }
 }

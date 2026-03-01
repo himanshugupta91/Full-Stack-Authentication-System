@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -22,21 +23,6 @@ import java.util.Locale;
 @Service
 @RequiredArgsConstructor
 public class AuthAbuseProtectionService {
-
-    private static final String UNKNOWN_IP = "unknown";
-    private static final String UNKNOWN_EMAIL = "unknown-email";
-    private static final String HEADER_X_FORWARDED_FOR = "X-Forwarded-For";
-    private static final String HEADER_X_REAL_IP = "X-Real-IP";
-    private static final String FORWARDED_FOR_SEPARATOR = ",";
-    private static final String RATE_LIMIT_LOGIN_IP_KEY_PREFIX = "auth:login:ip:";
-    private static final String RATE_LIMIT_LOGIN_EMAIL_KEY_PREFIX = "auth:login:email:";
-    private static final String RATE_LIMIT_OTP_VERIFY_IP_KEY_PREFIX = "auth:otp-verify:ip:";
-    private static final String RATE_LIMIT_OTP_VERIFY_EMAIL_KEY_PREFIX = "auth:otp-verify:email:";
-    private static final String RATE_LIMIT_RESEND_OTP_EMAIL_COOLDOWN_KEY_PREFIX = "auth:resend-otp:email-cooldown:";
-    private static final String RATE_LIMIT_RESEND_OTP_EMAIL_KEY_PREFIX = "auth:resend-otp:email:";
-    private static final String RATE_LIMIT_RESEND_OTP_IP_KEY_PREFIX = "auth:resend-otp:ip:";
-    private static final String RATE_LIMIT_RESET_PASSWORD_EMAIL_KEY_PREFIX = "auth:reset-password:email:";
-    private static final String RATE_LIMIT_RESET_PASSWORD_IP_KEY_PREFIX = "auth:reset-password:ip:";
 
     private final RateLimitService rateLimitService;
     private final UserService userService;
@@ -94,16 +80,16 @@ public class AuthAbuseProtectionService {
 
     /** Checks login endpoint rate limits and active account lock state. */
     public void guardLoginAttempt(String email) {
-        if (!protectionEnabled) {
+        if (isProtectionDisabled()) {
             return;
         }
 
         String normalizedEmail = normalizeEmail(email);
         String clientIp = resolveClientIp();
 
-        enforce(buildRateLimitKey(RATE_LIMIT_LOGIN_IP_KEY_PREFIX, clientIp), loginIpLimit, loginIpWindowSeconds,
+        enforce(buildRateLimitKey("auth:login:ip:", clientIp), loginIpLimit, loginIpWindowSeconds,
                 "Too many login attempts from this IP. Please retry later.");
-        enforce(buildRateLimitKey(RATE_LIMIT_LOGIN_EMAIL_KEY_PREFIX, normalizedEmail), loginEmailLimit,
+        enforce(buildRateLimitKey("auth:login:email:", normalizedEmail), loginEmailLimit,
                 loginEmailWindowSeconds,
                 "Too many login attempts for this account. Please retry later.");
 
@@ -112,7 +98,7 @@ public class AuthAbuseProtectionService {
 
     /** Increments failed login attempts and applies temporary lockout when threshold is crossed. */
     public void recordFailedLogin(String email) {
-        if (!protectionEnabled) {
+        if (isProtectionDisabled()) {
             return;
         }
 
@@ -122,11 +108,7 @@ public class AuthAbuseProtectionService {
 
     /** Clears login brute-force counters on successful authentication. */
     public void clearLoginFailures(User user) {
-        if (!protectionEnabled) {
-            return;
-        }
-
-        if (user == null) {
+        if (isProtectionDisabled() || isMissingUser(user)) {
             return;
         }
 
@@ -141,17 +123,17 @@ public class AuthAbuseProtectionService {
 
     /** Checks OTP verification rate limits and OTP-specific lock state. */
     public void guardOtpVerification(String email) {
-        if (!protectionEnabled) {
+        if (isProtectionDisabled()) {
             return;
         }
 
         String normalizedEmail = normalizeEmail(email);
         String clientIp = resolveClientIp();
 
-        enforce(buildRateLimitKey(RATE_LIMIT_OTP_VERIFY_IP_KEY_PREFIX, clientIp), otpVerifyIpLimit,
+        enforce(buildRateLimitKey("auth:otp-verify:ip:", clientIp), otpVerifyIpLimit,
                 otpVerifyIpWindowSeconds,
                 "Too many OTP verification attempts from this IP. Please retry later.");
-        enforce(buildRateLimitKey(RATE_LIMIT_OTP_VERIFY_EMAIL_KEY_PREFIX, normalizedEmail), otpVerifyEmailLimit,
+        enforce(buildRateLimitKey("auth:otp-verify:email:", normalizedEmail), otpVerifyEmailLimit,
                 otpVerifyEmailWindowSeconds,
                 "Too many OTP verification attempts for this email. Please retry later.");
 
@@ -160,11 +142,7 @@ public class AuthAbuseProtectionService {
 
     /** Increments OTP failure counter and applies temporary OTP lockout. */
     public void recordFailedOtp(User user) {
-        if (!protectionEnabled) {
-            return;
-        }
-
-        if (user == null) {
+        if (isProtectionDisabled() || isMissingUser(user)) {
             return;
         }
 
@@ -180,11 +158,7 @@ public class AuthAbuseProtectionService {
 
     /** Clears OTP brute-force counters after successful OTP verification. */
     public void clearOtpFailures(User user) {
-        if (!protectionEnabled) {
-            return;
-        }
-
-        if (user == null) {
+        if (isProtectionDisabled() || isMissingUser(user)) {
             return;
         }
 
@@ -199,37 +173,37 @@ public class AuthAbuseProtectionService {
 
     /** Applies resend-OTP endpoint limits (cooldown + window limits per email and IP). */
     public void guardResendOtp(String email) {
-        if (!protectionEnabled) {
+        if (isProtectionDisabled()) {
             return;
         }
 
         String normalizedEmail = normalizeEmail(email);
         String clientIp = resolveClientIp();
 
-        enforce(buildRateLimitKey(RATE_LIMIT_RESEND_OTP_EMAIL_COOLDOWN_KEY_PREFIX, normalizedEmail), 1,
+        enforce(buildRateLimitKey("auth:resend-otp:email-cooldown:", normalizedEmail), 1,
                 resendOtpCooldownSeconds,
                 "Please wait before requesting another OTP.");
-        enforce(buildRateLimitKey(RATE_LIMIT_RESEND_OTP_EMAIL_KEY_PREFIX, normalizedEmail), resendOtpEmailLimit,
+        enforce(buildRateLimitKey("auth:resend-otp:email:", normalizedEmail), resendOtpEmailLimit,
                 resendOtpEmailWindowSeconds,
                 "Too many OTP resend requests for this email. Please retry later.");
-        enforce(buildRateLimitKey(RATE_LIMIT_RESEND_OTP_IP_KEY_PREFIX, clientIp), resendOtpIpLimit,
+        enforce(buildRateLimitKey("auth:resend-otp:ip:", clientIp), resendOtpIpLimit,
                 resendOtpIpWindowSeconds,
                 "Too many OTP resend requests from this IP. Please retry later.");
     }
 
     /** Applies forgot-password endpoint limits per email and IP. */
     public void guardResetPassword(String email) {
-        if (!protectionEnabled) {
+        if (isProtectionDisabled()) {
             return;
         }
 
         String normalizedEmail = normalizeEmail(email);
         String clientIp = resolveClientIp();
 
-        enforce(buildRateLimitKey(RATE_LIMIT_RESET_PASSWORD_EMAIL_KEY_PREFIX, normalizedEmail), resetPasswordEmailLimit,
+        enforce(buildRateLimitKey("auth:reset-password:email:", normalizedEmail), resetPasswordEmailLimit,
                 resetPasswordEmailWindowSeconds,
                 "Too many password reset requests for this email. Please retry later.");
-        enforce(buildRateLimitKey(RATE_LIMIT_RESET_PASSWORD_IP_KEY_PREFIX, clientIp), resetPasswordIpLimit,
+        enforce(buildRateLimitKey("auth:reset-password:ip:", clientIp), resetPasswordIpLimit,
                 resetPasswordIpWindowSeconds,
                 "Too many password reset requests from this IP. Please retry later.");
     }
@@ -272,44 +246,35 @@ public class AuthAbuseProtectionService {
     private String resolveClientIp() {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attributes == null) {
-            return UNKNOWN_IP;
+            return "unknown";
         }
 
         HttpServletRequest request = attributes.getRequest();
-        String forwardedFor = request.getHeader(HEADER_X_FORWARDED_FOR);
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            String[] chain = forwardedFor.split(FORWARDED_FOR_SEPARATOR);
-            if (chain.length > 0 && !chain[0].isBlank()) {
-                return chain[0].trim();
-            }
+        String forwardedIp = extractForwardedClientIp(request);
+        if (forwardedIp != null) {
+            return forwardedIp;
         }
 
-        String realIp = request.getHeader(HEADER_X_REAL_IP);
-        if (realIp != null && !realIp.isBlank()) {
-            return realIp.trim();
+        String realIp = trimToNull(request.getHeader("X-Real-IP"));
+        if (realIp != null) {
+            return realIp;
         }
 
-        String remoteAddress = request.getRemoteAddr();
-        if (remoteAddress == null) {
-            return UNKNOWN_IP;
-        }
-
-        if (remoteAddress.isBlank()) {
-            return UNKNOWN_IP;
-        }
-
-        return remoteAddress.trim();
+        String remoteAddress = trimToNull(request.getRemoteAddr());
+        return remoteAddress != null ? remoteAddress : "unknown";
     }
 
     private String normalizeEmail(String email) {
-        if (email == null || email.isBlank()) {
-            return UNKNOWN_EMAIL;
+        if (!StringUtils.hasText(email)) {
+            return "unknown-email";
         }
-        return email.trim().toLowerCase(Locale.ROOT);
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        return normalizedEmail;
     }
 
     private String buildRateLimitKey(String prefix, String keyPart) {
-        return prefix + keyPart;
+        String rateLimitKey = prefix + keyPart;
+        return rateLimitKey;
     }
 
     private void applyFailedLoginAttempt(User user) {
@@ -325,11 +290,13 @@ public class AuthAbuseProtectionService {
     }
 
     private boolean hasLoginFailureState(User user) {
-        return user.getFailedLoginAttempts() != 0 || user.getAccountLockedUntil() != null;
+        boolean hasLoginFailureState = user.getFailedLoginAttempts() != 0 || user.getAccountLockedUntil() != null;
+        return hasLoginFailureState;
     }
 
     private boolean hasOtpFailureState(User user) {
-        return user.getFailedOtpAttempts() != 0 || user.getOtpLockedUntil() != null;
+        boolean hasOtpFailureState = user.getFailedOtpAttempts() != 0 || user.getOtpLockedUntil() != null;
+        return hasOtpFailureState;
     }
 
     private boolean isActiveLock(LocalDateTime lockedUntil) {
@@ -338,11 +305,45 @@ public class AuthAbuseProtectionService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        return lockedUntil.isAfter(now);
+        boolean isActiveLock = lockedUntil.isAfter(now);
+        return isActiveLock;
     }
 
     private long computeRetryAfterSeconds(LocalDateTime lockedUntil) {
         LocalDateTime now = LocalDateTime.now();
-        return Duration.between(now, lockedUntil).getSeconds();
+        long retryAfterSeconds = Duration.between(now, lockedUntil).getSeconds();
+        return retryAfterSeconds;
+    }
+
+    private String extractForwardedClientIp(HttpServletRequest request) {
+        String forwardedFor = trimToNull(request.getHeader("X-Forwarded-For"));
+        if (forwardedFor == null) {
+            return null;
+        }
+
+        String[] chain = forwardedFor.split(",");
+        if (chain.length == 0) {
+            return null;
+        }
+        String firstForwardedIp = trimToNull(chain[0]);
+        return firstForwardedIp;
+    }
+
+    private String trimToNull(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        String trimmedValue = value.trim();
+        return trimmedValue;
+    }
+
+    private boolean isProtectionDisabled() {
+        boolean protectionDisabled = !protectionEnabled;
+        return protectionDisabled;
+    }
+
+    private boolean isMissingUser(User user) {
+        boolean missingUser = user == null;
+        return missingUser;
     }
 }

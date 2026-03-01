@@ -9,8 +9,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -23,16 +25,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OAuth2UserProvisioningService {
 
-    private static final String EMAIL_ATTRIBUTE = "email";
-    private static final String NAME_ATTRIBUTE = "name";
-    private static final String PREFERRED_USERNAME_ATTRIBUTE = "preferred_username";
-    private static final String LOGIN_ATTRIBUTE = "login";
-    private static final String GIVEN_NAME_ATTRIBUTE = "given_name";
-    private static final String FAMILY_NAME_ATTRIBUTE = "family_name";
-    private static final String GITHUB_PROVIDER = "github";
-    private static final String GITHUB_NO_REPLY_SUFFIX = "@users.noreply.github.com";
-    private static final char EMAIL_SEPARATOR = '@';
-
     private final UserService userService;
 
     private final RoleService roleService;
@@ -41,33 +33,46 @@ public class OAuth2UserProvisioningService {
 
     /** Loads an existing OAuth user or creates a local enabled user profile when first seen. */
     public User loadOrCreateUser(OAuth2AuthenticationToken authenticationToken, OAuth2User oauth2User) {
-        String provider = normalize(authenticationToken.getAuthorizedClientRegistrationId());
+        String provider = normalizeProvider(authenticationToken.getAuthorizedClientRegistrationId());
         Map<String, Object> attributes = oauth2User.getAttributes();
+        String providerUserId = extractProviderUserId(provider, attributes);
 
-        String email = normalize(extractEmail(provider, attributes));
-        String name = extractDisplayName(attributes, email);
-
-        Optional<User> existingUser = userService.findByEmail(email);
-        if (existingUser.isPresent()) {
-            return updateExistingUserIfNeeded(existingUser.get(), provider, name);
+        Optional<User> existingUserByProviderOpt = userService.findByAuthProviderAndAuthProviderUserId(provider, providerUserId);
+        if (existingUserByProviderOpt.isPresent()) {
+            User existingUser = existingUserByProviderOpt.get();
+            String displayName = extractDisplayName(attributes, existingUser.getEmail());
+            User updatedUser = updateExistingUserIfNeeded(existingUser, provider, providerUserId, displayName);
+            return updatedUser;
         }
 
-        User newUser = new User();
-        newUser.setName(name);
-        newUser.setEmail(email);
-        newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-        newUser.setEnabled(true);
-        newUser.setAuthProvider(provider);
+        String email = extractEmail(provider, providerUserId, attributes);
+        String name = extractDisplayName(attributes, email);
+
+        Optional<User> existingUserOpt = userService.findByEmail(email);
+        User user = existingUserOpt
+                .map(existingUser -> updateExistingUserIfNeeded(existingUser, provider, providerUserId, name))
+                .orElseGet(() -> createNewOAuthUser(email, name, provider, providerUserId));
+        return user;
+    }
+
+    private User createNewOAuthUser(String email, String name, String provider, String providerUserId) {
+        User user = new User();
+        user.setName(name);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setEnabled(true);
+        user.setAuthProvider(provider);
+        user.setAuthProviderUserId(providerUserId);
 
         Set<Role> roles = new HashSet<>();
         roles.add(roleService.findOrCreateRole(Role.RoleName.ROLE_USER));
-        newUser.setRoles(roles);
-
-        return userService.save(newUser);
+        user.setRoles(roles);
+        User savedUser = userService.save(user);
+        return savedUser;
     }
 
     /** Updates existing OAuth-linked users only when persistence changes are required. */
-    private User updateExistingUserIfNeeded(User user, String provider, String displayName) {
+    private User updateExistingUserIfNeeded(User user, String provider, String providerUserId, String displayName) {
         boolean changed = false;
 
         if (!user.isEnabled()) {
@@ -75,12 +80,17 @@ public class OAuth2UserProvisioningService {
             changed = true;
         }
 
-        if (!hasText(user.getAuthProvider()) && hasText(provider)) {
+        if (!StringUtils.hasText(user.getAuthProvider()) && StringUtils.hasText(provider)) {
             user.setAuthProvider(provider);
             changed = true;
         }
 
-        if (!hasText(user.getName()) && hasText(displayName)) {
+        if (!StringUtils.hasText(user.getAuthProviderUserId()) && StringUtils.hasText(providerUserId)) {
+            user.setAuthProviderUserId(providerUserId);
+            changed = true;
+        }
+
+        if (!StringUtils.hasText(user.getName()) && StringUtils.hasText(displayName)) {
             user.setName(displayName);
             changed = true;
         }
@@ -88,21 +98,29 @@ public class OAuth2UserProvisioningService {
         if (!changed) {
             return user;
         }
-        return userService.save(user);
+        User updatedUser = userService.save(user);
+        return updatedUser;
     }
 
     /** Extracts a reliable email from provider attributes with provider-specific fallback logic. */
-    private String extractEmail(String provider, Map<String, Object> attributes) {
-        String email = normalize(toString(attributes.get(EMAIL_ATTRIBUTE)));
-        if (hasText(email)) {
-            return email;
+    private String extractEmail(String provider, String providerUserId, Map<String, Object> attributes) {
+        String email = trimToNull(toStringValue(attributes.get("email")));
+        if (StringUtils.hasText(email)) {
+            String normalizedEmail = email.toLowerCase(Locale.ROOT);
+            return normalizedEmail;
         }
 
-        if (GITHUB_PROVIDER.equals(provider)) {
-            String login = normalize(toString(attributes.get(LOGIN_ATTRIBUTE)));
-            if (hasText(login)) {
-                return login + GITHUB_NO_REPLY_SUFFIX;
+        if ("github".equals(provider)) {
+            String login = trimToNull(toStringValue(attributes.get("login")));
+            if (StringUtils.hasText(login)) {
+                String fallbackGithubEmail = login.toLowerCase(Locale.ROOT) + "@users.noreply.github.com";
+                return fallbackGithubEmail;
             }
+        }
+
+        String providerDerivedEmail = buildProviderDerivedEmail(provider, providerUserId);
+        if (providerDerivedEmail != null) {
+            return providerDerivedEmail;
         }
 
         throw new IllegalArgumentException("Email is not available from " + provider + " OAuth profile.");
@@ -111,16 +129,16 @@ public class OAuth2UserProvisioningService {
     /** Resolves a display name from known OAuth profile attributes. */
     private String extractDisplayName(Map<String, Object> attributes, String email) {
         String name = firstNonBlank(
-                normalize(toString(attributes.get(NAME_ATTRIBUTE))),
-                normalize(toString(attributes.get(PREFERRED_USERNAME_ATTRIBUTE))),
-                normalize(toString(attributes.get(LOGIN_ATTRIBUTE))));
+                trimToNull(toStringValue(attributes.get("name"))),
+                trimToNull(toStringValue(attributes.get("preferred_username"))),
+                trimToNull(toStringValue(attributes.get("login"))));
 
         if (name != null) {
             return name;
         }
 
-        String givenName = normalize(toString(attributes.get(GIVEN_NAME_ATTRIBUTE)));
-        String familyName = normalize(toString(attributes.get(FAMILY_NAME_ATTRIBUTE)));
+        String givenName = trimToNull(toStringValue(attributes.get("given_name")));
+        String familyName = trimToNull(toStringValue(attributes.get("family_name")));
         String combinedName = firstNonBlank(
                 joinWithSpace(givenName, familyName),
                 givenName,
@@ -130,19 +148,20 @@ public class OAuth2UserProvisioningService {
             return combinedName;
         }
 
-        int separatorIndex = email.indexOf(EMAIL_SEPARATOR);
+        int separatorIndex = email.indexOf('@');
         if (separatorIndex <= 0) {
             return email;
         }
-        return email.substring(0, separatorIndex);
+        String fallbackName = email.substring(0, separatorIndex);
+        return fallbackName;
     }
 
     /** Joins two non-blank strings with a single space. */
     private String joinWithSpace(String left, String right) {
-        if (!hasText(left)) {
+        if (!StringUtils.hasText(left)) {
             return right;
         }
-        if (!hasText(right)) {
+        if (!StringUtils.hasText(right)) {
             return left;
         }
         return left + " " + right;
@@ -151,7 +170,7 @@ public class OAuth2UserProvisioningService {
     /** Returns the first non-blank string in priority order. */
     private String firstNonBlank(String... values) {
         for (String value : values) {
-            if (hasText(value)) {
+            if (StringUtils.hasText(value)) {
                 return value;
             }
         }
@@ -159,24 +178,71 @@ public class OAuth2UserProvisioningService {
     }
 
     /** Safely converts an arbitrary OAuth attribute value to String. */
-    private String toString(Object value) {
+    private String toStringValue(Object value) {
         if (value == null) {
             return null;
         }
-        return String.valueOf(value);
+        String stringValue = String.valueOf(value);
+        return stringValue;
     }
 
-    private String normalize(String value) {
-        if (value == null) {
+    private String trimToNull(String value) {
+        if (!StringUtils.hasText(value)) {
             return null;
         }
-        return value.trim();
+        String trimmedValue = value.trim();
+        return trimmedValue;
     }
 
-    private boolean hasText(String value) {
-        if (value == null) {
-            return false;
+    private String normalizeProvider(String rawProvider) {
+        String provider = trimToNull(rawProvider);
+        if (!StringUtils.hasText(provider)) {
+            throw new IllegalArgumentException("OAuth provider is missing.");
         }
-        return !value.isBlank();
+
+        String normalizedProvider = provider.toLowerCase(Locale.ROOT);
+        Set<String> supportedProviders = Set.of("google", "github", "apple", "linkedin");
+        if (!supportedProviders.contains(normalizedProvider)) {
+            throw new IllegalArgumentException("Unsupported OAuth provider: " + normalizedProvider);
+        }
+        return normalizedProvider;
+    }
+
+    private String extractProviderUserId(String provider, Map<String, Object> attributes) {
+        String providerUserId;
+        if ("github".equals(provider)) {
+            providerUserId = firstNonBlank(
+                    trimToNull(toStringValue(attributes.get("id"))),
+                    trimToNull(toStringValue(attributes.get("node_id"))),
+                    trimToNull(toStringValue(attributes.get("login"))),
+                    trimToNull(toStringValue(attributes.get("email"))),
+                    trimToNull(toStringValue(attributes.get("sub"))));
+        } else {
+            providerUserId = firstNonBlank(
+                    trimToNull(toStringValue(attributes.get("sub"))),
+                    trimToNull(toStringValue(attributes.get("id"))),
+                    trimToNull(toStringValue(attributes.get("email"))),
+                    trimToNull(toStringValue(attributes.get("preferred_username"))),
+                    trimToNull(toStringValue(attributes.get("login"))));
+        }
+
+        if (!StringUtils.hasText(providerUserId)) {
+            throw new IllegalArgumentException("Provider user id is not available from " + provider + " OAuth profile.");
+        }
+        return providerUserId;
+    }
+
+    private String buildProviderDerivedEmail(String provider, String providerUserId) {
+        if (!StringUtils.hasText(providerUserId)) {
+            return null;
+        }
+
+        String sanitizedProviderUserId = providerUserId.replaceAll("[^a-zA-Z0-9._-]", "_");
+        if (!StringUtils.hasText(sanitizedProviderUserId)) {
+            return null;
+        }
+
+        String fallbackEmail = provider + "-" + sanitizedProviderUserId.toLowerCase(Locale.ROOT) + "@oauth.local";
+        return fallbackEmail;
     }
 }

@@ -20,11 +20,6 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AdminController {
 
-    private static final String DEFAULT_PAGE = "0";
-    private static final String DEFAULT_PAGE_SIZE = "20";
-    private static final String DEFAULT_SORT_FIELD = "createdAt";
-    private static final String DEFAULT_SORT_DIRECTION = "desc";
-
     private final AdminService adminService;
 
     /**
@@ -33,7 +28,9 @@ public class AdminController {
      */
     @GetMapping("/dashboard")
     public ResponseEntity<AdminDashboardDto> getDashboard(Authentication authentication) {
-        return ResponseEntity.ok(adminService.getDashboard(authentication.getName()));
+        String authenticatedEmail = authentication.getName();
+        AdminDashboardDto dashboard = adminService.getDashboard(authenticatedEmail);
+        return ResponseEntity.ok(dashboard);
     }
 
     /**
@@ -42,13 +39,14 @@ public class AdminController {
      */
     @GetMapping("/users")
     public ResponseEntity<Page<UserDto>> getAllUsers(
-            @RequestParam(defaultValue = DEFAULT_PAGE) int page,
-            @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Boolean enabled,
             @RequestParam(required = false) String role,
-            @RequestParam(defaultValue = DEFAULT_SORT_FIELD) String sortBy,
-            @RequestParam(defaultValue = DEFAULT_SORT_DIRECTION) String sortDir) {
-        return ResponseEntity.ok(adminService.getUsers(page, size, search, enabled, role, sortBy, sortDir));
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        Page<UserDto> users = adminService.getUsers(page, size, search, enabled, role, sortBy, sortDir);
+        return ResponseEntity.ok(users);
     }
 }

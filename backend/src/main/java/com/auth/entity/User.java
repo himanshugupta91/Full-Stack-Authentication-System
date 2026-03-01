@@ -69,6 +69,9 @@ public class User {
     @Column(name = "auth_provider")
     private String authProvider;
 
+    @Column(name = "auth_provider_user_id")
+    private String authProviderUserId;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

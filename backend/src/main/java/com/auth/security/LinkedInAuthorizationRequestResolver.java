@@ -14,30 +14,30 @@ import org.springframework.stereotype.Component;
 @Component
 public class LinkedInAuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
 
-    private static final String AUTHORIZATION_BASE_URI = "/oauth2/authorization";
-    private static final String LINKEDIN_REGISTRATION_ID = "linkedin";
-    private static final String LINKEDIN_PATH_SUFFIX = "/" + LINKEDIN_REGISTRATION_ID;
-
     private final DefaultOAuth2AuthorizationRequestResolver delegate;
 
     public LinkedInAuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository) {
         this.delegate = new DefaultOAuth2AuthorizationRequestResolver(
                 clientRegistrationRepository,
-                AUTHORIZATION_BASE_URI);
+                "/oauth2/authorization");
     }
 
     /** Resolves provider authorization request from incoming servlet request. */
     @Override
     public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
         OAuth2AuthorizationRequest authorizationRequest = delegate.resolve(request);
-        return customizeForLinkedIn(isLinkedInRequest(request), authorizationRequest);
+        boolean linkedInRequest = isLinkedInRequest(request);
+        OAuth2AuthorizationRequest customizedRequest = customizeForLinkedIn(linkedInRequest, authorizationRequest);
+        return customizedRequest;
     }
 
     /** Resolves provider authorization request for an explicit client registration id. */
     @Override
     public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String clientRegistrationId) {
         OAuth2AuthorizationRequest authorizationRequest = delegate.resolve(request, clientRegistrationId);
-        return customizeForLinkedIn(LINKEDIN_REGISTRATION_ID.equals(clientRegistrationId), authorizationRequest);
+        boolean linkedInRequest = "linkedin".equals(clientRegistrationId);
+        OAuth2AuthorizationRequest customizedRequest = customizeForLinkedIn(linkedInRequest, authorizationRequest);
+        return customizedRequest;
     }
 
     private OAuth2AuthorizationRequest customizeForLinkedIn(boolean isLinkedInRequest,
@@ -46,12 +46,14 @@ public class LinkedInAuthorizationRequestResolver implements OAuth2Authorization
             return authorizationRequest;
         }
 
-        return removeNonce(authorizationRequest);
+        OAuth2AuthorizationRequest requestWithoutNonce = removeNonce(authorizationRequest);
+        return requestWithoutNonce;
     }
 
     private boolean isLinkedInRequest(HttpServletRequest request) {
         String requestUri = request.getRequestURI();
-        return requestUri != null && requestUri.endsWith(LINKEDIN_PATH_SUFFIX);
+        boolean linkedInRequest = requestUri != null && requestUri.endsWith("/linkedin");
+        return linkedInRequest;
     }
 
     /** Removes nonce parameter/attribute for LinkedIn to prevent nonce validation mismatches. */
@@ -62,9 +64,10 @@ public class LinkedInAuthorizationRequestResolver implements OAuth2Authorization
             return authorizationRequest;
         }
 
-        return OAuth2AuthorizationRequest.from(authorizationRequest)
+        OAuth2AuthorizationRequest requestWithoutNonce = OAuth2AuthorizationRequest.from(authorizationRequest)
                 .additionalParameters(params -> params.remove(OidcParameterNames.NONCE))
                 .attributes(attrs -> attrs.remove(OidcParameterNames.NONCE))
                 .build();
+        return requestWithoutNonce;
     }
 }

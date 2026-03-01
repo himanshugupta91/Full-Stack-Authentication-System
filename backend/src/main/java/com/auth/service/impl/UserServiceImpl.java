@@ -22,8 +22,10 @@ public class UserServiceImpl implements UserService {
     /** Retrieves a user by email or throws a domain-level not-found exception. */
     @Override
     public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        User user = userOpt
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return user;
     }
 
     /**
@@ -35,7 +37,8 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        return userOpt;
     }
 
     /**
@@ -46,7 +49,8 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public boolean existsByEmail(String email) {
-        return userRepository.existsByEmail(email);
+        boolean userExists = userRepository.existsByEmail(email);
+        return userExists;
     }
 
     /**
@@ -59,7 +63,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User save(User user) {
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        return savedUser;
     }
 
     /**
@@ -70,12 +75,21 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public Optional<User> findByResetToken(String token) {
-        return userRepository.findByResetToken(token);
+        Optional<User> userOpt = userRepository.findByResetToken(token);
+        return userOpt;
     }
 
     /** Finds a user associated with a persisted refresh token. */
     @Override
     public Optional<User> findByRefreshToken(String token) {
-        return userRepository.findByRefreshToken(token);
+        Optional<User> userOpt = userRepository.findByRefreshToken(token);
+        return userOpt;
+    }
+
+    /** Finds a user by OAuth provider + provider user id. */
+    @Override
+    public Optional<User> findByAuthProviderAndAuthProviderUserId(String authProvider, String authProviderUserId) {
+        Optional<User> userOpt = userRepository.findByAuthProviderAndAuthProviderUserId(authProvider, authProviderUserId);
+        return userOpt;
     }
 }

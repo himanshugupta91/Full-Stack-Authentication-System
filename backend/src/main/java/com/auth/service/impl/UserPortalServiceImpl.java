@@ -18,8 +18,6 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class UserPortalServiceImpl implements UserPortalService {
 
-    private static final String DASHBOARD_WELCOME_MESSAGE = "Welcome to User Dashboard!";
-
     private final UserService userService;
     private final UserMapper userMapper;
 
@@ -27,7 +25,7 @@ public class UserPortalServiceImpl implements UserPortalService {
     public UserDashboardDto getDashboard(String email) {
         User user = userService.getUserByEmail(email);
         UserDashboardDto response = userMapper.toUserDashboardDto(user);
-        response.setMessage(DASHBOARD_WELCOME_MESSAGE);
+        response.setMessage("Welcome to User Dashboard!");
         response.setTimestamp(LocalDateTime.now().toString());
         return response;
     }
@@ -35,6 +33,7 @@ public class UserPortalServiceImpl implements UserPortalService {
     @Override
     public UserDto getProfile(String email) {
         User user = userService.getUserByEmail(email);
-        return userMapper.toDto(user);
+        UserDto profile = userMapper.toDto(user);
+        return profile;
     }
 }

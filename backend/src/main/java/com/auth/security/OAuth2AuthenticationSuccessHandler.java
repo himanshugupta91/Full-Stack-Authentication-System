@@ -27,8 +27,6 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private static final String OAUTH2_CALLBACK_PATH = "/oauth2/callback";
-
     private final OAuth2UserProvisioningService oAuth2UserProvisioningService;
 
     private final AuthTokenService authTokenService;
@@ -42,11 +40,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     @PostConstruct
     void initializeRedirectTarget() {
-        oauthCallbackUrl = UriComponentsBuilder
+        String callbackUrl = UriComponentsBuilder
                 .fromUriString(frontendUrl)
-                .path(OAUTH2_CALLBACK_PATH)
+                .path("/oauth2/callback")
                 .build(true)
                 .toUriString();
+        oauthCallbackUrl = callbackUrl;
     }
 
     /** Provisions local user data and redirects to frontend callback with a fresh access token. */
@@ -60,8 +59,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         User user = oAuth2UserProvisioningService.loadOrCreateUser(oauthToken, oauth2User);
         AuthTokens tokenResult = authTokenService.issueTokens(user);
 
-        response.addHeader(HttpHeaders.SET_COOKIE,
-                refreshTokenCookieService.buildRefreshTokenCookie(tokenResult.refreshToken()));
+        String refreshTokenCookieHeader = refreshTokenCookieService.buildRefreshTokenCookie(tokenResult.refreshToken());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookieHeader);
 
         clearAuthenticationAttributes(request);
         getRedirectStrategy().sendRedirect(request, response, oauthCallbackUrl);

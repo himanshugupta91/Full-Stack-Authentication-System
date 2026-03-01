@@ -10,8 +10,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class RefreshTokenCookieService {
 
-    private static final long MILLISECONDS_PER_SECOND = 1000L;
-
     @Value("${auth.refresh-token.cookie-name:refreshToken}")
     private String cookieName;
 
@@ -29,30 +27,33 @@ public class RefreshTokenCookieService {
 
     /** Builds the HTTP-only refresh-token cookie header value. */
     public String buildRefreshTokenCookie(String refreshToken) {
-        return ResponseCookie.from(cookieName, refreshToken)
+        ResponseCookie refreshCookie = ResponseCookie.from(cookieName, refreshToken)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path(cookiePath)
                 .sameSite(cookieSameSite)
-                .maxAge(refreshTokenExpirationMs / MILLISECONDS_PER_SECOND)
-                .build()
-                .toString();
+                .maxAge(refreshTokenExpirationMs / 1000L)
+                .build();
+        String cookieHeader = refreshCookie.toString();
+        return cookieHeader;
     }
 
     /** Builds an expired refresh-token cookie header value to clear browser state. */
     public String clearRefreshTokenCookie() {
-        return ResponseCookie.from(cookieName, "")
+        ResponseCookie clearedCookie = ResponseCookie.from(cookieName, "")
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path(cookiePath)
                 .sameSite(cookieSameSite)
                 .maxAge(0)
-                .build()
-                .toString();
+                .build();
+        String cookieHeader = clearedCookie.toString();
+        return cookieHeader;
     }
 
     /** Returns the configured refresh-token cookie name for request lookup. */
     public String getCookieName() {
-        return cookieName;
+        String configuredCookieName = cookieName;
+        return configuredCookieName;
     }
 }

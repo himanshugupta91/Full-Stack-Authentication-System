@@ -17,8 +17,6 @@ import java.util.stream.Collectors;
 @Configuration
 public class CorsConfig {
 
-    private static final long DEFAULT_MAX_AGE_SECONDS = 3600L;
-
     @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
     private String allowedOrigins;
 
@@ -31,7 +29,7 @@ public class CorsConfig {
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
-        configuration.setMaxAge(DEFAULT_MAX_AGE_SECONDS);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

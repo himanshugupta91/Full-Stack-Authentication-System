@@ -55,4 +55,13 @@ public interface UserService {
      * @return Optional User
      */
     Optional<User> findByRefreshToken(String token);
+
+    /**
+     * Finds a user by OAuth provider + provider user id.
+     *
+     * @param authProvider       OAuth provider id (e.g., google/github/apple/linkedin)
+     * @param authProviderUserId Stable user id returned by the provider
+     * @return Optional User
+     */
+    Optional<User> findByAuthProviderAndAuthProviderUserId(String authProvider, String authProviderUserId);
 }

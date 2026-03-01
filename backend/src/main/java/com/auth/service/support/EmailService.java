@@ -16,9 +16,6 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 public class EmailService {
 
-    private static final String OTP_SUBJECT = "Email Verification OTP";
-    private static final String PASSWORD_RESET_SUBJECT = "Password Reset Request";
-
     private final JavaMailSender mailSender;
 
     @Value("${spring.mail.username}")
@@ -37,13 +34,15 @@ public class EmailService {
      * Send OTP verification email.
      */
     public void sendOtpEmail(String toEmail, String otp) {
+        String emailBody = "Your OTP for email verification is: " + otp +
+                "\n\nThis OTP will expire in " + otpExpirationMinutes + " minutes." +
+                "\n\nIf you didn't request this, please ignore this email.";
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
         message.setTo(toEmail);
-        message.setSubject(OTP_SUBJECT);
-        message.setText("Your OTP for email verification is: " + otp +
-                "\n\nThis OTP will expire in " + otpExpirationMinutes + " minutes." +
-                "\n\nIf you didn't request this, please ignore this email.");
+        message.setSubject("Email Verification OTP");
+        message.setText(emailBody);
 
         mailSender.send(message);
     }
@@ -53,14 +52,15 @@ public class EmailService {
      */
     public void sendPasswordResetEmail(String toEmail, String resetToken) {
         String resetLink = resetPasswordUrl + "?token=" + URLEncoder.encode(resetToken, StandardCharsets.UTF_8);
+        String emailBody = "Click the link below to reset your password:\n\n" + resetLink +
+                "\n\nThis link will expire in " + resetTokenExpirationMinutes + " minutes." +
+                "\n\nIf you didn't request this, please ignore this email.";
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
         message.setTo(toEmail);
-        message.setSubject(PASSWORD_RESET_SUBJECT);
-        message.setText("Click the link below to reset your password:\n\n" + resetLink +
-                "\n\nThis link will expire in " + resetTokenExpirationMinutes + " minutes." +
-                "\n\nIf you didn't request this, please ignore this email.");
+        message.setSubject("Password Reset Request");
+        message.setText(emailBody);
 
         mailSender.send(message);
     }

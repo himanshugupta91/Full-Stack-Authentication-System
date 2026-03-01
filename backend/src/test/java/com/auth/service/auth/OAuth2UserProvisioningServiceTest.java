@@ -52,11 +52,13 @@ class OAuth2UserProvisioningServiceTest {
         existing.setName("Alice");
         existing.setEnabled(true);
         existing.setAuthProvider("google");
+        existing.setAuthProviderUserId("google-sub-1");
 
         OAuth2AuthenticationToken token = oauthToken(
                 "google",
-                Map.of("email", "alice@example.com", "name", "Alice Changed"));
+                Map.of("sub", "google-sub-1", "email", "alice@example.com", "name", "Alice Changed"));
 
+        when(userService.findByAuthProviderAndAuthProviderUserId("google", "google-sub-1")).thenReturn(Optional.empty());
         when(userService.findByEmail("alice@example.com")).thenReturn(Optional.of(existing));
 
         User resolved = service.loadOrCreateUser(token, token.getPrincipal());
@@ -76,8 +78,9 @@ class OAuth2UserProvisioningServiceTest {
 
         OAuth2AuthenticationToken token = oauthToken(
                 "google",
-                Map.of("email", "  alice@example.com  ", "name", "  Alice  "));
+                Map.of("sub", "google-sub-2", "email", "  alice@example.com  ", "name", "  Alice  "));
 
+        when(userService.findByAuthProviderAndAuthProviderUserId("google", "google-sub-2")).thenReturn(Optional.empty());
         when(userService.findByEmail("alice@example.com")).thenReturn(Optional.of(existing));
         when(userService.save(existing)).thenReturn(existing);
 
@@ -85,6 +88,7 @@ class OAuth2UserProvisioningServiceTest {
 
         assertTrue(resolved.isEnabled());
         assertEquals("google", resolved.getAuthProvider());
+        assertEquals("google-sub-2", resolved.getAuthProviderUserId());
         assertEquals("Alice", resolved.getName());
         verify(userService).save(existing);
         verifyNoInteractions(roleService, passwordEncoder);
@@ -97,8 +101,9 @@ class OAuth2UserProvisioningServiceTest {
 
         OAuth2AuthenticationToken token = oauthToken(
                 "google",
-                Map.of("email", "new.user@example.com", "name", "New User"));
+                Map.of("sub", "google-sub-3", "email", "new.user@example.com", "name", "New User"));
 
+        when(userService.findByAuthProviderAndAuthProviderUserId("google", "google-sub-3")).thenReturn(Optional.empty());
         when(userService.findByEmail("new.user@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded-password");
         when(roleService.findOrCreateRole(Role.RoleName.ROLE_USER)).thenReturn(role);
@@ -113,6 +118,7 @@ class OAuth2UserProvisioningServiceTest {
         assertEquals("new.user@example.com", saved.getEmail());
         assertEquals("New User", saved.getName());
         assertEquals("google", saved.getAuthProvider());
+        assertEquals("google-sub-3", saved.getAuthProviderUserId());
         assertTrue(saved.isEnabled());
         assertEquals("encoded-password", saved.getPassword());
         assertEquals(Set.of(role), saved.getRoles());
@@ -126,8 +132,9 @@ class OAuth2UserProvisioningServiceTest {
 
         OAuth2AuthenticationToken token = oauthToken(
                 "github",
-                Map.of("login", "octocat", "name", "The Cat"));
+                Map.of("login", "octocat", "name", "The Cat", "id", "42"));
 
+        when(userService.findByAuthProviderAndAuthProviderUserId("github", "42")).thenReturn(Optional.empty());
         when(userService.findByEmail("octocat@users.noreply.github.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded-password");
         when(roleService.findOrCreateRole(Role.RoleName.ROLE_USER)).thenReturn(role);
@@ -136,6 +143,7 @@ class OAuth2UserProvisioningServiceTest {
         User resolved = service.loadOrCreateUser(token, token.getPrincipal());
 
         assertEquals("octocat@users.noreply.github.com", resolved.getEmail());
+        assertEquals("42", resolved.getAuthProviderUserId());
     }
 
     @Test
@@ -146,6 +154,51 @@ class OAuth2UserProvisioningServiceTest {
 
         verify(userService, never()).save(any(User.class));
         verifyNoInteractions(roleService, passwordEncoder);
+    }
+
+    @Test
+    void loadOrCreateUser_whenAppleEmailMissing_usesProviderDerivedEmail() {
+        Role role = new Role();
+        role.setName(Role.RoleName.ROLE_USER);
+
+        OAuth2AuthenticationToken token = oauthToken(
+                "apple",
+                Map.of("sub", "apple-user-77", "name", "Apple User"));
+
+        when(userService.findByAuthProviderAndAuthProviderUserId("apple", "apple-user-77")).thenReturn(Optional.empty());
+        when(userService.findByEmail("apple-apple-user-77@oauth.local")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded-password");
+        when(roleService.findOrCreateRole(Role.RoleName.ROLE_USER)).thenReturn(role);
+        when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User resolved = service.loadOrCreateUser(token, token.getPrincipal());
+
+        assertEquals("apple-apple-user-77@oauth.local", resolved.getEmail());
+        assertEquals("apple-user-77", resolved.getAuthProviderUserId());
+        assertEquals("apple", resolved.getAuthProvider());
+    }
+
+    @Test
+    void loadOrCreateUser_whenExistingUserFoundByProviderId_skipsEmailLookup() {
+        User existing = new User();
+        existing.setEmail("linked@example.com");
+        existing.setName("Linked User");
+        existing.setEnabled(true);
+        existing.setAuthProvider("linkedin");
+        existing.setAuthProviderUserId("linkedin-sub-22");
+
+        OAuth2AuthenticationToken token = oauthToken(
+                "linkedin",
+                Map.of("sub", "linkedin-sub-22", "name", "Linked User Updated"));
+
+        when(userService.findByAuthProviderAndAuthProviderUserId("linkedin", "linkedin-sub-22"))
+                .thenReturn(Optional.of(existing));
+
+        User resolved = service.loadOrCreateUser(token, token.getPrincipal());
+
+        assertEquals(existing, resolved);
+        verify(userService, never()).findByEmail(anyString());
+        verify(userService, never()).save(any(User.class));
     }
 
     private OAuth2AuthenticationToken oauthToken(String registrationId, Map<String, Object> attributes) {

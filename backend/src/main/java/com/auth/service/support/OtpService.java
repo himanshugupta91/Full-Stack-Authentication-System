@@ -11,14 +11,15 @@ import java.util.Base64;
 @Service
 public class OtpService {
 
-    private static final SecureRandom random = new SecureRandom();
+    private SecureRandom secureRandom = new SecureRandom();
 
     /**
      * Generate a 6-digit OTP code.
      */
     public String generateOtp() {
-        int otp = 100000 + random.nextInt(900000);
-        return String.valueOf(otp);
+        int otp = 100000 + secureRandom.nextInt(900000);
+        String otpValue = String.valueOf(otp);
+        return otpValue;
     }
 
     /**
@@ -26,7 +27,8 @@ public class OtpService {
      */
     public String generateResetToken() {
         byte[] randomBytes = new byte[32];
-        random.nextBytes(randomBytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+        secureRandom.nextBytes(randomBytes);
+        String resetToken = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+        return resetToken;
     }
 }

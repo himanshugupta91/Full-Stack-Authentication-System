@@ -25,7 +25,8 @@ public class TokenHashService {
 
         String normalizedToken = rawToken.trim();
         byte[] digest = sha256((tokenHashPepper + ":" + normalizedToken).getBytes(StandardCharsets.UTF_8));
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
+        String tokenHash = Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
+        return tokenHash;
     }
 
     /** Constant-time token/hash comparison helper. */
@@ -36,13 +37,15 @@ public class TokenHashService {
 
         byte[] computedHash = hash(rawToken).getBytes(StandardCharsets.UTF_8);
         byte[] storedHash = tokenHash.getBytes(StandardCharsets.UTF_8);
-        return MessageDigest.isEqual(computedHash, storedHash);
+        boolean hashMatches = MessageDigest.isEqual(computedHash, storedHash);
+        return hashMatches;
     }
 
     private byte[] sha256(byte[] payload) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return digest.digest(payload);
+            byte[] hash = digest.digest(payload);
+            return hash;
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 algorithm is not available.", exception);
         }

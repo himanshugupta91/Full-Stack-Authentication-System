@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -26,26 +27,6 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
 
-    private static final int MIN_PAGE = 0;
-    private static final int MIN_PAGE_SIZE = 1;
-    private static final int MAX_PAGE_SIZE = 100;
-    private static final String DEFAULT_SORT_FIELD = "createdAt";
-    private static final String ROLE_PREFIX = "ROLE_";
-    private static final String SORT_DIRECTION_ASC = "asc";
-    private static final String ERROR_INVALID_ROLE_FILTER =
-            "Invalid role filter. Use USER, ADMIN, ROLE_USER, or ROLE_ADMIN.";
-    private static final String FIELD_ENABLED = "enabled";
-    private static final String FIELD_ROLES = "roles";
-    private static final String FIELD_ROLE_NAME = "name";
-    private static final String FIELD_USER_NAME = "name";
-    private static final String FIELD_EMAIL = "email";
-    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-            "id",
-            FIELD_USER_NAME,
-            FIELD_EMAIL,
-            FIELD_ENABLED,
-            DEFAULT_SORT_FIELD);
-
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
@@ -54,12 +35,13 @@ public class AdminServiceImpl implements AdminService {
         long totalUsers = userRepository.count();
         long activeUsers = userRepository.countByEnabledTrue();
 
-        return new AdminDashboardDto(
+        AdminDashboardDto dashboard = new AdminDashboardDto(
                 "Welcome to Admin Dashboard!",
                 adminEmail,
                 totalUsers,
                 activeUsers,
                 LocalDateTime.now().toString());
+        return dashboard;
     }
 
     @Override
@@ -81,7 +63,8 @@ public class AdminServiceImpl implements AdminService {
 
         Specification<User> specification = buildUserSpecification(search, enabled, role);
         Page<User> usersPage = userRepository.findAll(specification, pageable);
-        return usersPage.map(userMapper::toDto);
+        Page<UserDto> userDtoPage = usersPage.map(userMapper::toDto);
+        return userDtoPage;
     }
 
     /** Builds optional user filters for search/status/role queries. */
@@ -95,14 +78,14 @@ public class AdminServiceImpl implements AdminService {
         if (enabled != null) {
             specification = andSpecification(
                     specification,
-                    (root, query, cb) -> cb.equal(root.get(FIELD_ENABLED), enabled));
+                    (root, query, cb) -> cb.equal(root.get("enabled"), enabled));
         }
 
         if (hasText(role)) {
             Role.RoleName roleName = normalizeRoleName(role);
             specification = andSpecification(specification, (root, query, cb) -> {
                 query.distinct(true);
-                return cb.equal(root.join(FIELD_ROLES).get(FIELD_ROLE_NAME), roleName);
+                return cb.equal(root.join("roles").get("name"), roleName);
             });
         }
 
@@ -112,66 +95,61 @@ public class AdminServiceImpl implements AdminService {
     /** Accepts USER/ADMIN or ROLE_USER/ROLE_ADMIN query values. */
     private Role.RoleName normalizeRoleName(String rawRole) {
         String trimmedRole = rawRole.trim().toUpperCase(Locale.ROOT);
-        if (!trimmedRole.startsWith(ROLE_PREFIX)) {
-            trimmedRole = ROLE_PREFIX + trimmedRole;
+        if (!trimmedRole.startsWith("ROLE_")) {
+            trimmedRole = "ROLE_" + trimmedRole;
         }
 
         try {
-            return Role.RoleName.valueOf(trimmedRole);
+            Role.RoleName roleName = Role.RoleName.valueOf(trimmedRole);
+            return roleName;
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException(ERROR_INVALID_ROLE_FILTER);
+            throw new IllegalArgumentException("Invalid role filter. Use USER, ADMIN, ROLE_USER, or ROLE_ADMIN.");
         }
     }
 
     /** Restricts client sort field to safe, indexed-ish columns. */
     private String resolveSortField(String rawSortBy) {
-        if (rawSortBy == null || rawSortBy.isBlank()) {
-            return DEFAULT_SORT_FIELD;
+        if (!StringUtils.hasText(rawSortBy)) {
+            return "createdAt";
         }
-
-        if (ALLOWED_SORT_FIELDS.contains(rawSortBy)) {
-            return rawSortBy;
-        }
-        return DEFAULT_SORT_FIELD;
+        String safeSortField = isAllowedSortField(rawSortBy) ? rawSortBy : "createdAt";
+        return safeSortField;
     }
 
     private int normalizePage(int page) {
-        if (page < MIN_PAGE) {
-            return MIN_PAGE;
+        if (page < 0) {
+            return 0;
         }
         return page;
     }
 
     private int normalizePageSize(int size) {
         int boundedSize = size;
-        if (boundedSize < MIN_PAGE_SIZE) {
-            boundedSize = MIN_PAGE_SIZE;
+        if (boundedSize < 1) {
+            boundedSize = 1;
         }
-        if (boundedSize > MAX_PAGE_SIZE) {
-            boundedSize = MAX_PAGE_SIZE;
+        if (boundedSize > 100) {
+            boundedSize = 100;
         }
         return boundedSize;
     }
 
     private Sort.Direction resolveSortDirection(String sortDir) {
-        if (sortDir != null && sortDir.equalsIgnoreCase(SORT_DIRECTION_ASC)) {
-            return Sort.Direction.ASC;
-        }
-        return Sort.Direction.DESC;
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return direction;
     }
 
     private Specification<User> buildSearchSpecification(String search) {
         String loweredSearch = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
-        return (root, query, cb) -> cb.or(
-                cb.like(cb.lower(root.get(FIELD_USER_NAME)), loweredSearch),
-                cb.like(cb.lower(root.get(FIELD_EMAIL)), loweredSearch));
+        Specification<User> searchSpecification = (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("name")), loweredSearch),
+                cb.like(cb.lower(root.get("email")), loweredSearch));
+        return searchSpecification;
     }
 
     private boolean hasText(String value) {
-        if (value == null) {
-            return false;
-        }
-        return !value.isBlank();
+        boolean hasText = StringUtils.hasText(value);
+        return hasText;
     }
 
     private Specification<User> andSpecification(
@@ -180,6 +158,13 @@ public class AdminServiceImpl implements AdminService {
         if (baseSpecification == null) {
             return clause;
         }
-        return baseSpecification.and(clause);
+        Specification<User> combinedSpecification = baseSpecification.and(clause);
+        return combinedSpecification;
+    }
+
+    private boolean isAllowedSortField(String sortField) {
+        Set<String> allowedSortFields = Set.of("id", "name", "email", "enabled", "createdAt");
+        boolean isAllowed = allowedSortFields.contains(sortField);
+        return isAllowed;
     }
 }

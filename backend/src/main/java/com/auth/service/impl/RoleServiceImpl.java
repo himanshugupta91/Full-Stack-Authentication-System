@@ -22,19 +22,22 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public Role findOrCreateRole(Role.RoleName roleName) {
-        return roleRepository.findByName(roleName)
-                .orElseGet(() -> createRole(roleName));
+        Optional<Role> existingRoleOpt = roleRepository.findByName(roleName);
+        Role role = existingRoleOpt.orElseGet(() -> createRole(roleName));
+        return role;
     }
 
     /** Returns a role lookup result for the provided enum role name. */
     @Override
     public Optional<Role> findByName(Role.RoleName roleName) {
-        return roleRepository.findByName(roleName);
+        Optional<Role> roleOpt = roleRepository.findByName(roleName);
+        return roleOpt;
     }
 
     private Role createRole(Role.RoleName roleName) {
         Role role = new Role();
         role.setName(roleName);
-        return roleRepository.save(role);
+        Role savedRole = roleRepository.save(role);
+        return savedRole;
     }
 }

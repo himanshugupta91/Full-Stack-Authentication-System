@@ -20,11 +20,6 @@ import java.io.IOException;
 @Slf4j
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
-    private static final String LOGIN_PATH = "/login";
-    private static final String OAUTH_ERROR_QUERY_PARAM = "oauthError";
-    private static final String FALLBACK_ERROR_MESSAGE = "OAuth login failed.";
-    private static final int MAX_ERROR_MESSAGE_LENGTH = 240;
-
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
@@ -34,7 +29,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
     void initializeRedirectTarget() {
         frontendLoginUrl = UriComponentsBuilder
                 .fromUriString(frontendUrl)
-                .path(LOGIN_PATH)
+                .path("/login")
                 .build(true)
                 .toUriString();
     }
@@ -55,7 +50,7 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
         String targetUrl = UriComponentsBuilder
                 .fromUriString(frontendLoginUrl)
-                .queryParam(OAUTH_ERROR_QUERY_PARAM, errorMessage)
+                .queryParam("oauthError", errorMessage)
                 .build()
                 .encode()
                 .toUriString();
@@ -65,20 +60,25 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
     private String resolveErrorMessage(AuthenticationException exception) {
         String message = exception.getMessage();
+        String resolvedMessage;
         if (message == null || message.isBlank()) {
-            return FALLBACK_ERROR_MESSAGE;
+            resolvedMessage = "OAuth login failed.";
+        } else if (message.length() <= 240) {
+            resolvedMessage = message;
+        } else {
+            resolvedMessage = message.substring(0, 240);
         }
-        if (message.length() <= MAX_ERROR_MESSAGE_LENGTH) {
-            return message;
-        }
-        return message.substring(0, MAX_ERROR_MESSAGE_LENGTH);
+        return resolvedMessage;
     }
 
     private Throwable resolveRootCause(AuthenticationException exception) {
         Throwable cause = exception.getCause();
+        Throwable rootCause;
         if (cause == null) {
-            return exception;
+            rootCause = exception;
+        } else {
+            rootCause = cause;
         }
-        return cause;
+        return rootCause;
     }
 }

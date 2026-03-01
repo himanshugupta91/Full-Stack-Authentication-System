@@ -33,7 +33,9 @@ public class UserController {
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<UserDashboardDto> getDashboard(Authentication authentication) {
-        return ResponseEntity.ok(userPortalService.getDashboard(authentication.getName()));
+        String authenticatedEmail = authentication.getName();
+        UserDashboardDto dashboard = userPortalService.getDashboard(authenticatedEmail);
+        return ResponseEntity.ok(dashboard);
     }
 
     /**
@@ -43,7 +45,9 @@ public class UserController {
     @GetMapping("/profile")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<UserDto> getProfile(Authentication authentication) {
-        return ResponseEntity.ok(userPortalService.getProfile(authentication.getName()));
+        String authenticatedEmail = authentication.getName();
+        UserDto profile = userPortalService.getProfile(authenticatedEmail);
+        return ResponseEntity.ok(profile);
     }
 
     /**

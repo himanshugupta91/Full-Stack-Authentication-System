@@ -27,6 +27,7 @@ public interface UserMapper {
     @Mapping(target = "failedOtpAttempts", ignore = true)
     @Mapping(target = "otpLockedUntil", ignore = true)
     @Mapping(target = "authProvider", ignore = true)
+    @Mapping(target = "authProviderUserId", ignore = true)
     @Mapping(target = "enabled", constant = "false")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)

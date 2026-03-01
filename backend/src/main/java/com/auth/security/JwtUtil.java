@@ -19,9 +19,6 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private static final String ACCESS_TOKEN_TYPE = "access";
-    private static final String TOKEN_TYPE_CLAIM = "tokenType";
-
     @Value("${jwt.secret}")
     private String jwtSecret;
 
@@ -34,32 +31,35 @@ public class JwtUtil {
      */
     public String generateToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-        return generateTokenFromEmail(userPrincipal.getUsername());
+        String token = generateTokenFromEmail(userPrincipal.getUsername());
+        return token;
     }
 
     /**
      * Generate JWT token from email.
      */
     public String generateTokenFromEmail(String email) {
-        return Jwts.builder()
+        String token = Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
-                .claim(TOKEN_TYPE_CLAIM, ACCESS_TOKEN_TYPE)
+                .claim("tokenType", "access")
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSigningKey())
                 .compact();
+        return token;
     }
 
     /**
      * Extract email from JWT token.
      */
     public String getEmailFromToken(String token) {
-        return Jwts.parser()
+        String email = Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+        return email;
     }
 
     /**
@@ -83,7 +83,8 @@ public class JwtUtil {
         if (keyBytes.length < 32) {
             throw new IllegalStateException("jwt.secret must be at least 32 bytes for HS256 signing.");
         }
-        return Keys.hmacShaKeyFor(keyBytes);
+        SecretKey signingKey = Keys.hmacShaKeyFor(keyBytes);
+        return signingKey;
     }
 
     /** Decodes secret value from Base64/Base64URL and falls back to UTF-8 bytes for plain text secrets. */
@@ -95,15 +96,18 @@ public class JwtUtil {
         String normalizedSecret = secret.trim();
 
         try {
-            return Decoders.BASE64.decode(normalizedSecret);
+            byte[] base64DecodedSecret = Decoders.BASE64.decode(normalizedSecret);
+            return base64DecodedSecret;
         } catch (RuntimeException ignored) {
             // Fallback to Base64URL or plain text for local/dev setups.
         }
 
         try {
-            return Decoders.BASE64URL.decode(normalizedSecret);
+            byte[] base64UrlDecodedSecret = Decoders.BASE64URL.decode(normalizedSecret);
+            return base64UrlDecodedSecret;
         } catch (RuntimeException ignored) {
-            return normalizedSecret.getBytes(StandardCharsets.UTF_8);
+            byte[] plainTextSecret = normalizedSecret.getBytes(StandardCharsets.UTF_8);
+            return plainTextSecret;
         }
     }
 

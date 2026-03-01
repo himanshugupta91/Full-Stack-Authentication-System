@@ -22,10 +22,6 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
-    private static final int BEARER_PREFIX_LENGTH = BEARER_PREFIX.length();
-
     private final JwtUtil jwtUtil;
 
     private final CustomUserDetailsService userDetailsService;
@@ -38,9 +34,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
         try {
-            String jwt = parseJwt(request);
+            String jwt = extractBearerToken(request);
             if (jwt != null && jwtUtil.validateToken(jwt)) {
-                authenticateRequest(request, jwt);
+                authenticateBearerToken(request, jwt);
             }
         } catch (Exception exception) {
             logger.error("Cannot set user authentication", exception);
@@ -52,21 +48,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     /**
      * Extract JWT token from Authorization header.
      */
-    private String parseJwt(HttpServletRequest request) {
-        String headerAuth = request.getHeader(AUTHORIZATION_HEADER);
-
-        boolean hasHeader = StringUtils.hasText(headerAuth);
-        if (hasHeader) {
-            boolean isBearer = headerAuth.startsWith(BEARER_PREFIX);
-            if (isBearer) {
-                return headerAuth.substring(BEARER_PREFIX_LENGTH);
-            }
+    private String extractBearerToken(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader("Authorization");
+        if (!StringUtils.hasText(authorizationHeader) || !authorizationHeader.startsWith("Bearer ")) {
+            return null;
         }
-
-        return null;
+        String bearerToken = authorizationHeader.substring("Bearer ".length());
+        return bearerToken;
     }
 
-    private void authenticateRequest(HttpServletRequest request, String jwt) {
+    private void authenticateBearerToken(HttpServletRequest request, String jwt) {
         String email = jwtUtil.getEmailFromToken(jwt);
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 

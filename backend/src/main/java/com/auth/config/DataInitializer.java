@@ -12,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -23,15 +22,13 @@ import java.util.Set;
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
 
-    private static final String DEFAULT_ADMIN_NAME = "Admin";
-
     private final RoleRepository roleRepository;
 
     private final UserRepository userRepository;
 
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.seed.admin.name:" + DEFAULT_ADMIN_NAME + "}")
+    @Value("${app.seed.admin.name:Admin}")
     private String seedAdminName;
 
     @Value("${app.seed.admin.email:admin@admin.com}")
@@ -52,11 +49,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setEmail(seedAdminEmail);
             admin.setPassword(passwordEncoder.encode(seedAdminPassword));
             admin.setEnabled(true);
-
-            Set<Role> adminRoles = new HashSet<>();
-            adminRoles.add(adminRole);
-            adminRoles.add(userRole);
-            admin.setRoles(adminRoles);
+            admin.setRoles(new HashSet<>(Set.of(adminRole, userRole)));
 
             userRepository.save(admin);
             log.info("Default admin user created: {}", seedAdminEmail);
@@ -64,11 +57,8 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Role findOrCreateRole(Role.RoleName roleName) {
-        Optional<Role> roleOpt = roleRepository.findByName(roleName);
-        if (roleOpt.isPresent()) {
-            return roleOpt.get();
-        }
-        return createRole(roleName);
+        return roleRepository.findByName(roleName)
+                .orElseGet(() -> createRole(roleName));
     }
 
     private Role createRole(Role.RoleName roleName) {

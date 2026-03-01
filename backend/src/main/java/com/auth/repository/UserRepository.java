@@ -25,6 +25,9 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     /** Finds a user by current refresh token hash. */
     Optional<User> findByRefreshToken(String refreshToken);
 
+    /** Finds an OAuth user by provider id + provider user id. */
+    Optional<User> findByAuthProviderAndAuthProviderUserId(String authProvider, String authProviderUserId);
+
     /** Counts users with enabled=true for admin metrics. */
     long countByEnabledTrue();
 }
