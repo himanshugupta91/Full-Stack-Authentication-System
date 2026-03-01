@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -18,14 +16,13 @@ services:
       timeout: 5s
       retries: 5
 
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: auth-pgadmin
+  adminer:
+    image: adminer:latest
+    container_name: auth-adminer
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@auth.local
-      PGADMIN_DEFAULT_PASSWORD: admin123
+      ADMINER_DEFAULT_SERVER: postgres
     ports:
-      - "5050:80"
+      - "5050:8080"
     depends_on:
       postgres:
         condition: service_healthy
