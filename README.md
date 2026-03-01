@@ -126,8 +126,7 @@ Key design principles used:
 
 ---
 
-<details>
-<summary><strong>System Architecture</strong></summary>
+## System Architecture
 
 ```mermaid
 graph LR
@@ -142,12 +141,9 @@ graph LR
     C --> J[OAuth Providers]
 ```
 
-</details>
-
 ---
 
-<details>
-<summary><strong>Data Flow Diagrams (DFD)</strong></summary>
+## Data Flow Diagrams (DFD)
 
 ### DFD Level 0 (Context Diagram)
 
@@ -178,21 +174,15 @@ graph LR
     G --> L[AuthResponse]
 ```
 
-</details>
-
 ---
 
-<details>
-<summary><strong>UML Diagrams</strong></summary>
+## UML Diagrams
 
 This section gives developer-facing UML views that match implementation layers.
 
-</details>
-
 ---
 
-<details>
-<summary><strong>Use Case Diagram</strong></summary>
+## Use Case Diagram
 
 ```mermaid
 graph LR
@@ -208,12 +198,9 @@ graph LR
     K --> M[List Users]
 ```
 
-</details>
-
 ---
 
-<details>
-<summary><strong>Class Diagram</strong></summary>
+## Class Diagram
 
 ```mermaid
 classDiagram
@@ -248,12 +235,9 @@ classDiagram
     RoleRepository --> Role
 ```
 
-</details>
-
 ---
 
-<details>
-<summary><strong>Sequence Diagram</strong></summary>
+## Sequence Diagram
 
 ### 1) Registration + OTP Verification + Resend Flow
 
@@ -447,12 +431,9 @@ sequenceDiagram
     API-->>FE: 200 OK with paginated data
 ```
 
-</details>
-
 ---
 
-<details>
-<summary><strong>Activity Diagram</strong></summary>
+## Activity Diagram
 
 ### Registration and OTP Verification
 
@@ -472,8 +453,6 @@ graph TD
     K -- Yes --> M[Enable User Account]
     M --> N[Return Success]
 ```
-
-</details>
 
 ---
 
