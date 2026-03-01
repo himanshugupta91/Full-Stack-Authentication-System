@@ -24,7 +24,7 @@
 ---
 
 <details>
-<summary><h2>📋 Table of Contents</h2></summary>
+<summary><strong>📋 Table of Contents</strong></summary>
 
 1. [About the Project](#about-the-project)
 2. [Features](#features)
@@ -103,7 +103,7 @@ This project is structured to be interview-ready, production-oriented, and easy 
 ---
 
 <details>
-<summary><h2>System Design</h2></summary>
+<summary><strong>System Design</strong></summary>
 
 This system follows a layered backend design for clear separation of responsibilities:
 
@@ -127,7 +127,7 @@ Key design principles used:
 ---
 
 <details>
-<summary><h2>System Architecture</h2></summary>
+<summary><strong>System Architecture</strong></summary>
 
 ```mermaid
 flowchart LR
@@ -158,7 +158,7 @@ flowchart LR
 ---
 
 <details>
-<summary><h2>Data Flow Diagrams (DFD)</h2></summary>
+<summary><strong>Data Flow Diagrams (DFD)</strong></summary>
 
 ### DFD Level 0 (Context Diagram)
 
@@ -194,7 +194,7 @@ flowchart LR
 ---
 
 <details>
-<summary><h2>UML Diagrams</h2></summary>
+<summary><strong>UML Diagrams</strong></summary>
 
 This section gives developer-facing UML views that match implementation layers.
 
@@ -203,7 +203,7 @@ This section gives developer-facing UML views that match implementation layers.
 ---
 
 <details>
-<summary><h2>Use Case Diagram</h2></summary>
+<summary><strong>Use Case Diagram</strong></summary>
 
 ```mermaid
 flowchart LR
@@ -224,7 +224,7 @@ flowchart LR
 ---
 
 <details>
-<summary><h2>Class Diagram</h2></summary>
+<summary><strong>Class Diagram</strong></summary>
 
 ```mermaid
 classDiagram
@@ -269,7 +269,7 @@ classDiagram
 ---
 
 <details>
-<summary><h2>Sequence Diagram</h2></summary>
+<summary><strong>Sequence Diagram</strong></summary>
 
 ### 1) Registration + OTP Verification + Resend Flow
 
@@ -511,7 +511,7 @@ sequenceDiagram
 ---
 
 <details>
-<summary><h2>Activity Diagram</h2></summary>
+<summary><strong>Activity Diagram</strong></summary>
 
 ### Registration and OTP Verification
 
@@ -584,7 +584,7 @@ Design notes:
 ---
 
 <details>
-<summary><h2>4.5 User Interface Design</h2></summary>
+<summary><strong>4.5 User Interface Design</strong></summary>
 
 Frontend design goals and implementation choices:
 
@@ -632,111 +632,6 @@ Base URL: `http://localhost:8080`
 | 7 | POST | `/api/auth/update-password` | Set new password using reset token | Public |
 | 8 | POST | `/api/auth/resend-otp?email={email}` | Resend OTP with rate limiting | Public |
 
-<details>
-<summary><strong>📦 Request / Response Details</strong></summary>
-
-#### `POST /api/auth/register`
-
-**Request Body** (`RegisterRequest`):
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "SecureP@ss1"
-}
-```
-**Validation**: `name` required · `email` valid format · `password` min 6 chars
-**Response**: `200` → `{ "message": "...", "success": true }`
-
----
-
-#### `POST /api/auth/verify-otp`
-
-**Request Body** (`OtpVerifyRequest`):
-```json
-{
-  "email": "john@example.com",
-  "otp": "483921"
-}
-```
-**Response**: `200` → `{ "message": "Account verified", "success": true }`
-**Errors**: `400` invalid/expired OTP · `423` OTP attempts locked
-
----
-
-#### `POST /api/auth/login`
-
-**Request Body** (`LoginRequest`):
-```json
-{
-  "email": "john@example.com",
-  "password": "SecureP@ss1"
-}
-```
-**Response**: `200` → `AuthResponse` (access token + user info) + `Set-Cookie: refreshToken=...`
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "name": "John Doe",
-  "email": "john@example.com",
-  "roles": ["ROLE_USER"]
-}
-```
-**Errors**: `401` bad credentials · `423` account locked + `Retry-After` header
-
----
-
-#### `POST /api/auth/refresh`
-
-**Request**: Refresh token from `HttpOnly` cookie (auto-sent) or body:
-```json
-{ "refreshToken": "raw-refresh-token-value" }
-```
-**Response**: `200` → New `AuthResponse` + rotated `Set-Cookie`
-**Errors**: `401` invalid/expired refresh token
-
----
-
-#### `POST /api/auth/logout`
-
-**Request**: Refresh token from cookie or body (same as refresh)
-**Response**: `200` → `{ "message": "Logged out successfully.", "success": true }` + `Set-Cookie: refreshToken=; Max-Age=0`
-
----
-
-#### `POST /api/auth/reset-password`
-
-**Request Body** (`ResetPasswordRequest`):
-```json
-{ "email": "john@example.com" }
-```
-**Response**: Always `200` → `{ "message": "..." }` (prevents user enumeration)
-
----
-
-#### `POST /api/auth/update-password`
-
-**Request Body** (`UpdatePasswordRequest`):
-```json
-{
-  "token": "raw-reset-token",
-  "newPassword": "NewSecure@99"
-}
-```
-**Validation**: `token` required · `newPassword` min 6 chars + policy checks
-**Response**: `200` → `{ "message": "Password updated", "success": true }`
-**Errors**: `400` / `401` invalid/expired token
-
----
-
-#### `POST /api/auth/resend-otp?email={email}`
-
-**Query Param**: `email` (required)
-**Response**: `200` → `{ "message": "OTP resent", "success": true }`
-**Rate Limited**: `429` Too Many Requests + `Retry-After`
-
-</details>
-
 ---
 
 ### User APIs — `/api/user/*`
@@ -747,47 +642,6 @@ Base URL: `http://localhost:8080`
 | 2 | GET | `/api/user/profile` | Get current user profile | `ROLE_USER` or `ROLE_ADMIN` |
 | 3 | POST | `/api/user/change-password` | Change password (authenticated) | `ROLE_USER` or `ROLE_ADMIN` |
 
-<details>
-<summary><strong>📦 Request / Response Details</strong></summary>
-
-#### `GET /api/user/dashboard`
-
-**Headers**: `Authorization: Bearer {accessToken}`
-**Response**: `200` → `UserDashboardDto`
-
----
-
-#### `GET /api/user/profile`
-
-**Headers**: `Authorization: Bearer {accessToken}`
-**Response**: `200` → `UserDto`
-```json
-{
-  "id": 1,
-  "name": "John Doe",
-  "email": "john@example.com",
-  "roles": ["ROLE_USER"],
-  "createdAt": "2026-03-01T12:00:00"
-}
-```
-
----
-
-#### `POST /api/user/change-password`
-
-**Headers**: `Authorization: Bearer {accessToken}`
-**Request Body** (`ChangePasswordRequest`):
-```json
-{
-  "currentPassword": "OldP@ss1",
-  "newPassword": "NewSecure@99"
-}
-```
-**Validation**: Both fields required · `newPassword` min 6 chars + policy
-**Response**: `200` → `{ "message": "...", "success": true }`
-
-</details>
-
 ---
 
 ### Admin APIs — `/api/admin/*`
@@ -797,46 +651,15 @@ Base URL: `http://localhost:8080`
 | 1 | GET | `/api/admin/dashboard` | Admin metrics (total users, active count) | `ROLE_ADMIN` |
 | 2 | GET | `/api/admin/users` | Paginated, searchable, filterable user list | `ROLE_ADMIN` |
 
-<details>
-<summary><strong>📦 Request / Response Details</strong></summary>
+Admin users query params:
 
-#### `GET /api/admin/dashboard`
-
-**Headers**: `Authorization: Bearer {accessToken}`
-**Response**: `200` → `AdminDashboardDto`
-
----
-
-#### `GET /api/admin/users`
-
-**Headers**: `Authorization: Bearer {accessToken}`
-
-**Query Parameters**:
-
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `page` | int | `0` | Page number (zero-indexed) |
-| `size` | int | `20` | Page size (max `100`) |
-| `search` | String | — | Search by name or email |
-| `enabled` | Boolean | — | Filter by account status |
-| `role` | String | — | `USER`, `ADMIN`, `ROLE_USER`, `ROLE_ADMIN` |
-| `sortBy` | String | `createdAt` | Sort field: `id`, `name`, `email`, `enabled`, `createdAt` |
-| `sortDir` | String | `desc` | Sort direction: `asc` or `desc` |
-
-**Example**: `GET /api/admin/users?page=0&size=20&search=john&role=ADMIN&sortBy=createdAt&sortDir=desc`
-
-**Response**: `200` → `Page<UserDto>`
-```json
-{
-  "content": [ { "id": 1, "name": "...", "email": "...", "roles": [...], "createdAt": "..." } ],
-  "totalElements": 150,
-  "totalPages": 8,
-  "size": 20,
-  "number": 0
-}
-```
-
-</details>
+- `page` default `0`
+- `size` default `20`, max `100`
+- `search` for name/email match
+- `enabled` boolean filter
+- `role` accepts `USER`, `ADMIN`, `ROLE_USER`, `ROLE_ADMIN`
+- `sortBy` allows `id`, `name`, `email`, `enabled`, `createdAt`
+- `sortDir` accepts `asc` or `desc`
 
 ---
 
@@ -852,7 +675,7 @@ OAuth2 flow: Frontend redirects to `/oauth2/authorization/google` → user authe
 ---
 
 <details>
-<summary><h2>Project Structure</h2></summary>
+<summary><strong>Project Structure</strong></summary>
 
 ```text
 Full-Stack-Authentication-System/
@@ -943,7 +766,7 @@ Use environment variables or external secret managers.
 ---
 
 <details>
-<summary><h2>How to Explain This Project in an Interview</h2></summary>
+<summary><strong>How to Explain This Project in an Interview</strong></summary>
 
 This is a full-stack authentication platform designed with production security and maintainability in mind.
 On the backend, I used Spring Boot layered architecture and kept controllers thin by placing business rules in services.
@@ -958,7 +781,7 @@ Overall, this project demonstrates secure API design, clean architecture, and pr
 ---
 
 <details>
-<summary><h2>Java Spring Boot Developer — 20 Q&A</h2></summary>
+<summary><strong>Java Spring Boot Developer — 20 Q&A</strong></summary>
 
 ### Q1. A teammate wrote all the validation and token logic directly in the controller. You reviewed the PR — what feedback did you give, and why?
 I flagged that controllers should only own HTTP concerns: request binding, status codes, and response shape.
@@ -1125,7 +948,7 @@ I stored the previous refresh hash alongside the current one with a 30-second TT
 ---
 
 <details>
-<summary><h2>Backend Tech Stack — Q&A</h2></summary>
+<summary><strong>Backend Tech Stack — Q&A</strong></summary>
 
 ### Q1. Why did you choose Java 21 for this project, and are you using any Java 21–specific features?
 I chose Java 21 because it's the latest LTS release, which means long-term security patches and vendor support — critical for a production auth system.
