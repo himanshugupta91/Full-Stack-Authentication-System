@@ -1,6 +1,30 @@
-# Matrix Auth System
+# 🔐 Matrix Auth System
 
-## Table of Contents
+<p align="center">
+  <img src="https://img.shields.io/badge/A%20Secure%20Full--Stack-Authentication%20%26%20Authorization%20Platform-00C853?style=for-the-badge&labelColor=1a1a2e" alt="tagline" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Spring%20Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot" />
+  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-21-ED8B00?style=flat-square&logo=openjdk&logoColor=white" alt="Java 21" />
+  <img src="https://img.shields.io/badge/Spring%20Security-6.x-6DB33F?style=flat-square&logo=springsecurity&logoColor=white" alt="Spring Security 6" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License" />
+</p>
+
+---
+
+<details>
+<summary><h2>📋 Table of Contents</h2></summary>
 
 1. [About the Project](#about-the-project)
 2. [Features](#features)
@@ -22,6 +46,8 @@
 18. [How to Explain This Project in an Interview](#how-to-explain-this-project-in-an-interview)
 19. [Java Spring Boot Developer — 20 Q&A](#java-spring-boot-developer--20-qa)
 20. [Backend Tech Stack — Q&A](#backend-tech-stack--qa)
+
+</details>
 
 ---
 
