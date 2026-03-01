@@ -74,21 +74,10 @@ This project is structured to be interview-ready, production-oriented, and easy 
 
 ---
 
-## <img src="https://img.shields.io/badge/📸-Screenshots-1a1a2e?style=for-the-badge&labelColor=E91E63" />
+## <img src="https://img.shields.io/badge/📸-Preview-1a1a2e?style=for-the-badge&labelColor=E91E63" />
 
-### Authentication Flow
-
-<p>
-  <img src="screenshots/Screenshot%202026-02-28%20at%204.25.26%E2%80%AFPM.png" alt="Registration" width="400" />
-  <img src="screenshots/Screenshot%202026-02-28%20at%204.25.36%E2%80%AFPM.png" alt="OTP Verification" width="400" />
-  <img src="screenshots/Screenshot%202026-02-28%20at%204.25.44%E2%80%AFPM.png" alt="Login" width="400" />
-</p>
-
-### Dashboard Views
-
-<p>
-  <img src="screenshots/Screenshot%202026-02-28%20at%204.27.39%E2%80%AFPM.png" alt="User Dashboard" width="400" />
-  <img src="screenshots/Screenshot%202026-02-28%20at%204.28.17%E2%80%AFPM.png" alt="Admin Dashboard" width="400" />
+<p align="center">
+  <img src="screenshots/Screenshot%202026-02-28%20at%204.25.26%E2%80%AFPM.png" alt="Home Page" width="700" />
 </p>
 
 ---
