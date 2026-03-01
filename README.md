@@ -130,27 +130,16 @@ Key design principles used:
 <summary><strong>System Architecture</strong></summary>
 
 ```mermaid
-flowchart LR
-    FE[React Frontend]
-    API[Spring Boot API]
-    SEC[Security Layer\nJWT Filter + OAuth2 Handlers]
-    CTRL[Controllers]
-    SVC[Service Layer\nBusiness Logic]
-    REPO[Repository Layer]
-    PG[(PostgreSQL)]
-    REDIS[(Redis)]
-    SMTP[SMTP Provider]
-    OAUTH[OAuth Providers]
-
-    FE -->|REST + Credentials| API
-    API --> SEC
-    SEC --> CTRL
-    CTRL --> SVC
-    SVC --> REPO
-    REPO --> PG
-    SVC --> REDIS
-    SVC --> SMTP
-    SEC --> OAUTH
+graph LR
+    A[React Frontend] --> B[Spring Boot API]
+    B --> C[Security Layer]
+    C --> D[Controllers]
+    D --> E[Service Layer]
+    E --> F[Repository Layer]
+    F --> G[(PostgreSQL)]
+    E --> H[(Redis)]
+    E --> I[SMTP Provider]
+    C --> J[OAuth Providers]
 ```
 
 </details>
@@ -163,22 +152,22 @@ flowchart LR
 ### DFD Level 0 (Context Diagram)
 
 ```mermaid
-flowchart TD
-    User[User/Admin] -->|Auth Requests| System[Matrix Auth System]
-    System -->|Responses/Tokens| User
-    System --> DB[(PostgreSQL)]
-    System --> Cache[(Redis)]
-    System --> Mail[Email Service]
-    System --> OAuth[OAuth Providers]
+graph TD
+    A[User / Admin] -->|Auth Requests| B[Matrix Auth System]
+    B -->|Responses and Tokens| A
+    B --> C[(PostgreSQL)]
+    B --> D[(Redis)]
+    B --> E[Email Service]
+    B --> F[OAuth Providers]
 ```
 
 ### DFD Level 1 (Authentication)
 
 ```mermaid
-flowchart LR
+graph LR
     A[Client Request] --> B[AuthController]
     B --> C[AuthServiceImpl]
-    C --> D[Password Policy + Abuse Checks]
+    C --> D[Password Policy]
     C --> E[UserRepository]
     E --> F[(PostgreSQL)]
     C --> G[AuthTokenService]
@@ -186,7 +175,7 @@ flowchart LR
     G --> I[TokenHashService]
     C --> J[EmailService]
     D --> K[(Redis)]
-    G --> L[AuthResponse + Refresh Cookie]
+    G --> L[AuthResponse]
 ```
 
 </details>
@@ -206,17 +195,17 @@ This section gives developer-facing UML views that match implementation layers.
 <summary><strong>Use Case Diagram</strong></summary>
 
 ```mermaid
-flowchart LR
-    U[Guest/User] --> UC1[Register]
-    U --> UC2[Verify OTP]
-    U --> UC3[Login]
-    U --> UC4[Reset Password]
-    U --> UC5[OAuth Login]
-    AU[Authenticated User] --> UC6[View Profile]
-    AU --> UC7[View Dashboard]
-    AU --> UC8[Change Password]
-    AD[Admin] --> UC9[View Admin Dashboard]
-    AD --> UC10[List Users with Filters]
+graph LR
+    A[Guest User] --> B[Register]
+    A --> C[Verify OTP]
+    A --> D[Login]
+    A --> E[Reset Password]
+    A --> F[OAuth Login]
+    G[Authenticated User] --> H[View Profile]
+    G --> I[View Dashboard]
+    G --> J[Change Password]
+    K[Admin] --> L[Admin Dashboard]
+    K --> M[List Users]
 ```
 
 </details>
@@ -231,7 +220,6 @@ classDiagram
     class AuthController
     class UserController
     class AdminController
-
     class AuthService
     class AuthServiceImpl
     class AuthTokenService
@@ -239,10 +227,8 @@ classDiagram
     class UserServiceImpl
     class AdminService
     class AdminServiceImpl
-
     class UserRepository
     class RoleRepository
-
     class User
     class Role
 
@@ -252,11 +238,9 @@ classDiagram
     UserController --> AuthService
     UserController --> AdminService
     AdminController --> AdminService
-
     AuthService <|.. AuthServiceImpl
     UserService <|.. UserServiceImpl
     AdminService <|.. AdminServiceImpl
-
     AuthServiceImpl --> UserRepository
     UserServiceImpl --> UserRepository
     AdminServiceImpl --> UserRepository
@@ -284,45 +268,38 @@ sequenceDiagram
     participant REDIS as Redis
     participant MAIL as EmailService
 
-    Note over User,MAIL: Registration
     User->>FE: Submit register form
     FE->>API: POST /api/auth/register
-    API->>REDIS: Rate-limit check
+    API->>REDIS: Rate limit check
     alt rate limit exceeded
         API-->>FE: 429 Too Many Requests
     else allowed
-    API->>SVC: validatePolicy and register()
+        API->>SVC: Register user
         alt email exists
             SVC-->>API: 409 Conflict
-        else email available
-            SVC->>DB: Save disabled user + hashed OTP
+        else new email
+            SVC->>DB: Save user with hashed OTP
             SVC->>MAIL: Send OTP email
             SVC-->>API: 200 OTP sent
         end
     end
     API-->>FE: Response
-
-    Note over User,MAIL: OTP Verification
     User->>FE: Submit OTP code
     FE->>API: POST /api/auth/verify-otp
-    API->>REDIS: Rate-limit check
-    API->>SVC: verifyOtp
-    SVC->>DB: Load user + compare hashed OTP
+    API->>SVC: Verify OTP
+    SVC->>DB: Compare hashed OTP
     alt invalid or expired
-        SVC->>DB: Increment failedOtpAttempts
-        SVC-->>API: 400 / 423 Locked
+        SVC->>DB: Increment failed attempts
+        SVC-->>API: 400 Bad Request
     else valid
-        SVC->>DB: Enable user + clear OTP fields
+        SVC->>DB: Enable user account
         SVC-->>API: 200 Account verified
     end
     API-->>FE: Response
-
-    Note over User,MAIL: OTP Resend
-    User->>FE: Request resend
+    User->>FE: Request resend OTP
     FE->>API: POST /api/auth/resend-otp
-    API->>REDIS: Rate-limit check
-    API->>SVC: resendOtp
-    SVC->>DB: Update user with new hashed OTP
+    API->>SVC: Resend OTP
+    SVC->>DB: Save new hashed OTP
     SVC->>MAIL: Send new OTP
     API-->>FE: 200 OTP resent
 ```
@@ -339,48 +316,43 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant REDIS as Redis
 
-    Note over User,REDIS: Login
-    User->>FE: Submit email + password
+    User->>FE: Submit email and password
     FE->>API: POST /api/auth/login
-    API->>REDIS: Rate-limit check
-    API->>SVC: login
-    SVC->>DB: Check account lock state
+    API->>REDIS: Rate limit check
+    API->>SVC: Authenticate user
+    SVC->>DB: Check lock state
     alt account locked
-        SVC-->>API: 423 Locked + Retry-After
+        SVC-->>API: 423 Locked
     else not locked
-        SVC->>SVC: AuthenticationManager authenticate
-        alt credentials invalid
-            SVC->>DB: Increment failed attempts / lock
+        SVC->>SVC: Validate credentials
+        alt invalid credentials
+            SVC->>DB: Increment failed attempts
             SVC-->>API: 401 Unauthorized
-        else credentials valid
-            SVC->>DB: Clear failure state + load roles
-            SVC->>SVC: Issue JWT access token
+        else valid credentials
+            SVC->>DB: Clear failures and load roles
+            SVC->>SVC: Generate JWT access token
             SVC->>DB: Save hashed refresh token
-            SVC-->>API: AuthResponse + Set-Cookie HttpOnly
+            SVC-->>API: AuthResponse with HttpOnly cookie
         end
     end
     API-->>FE: Response
-
-    Note over FE,REDIS: Token Refresh (rotation)
     FE->>API: POST /api/auth/refresh
-    API->>SVC: refreshAccessToken
+    API->>SVC: Refresh access token
     SVC->>DB: Match hashed refresh token
-    alt invalid / expired
+    alt invalid or expired
         SVC->>DB: Clear refresh fields
         SVC-->>API: 401 Unauthorized
     else valid
         SVC->>SVC: Issue new access token
-        SVC->>DB: Rotate - save new hashed refresh token
-        SVC-->>API: New access token + rotated cookie
+        SVC->>DB: Rotate refresh token
+        SVC-->>API: New tokens with rotated cookie
     end
     API-->>FE: Response
-
-    Note over User,REDIS: Logout
     User->>FE: Click logout
     FE->>API: POST /api/auth/logout
-    API->>SVC: logout
+    API->>SVC: Revoke refresh token
     SVC->>DB: Clear refresh token fields
-    SVC-->>API: 200 + Set-Cookie maxAge=0
+    SVC-->>API: 200 OK
     API-->>FE: Logged out
 ```
 
@@ -397,30 +369,27 @@ sequenceDiagram
     participant REDIS as Redis
     participant MAIL as EmailService
 
-    Note over User,MAIL: Request Reset
     User->>FE: Enter email for reset
     FE->>API: POST /api/auth/reset-password
-    API->>REDIS: Rate-limit check
-    API->>SVC: resetPassword email
+    API->>REDIS: Rate limit check
+    API->>SVC: Reset password
     SVC->>DB: Find user by email
     alt user exists
-        SVC->>DB: Save hashed reset token + expiry
-        SVC->>MAIL: Send reset link / code
-    else user missing
-        Note right of SVC: No-op (prevent enumeration)
+        SVC->>DB: Save hashed reset token
+        SVC->>MAIL: Send reset email
+    else user not found
+        SVC->>SVC: No-op to prevent enumeration
     end
-    API-->>FE: 200 generic response
-
-    Note over User,MAIL: Submit New Password
-    User->>FE: Enter new password + token
+    API-->>FE: 200 OK
+    User->>FE: Enter new password with token
     FE->>API: POST /api/auth/update-password
-    API->>REDIS: Rate-limit check
-    API->>SVC: validatePolicy and updatePassword
+    API->>REDIS: Rate limit check
+    API->>SVC: Update password
     SVC->>DB: Match hashed reset token
-    alt token invalid / expired
-        SVC-->>API: 400 / 401
+    alt token invalid or expired
+        SVC-->>API: 400 Bad Request
     else token valid
-        SVC->>DB: BCrypt new password + clear reset and refresh fields
+        SVC->>DB: Hash and save new password
         SVC-->>API: 200 Password updated
     end
     API-->>FE: Response
@@ -438,26 +407,21 @@ sequenceDiagram
     participant SVC as AuthService
     participant DB as PostgreSQL
 
-    Note over User,DB: OAuth2 Redirect Flow
-    User->>FE: Click Continue with Google/GitHub
-    FE->>SEC: GET /oauth2/authorization/provider
-    SEC->>OP: Redirect to provider auth page
+    User->>FE: Click OAuth login button
+    FE->>SEC: GET /oauth2/authorization/google
+    SEC->>OP: Redirect to provider
     OP-->>SEC: Callback with auth code
-    SEC->>OP: Exchange code for user profile
-    OP-->>SEC: email, name, providerId
-
-    Note over SEC,DB: Token Issuance (Success Handler)
-    SEC->>SVC: resolveOrCreateOAuthUser profile
-    SVC->>DB: Find or create user and assign ROLE_USER
+    SEC->>OP: Exchange code for profile
+    OP-->>SEC: User profile data
+    SEC->>SVC: Resolve or create user
+    SVC->>DB: Find or create user
     SVC->>DB: Save hashed refresh token
     SVC-->>SEC: User resolved
-    SEC-->>FE: Redirect to frontend with HttpOnly cookie
-
-    Note over FE,DB: Access Token Retrieval
+    SEC-->>FE: Redirect with HttpOnly cookie
     FE->>SEC: POST /api/auth/refresh
-    SEC->>SVC: refreshAccessToken
-    SVC-->>SEC: AuthResponse with accessToken
-    SEC-->>FE: Access token in response body
+    SEC->>SVC: Refresh access token
+    SVC-->>SEC: New access token
+    SEC-->>FE: Access token in body
 ```
 
 ### 5) Admin Users Pagination + Filter + Search Flow
@@ -471,17 +435,16 @@ sequenceDiagram
     participant SVC as AdminService
     participant DB as PostgreSQL
 
-    Admin->>FE: Open admin users page with filters
+    Admin->>FE: Open admin users page
     FE->>API: GET /api/admin/users
-    Note right of API: JWT filter authenticates ROLE_ADMIN
-    API->>SVC: getUsers pageable filters
-    SVC->>SVC: Validate page size and normalize role
+    API->>SVC: Get users with filters
+    SVC->>SVC: Validate and normalize params
     SVC->>SVC: Build JPA Specification
-    SVC->>DB: SELECT with filters ORDER BY LIMIT OFFSET
-    DB-->>SVC: Page rows and total count
-    SVC->>SVC: Map entities to UserDto
+    SVC->>DB: Query with filters and pagination
+    DB-->>SVC: Page of user rows
+    SVC->>SVC: Map entities to DTOs
     SVC-->>API: Paged response
-    API-->>FE: 200 JSON with content page size totalElements
+    API-->>FE: 200 OK with paginated data
 ```
 
 </details>
@@ -494,19 +457,19 @@ sequenceDiagram
 ### Registration and OTP Verification
 
 ```mermaid
-flowchart TD
+graph TD
     A[User Submits Register Form] --> B[Validate Request]
-    B --> C{Email Exists?}
+    B --> C{Email Exists}
     C -- Yes --> D[Return 409 Conflict]
     C -- No --> E[Validate Password Policy]
-    E --> F[Create User Disabled]
-    F --> G[Generate OTP]
-    G --> H[Hash OTP + Save User]
+    E --> F[Create Disabled User]
+    F --> G[Generate and Hash OTP]
+    G --> H[Save User to Database]
     H --> I[Send OTP Email]
     I --> J[User Submits OTP]
-    J --> K{OTP Valid and Not Expired?}
+    J --> K{OTP Valid}
     K -- No --> L[Return Error]
-    K -- Yes --> M[Enable User + Clear OTP Fields]
+    K -- Yes --> M[Enable User Account]
     M --> N[Return Success]
 ```
 
@@ -541,7 +504,7 @@ erDiagram
 
     ROLES {
         bigint id PK
-        enum name "ROLE_USER, ROLE_ADMIN"
+        string name
     }
 
     USER_ROLES {
