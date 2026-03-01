@@ -284,8 +284,7 @@ sequenceDiagram
     participant REDIS as Redis
     participant MAIL as EmailService
 
-    rect rgb(40, 40, 60)
-    Note right of User: Registration
+    Note over User,MAIL: Registration
     User->>FE: Submit register form
     FE->>API: POST /api/auth/register
     API->>REDIS: Rate-limit check (ip + email)
@@ -302,10 +301,8 @@ sequenceDiagram
         end
     end
     API-->>FE: Response
-    end
 
-    rect rgb(40, 60, 40)
-    Note right of User: OTP Verification
+    Note over User,MAIL: OTP Verification
     User->>FE: Submit OTP code
     FE->>API: POST /api/auth/verify-otp
     API->>REDIS: Rate-limit check
@@ -319,10 +316,8 @@ sequenceDiagram
         SVC-->>API: 200 "Account verified"
     end
     API-->>FE: Response
-    end
 
-    rect rgb(60, 40, 40)
-    Note right of User: OTP Resend
+    Note over User,MAIL: OTP Resend
     User->>FE: Request resend
     FE->>API: POST /api/auth/resend-otp
     API->>REDIS: Rate-limit check
@@ -330,7 +325,6 @@ sequenceDiagram
     SVC->>DB: Update user with new hashed OTP
     SVC->>MAIL: Send new OTP
     API-->>FE: 200 "OTP resent"
-    end
 ```
 
 ### 2) Login + Refresh Rotation + Logout Flow
@@ -345,8 +339,7 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant REDIS as Redis
 
-    rect rgb(40, 40, 60)
-    Note right of User: Login
+    Note over User,REDIS: Login
     User->>FE: Submit email + password
     FE->>API: POST /api/auth/login
     API->>REDIS: Rate-limit check (ip + email)
@@ -367,10 +360,8 @@ sequenceDiagram
         end
     end
     API-->>FE: Response
-    end
 
-    rect rgb(40, 60, 40)
-    Note right of FE: Token Refresh (rotation)
+    Note over FE,REDIS: Token Refresh (rotation)
     FE->>API: POST /api/auth/refresh (cookie auto-sent)
     API->>SVC: refreshAccessToken()
     SVC->>DB: Match hashed refresh token
@@ -379,21 +370,18 @@ sequenceDiagram
         SVC-->>API: 401 Unauthorized
     else valid
         SVC->>SVC: Issue new access token
-        SVC->>DB: Rotate → save new hashed refresh token
+        SVC->>DB: Rotate - save new hashed refresh token
         SVC-->>API: New access token + rotated cookie
     end
     API-->>FE: Response
-    end
 
-    rect rgb(60, 40, 40)
-    Note right of User: Logout
+    Note over User,REDIS: Logout
     User->>FE: Click logout
     FE->>API: POST /api/auth/logout
     API->>SVC: logout()
     SVC->>DB: Clear refresh token fields
-    SVC-->>API: 200 + Set-Cookie(maxAge=0)
+    SVC-->>API: 200 + Set-Cookie maxAge=0
     API-->>FE: Logged out
-    end
 ```
 
 ### 3) Forgot Password + Update Password Flow
@@ -409,8 +397,7 @@ sequenceDiagram
     participant REDIS as Redis
     participant MAIL as EmailService
 
-    rect rgb(40, 40, 60)
-    Note right of User: Request Reset
+    Note over User,MAIL: Request Reset
     User->>FE: Enter email for reset
     FE->>API: POST /api/auth/reset-password
     API->>REDIS: Rate-limit check
@@ -423,10 +410,8 @@ sequenceDiagram
         Note right of SVC: No-op (prevent enumeration)
     end
     API-->>FE: 200 generic response
-    end
 
-    rect rgb(40, 60, 40)
-    Note right of User: Submit New Password
+    Note over User,MAIL: Submit New Password
     User->>FE: Enter new password + token
     FE->>API: POST /api/auth/update-password
     API->>REDIS: Rate-limit check
@@ -435,11 +420,10 @@ sequenceDiagram
     alt token invalid / expired
         SVC-->>API: 400 / 401
     else token valid
-        SVC->>DB: BCrypt new password + clear reset & refresh fields
-        SVC-->>API: 200 "Password updated"
+        SVC->>DB: BCrypt new password + clear reset and refresh fields
+        SVC-->>API: 200 Password updated
     end
     API-->>FE: Response
-    end
 ```
 
 ### 4) OAuth2 Login (No Access Token in Callback URL)
@@ -454,32 +438,26 @@ sequenceDiagram
     participant SVC as AuthService
     participant DB as PostgreSQL
 
-    rect rgb(40, 40, 60)
-    Note right of User: OAuth2 Redirect Flow
-    User->>FE: Click "Continue with Google/GitHub"
-    FE->>SEC: GET /oauth2/authorization/{provider}
+    Note over User,DB: OAuth2 Redirect Flow
+    User->>FE: Click Continue with Google/GitHub
+    FE->>SEC: GET /oauth2/authorization/provider
     SEC->>OP: Redirect to provider auth page
     OP-->>SEC: Callback with auth code
-    SEC->>OP: Exchange code → user profile
+    SEC->>OP: Exchange code for user profile
     OP-->>SEC: email, name, providerId
-    end
 
-    rect rgb(40, 60, 40)
-    Note right of SEC: Token Issuance (Success Handler)
+    Note over SEC,DB: Token Issuance (Success Handler)
     SEC->>SVC: resolveOrCreateOAuthUser(profile)
     SVC->>DB: Find or create user + assign ROLE_USER
     SVC->>DB: Save hashed refresh token
     SVC-->>SEC: User resolved
     SEC-->>FE: Redirect (no token in URL) + HttpOnly cookie
-    end
 
-    rect rgb(60, 40, 40)
-    Note right of FE: Access Token Retrieval
+    Note over FE,DB: Access Token Retrieval
     FE->>SEC: POST /api/auth/refresh (cookie auto-sent)
     SEC->>SVC: refreshAccessToken()
-    SVC-->>SEC: AuthResponse(accessToken)
+    SVC-->>SEC: AuthResponse with accessToken
     SEC-->>FE: Access token in response body
-    end
 ```
 
 ### 5) Admin Users Pagination + Filter + Search Flow
