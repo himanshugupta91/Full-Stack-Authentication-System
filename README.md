@@ -617,45 +617,237 @@ Frontend design goals and implementation choices:
 
 ## API Endpoints
 
-Base URL: `http://localhost:8080/api`
+Base URL: `http://localhost:8080`
 
-### Auth APIs (`/auth`)
+### Auth APIs — `POST /api/auth/*`
 
-| Method | Endpoint | Description | Access |
-| --- | --- | --- | --- |
-| POST | `/register` | Register user account | Public |
-| POST | `/verify-otp` | Verify registration OTP | Public |
-| POST | `/login` | Login and issue tokens | Public |
-| POST | `/refresh` | Refresh access token via cookie/body token | Public |
-| POST | `/logout` | Revoke refresh token and clear cookie | Public |
-| POST | `/reset-password` | Request reset token | Public |
-| POST | `/update-password` | Update password with reset token | Public |
-| POST | `/resend-otp?email=` | Resend OTP with cooldown/rate limits | Public |
+| # | Method | Endpoint | Description | Access |
+|---|--------|----------|-------------|--------|
+| 1 | POST | `/api/auth/register` | Register a new user account | Public |
+| 2 | POST | `/api/auth/verify-otp` | Verify email with OTP code | Public |
+| 3 | POST | `/api/auth/login` | Login and receive JWT + refresh cookie | Public |
+| 4 | POST | `/api/auth/refresh` | Refresh access token (cookie or body) | Public |
+| 5 | POST | `/api/auth/logout` | Revoke refresh token and clear cookie | Public |
+| 6 | POST | `/api/auth/reset-password` | Request password reset email | Public |
+| 7 | POST | `/api/auth/update-password` | Set new password using reset token | Public |
+| 8 | POST | `/api/auth/resend-otp?email={email}` | Resend OTP with rate limiting | Public |
 
-### User APIs (`/user`)
+<details>
+<summary><strong>📦 Request / Response Details</strong></summary>
 
-| Method | Endpoint | Description | Access |
-| --- | --- | --- | --- |
-| GET | `/dashboard` | User dashboard payload | ROLE_USER / ROLE_ADMIN |
-| GET | `/profile` | Current profile info | ROLE_USER / ROLE_ADMIN |
-| POST | `/change-password` | Change password (authenticated) | ROLE_USER / ROLE_ADMIN |
+#### `POST /api/auth/register`
 
-### Admin APIs (`/admin`)
+**Request Body** (`RegisterRequest`):
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "SecureP@ss1"
+}
+```
+**Validation**: `name` required · `email` valid format · `password` min 6 chars
+**Response**: `200` → `{ "message": "...", "success": true }`
 
-| Method | Endpoint | Description | Access |
-| --- | --- | --- | --- |
-| GET | `/dashboard` | Admin metrics (total users, active users) | ROLE_ADMIN |
-| GET | `/users` | Paginated/searchable/filterable users list | ROLE_ADMIN |
+---
 
-Admin users query params:
+#### `POST /api/auth/verify-otp`
 
-- `page` default `0`
-- `size` default `20`, max `100`
-- `search` for name/email match
-- `enabled` boolean filter
-- `role` accepts `USER`, `ADMIN`, `ROLE_USER`, `ROLE_ADMIN`
-- `sortBy` allows `id`, `name`, `email`, `enabled`, `createdAt`
-- `sortDir` accepts `asc` or `desc`
+**Request Body** (`OtpVerifyRequest`):
+```json
+{
+  "email": "john@example.com",
+  "otp": "483921"
+}
+```
+**Response**: `200` → `{ "message": "Account verified", "success": true }`
+**Errors**: `400` invalid/expired OTP · `423` OTP attempts locked
+
+---
+
+#### `POST /api/auth/login`
+
+**Request Body** (`LoginRequest`):
+```json
+{
+  "email": "john@example.com",
+  "password": "SecureP@ss1"
+}
+```
+**Response**: `200` → `AuthResponse` (access token + user info) + `Set-Cookie: refreshToken=...`
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "name": "John Doe",
+  "email": "john@example.com",
+  "roles": ["ROLE_USER"]
+}
+```
+**Errors**: `401` bad credentials · `423` account locked + `Retry-After` header
+
+---
+
+#### `POST /api/auth/refresh`
+
+**Request**: Refresh token from `HttpOnly` cookie (auto-sent) or body:
+```json
+{ "refreshToken": "raw-refresh-token-value" }
+```
+**Response**: `200` → New `AuthResponse` + rotated `Set-Cookie`
+**Errors**: `401` invalid/expired refresh token
+
+---
+
+#### `POST /api/auth/logout`
+
+**Request**: Refresh token from cookie or body (same as refresh)
+**Response**: `200` → `{ "message": "Logged out successfully.", "success": true }` + `Set-Cookie: refreshToken=; Max-Age=0`
+
+---
+
+#### `POST /api/auth/reset-password`
+
+**Request Body** (`ResetPasswordRequest`):
+```json
+{ "email": "john@example.com" }
+```
+**Response**: Always `200` → `{ "message": "..." }` (prevents user enumeration)
+
+---
+
+#### `POST /api/auth/update-password`
+
+**Request Body** (`UpdatePasswordRequest`):
+```json
+{
+  "token": "raw-reset-token",
+  "newPassword": "NewSecure@99"
+}
+```
+**Validation**: `token` required · `newPassword` min 6 chars + policy checks
+**Response**: `200` → `{ "message": "Password updated", "success": true }`
+**Errors**: `400` / `401` invalid/expired token
+
+---
+
+#### `POST /api/auth/resend-otp?email={email}`
+
+**Query Param**: `email` (required)
+**Response**: `200` → `{ "message": "OTP resent", "success": true }`
+**Rate Limited**: `429` Too Many Requests + `Retry-After`
+
+</details>
+
+---
+
+### User APIs — `/api/user/*`
+
+| # | Method | Endpoint | Description | Access |
+|---|--------|----------|-------------|--------|
+| 1 | GET | `/api/user/dashboard` | Get user dashboard data | `ROLE_USER` or `ROLE_ADMIN` |
+| 2 | GET | `/api/user/profile` | Get current user profile | `ROLE_USER` or `ROLE_ADMIN` |
+| 3 | POST | `/api/user/change-password` | Change password (authenticated) | `ROLE_USER` or `ROLE_ADMIN` |
+
+<details>
+<summary><strong>📦 Request / Response Details</strong></summary>
+
+#### `GET /api/user/dashboard`
+
+**Headers**: `Authorization: Bearer {accessToken}`
+**Response**: `200` → `UserDashboardDto`
+
+---
+
+#### `GET /api/user/profile`
+
+**Headers**: `Authorization: Bearer {accessToken}`
+**Response**: `200` → `UserDto`
+```json
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "john@example.com",
+  "roles": ["ROLE_USER"],
+  "createdAt": "2026-03-01T12:00:00"
+}
+```
+
+---
+
+#### `POST /api/user/change-password`
+
+**Headers**: `Authorization: Bearer {accessToken}`
+**Request Body** (`ChangePasswordRequest`):
+```json
+{
+  "currentPassword": "OldP@ss1",
+  "newPassword": "NewSecure@99"
+}
+```
+**Validation**: Both fields required · `newPassword` min 6 chars + policy
+**Response**: `200` → `{ "message": "...", "success": true }`
+
+</details>
+
+---
+
+### Admin APIs — `/api/admin/*`
+
+| # | Method | Endpoint | Description | Access |
+|---|--------|----------|-------------|--------|
+| 1 | GET | `/api/admin/dashboard` | Admin metrics (total users, active count) | `ROLE_ADMIN` |
+| 2 | GET | `/api/admin/users` | Paginated, searchable, filterable user list | `ROLE_ADMIN` |
+
+<details>
+<summary><strong>📦 Request / Response Details</strong></summary>
+
+#### `GET /api/admin/dashboard`
+
+**Headers**: `Authorization: Bearer {accessToken}`
+**Response**: `200` → `AdminDashboardDto`
+
+---
+
+#### `GET /api/admin/users`
+
+**Headers**: `Authorization: Bearer {accessToken}`
+
+**Query Parameters**:
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | int | `0` | Page number (zero-indexed) |
+| `size` | int | `20` | Page size (max `100`) |
+| `search` | String | — | Search by name or email |
+| `enabled` | Boolean | — | Filter by account status |
+| `role` | String | — | `USER`, `ADMIN`, `ROLE_USER`, `ROLE_ADMIN` |
+| `sortBy` | String | `createdAt` | Sort field: `id`, `name`, `email`, `enabled`, `createdAt` |
+| `sortDir` | String | `desc` | Sort direction: `asc` or `desc` |
+
+**Example**: `GET /api/admin/users?page=0&size=20&search=john&role=ADMIN&sortBy=createdAt&sortDir=desc`
+
+**Response**: `200` → `Page<UserDto>`
+```json
+{
+  "content": [ { "id": 1, "name": "...", "email": "...", "roles": [...], "createdAt": "..." } ],
+  "totalElements": 150,
+  "totalPages": 8,
+  "size": 20,
+  "number": 0
+}
+```
+
+</details>
+
+---
+
+### OAuth2 APIs — Spring Security Managed
+
+| # | Method | Endpoint | Description | Access |
+|---|--------|----------|-------------|--------|
+| 1 | GET | `/oauth2/authorization/{provider}` | Start OAuth2 login flow (Google, GitHub, Apple, LinkedIn) | Public |
+| 2 | GET | `/login/oauth2/code/{provider}` | OAuth2 callback (handled by Spring Security) | Public |
+
+OAuth2 flow: Frontend redirects to `/oauth2/authorization/google` → user authenticates with provider → Spring Security handles callback → `OAuth2AuthenticationSuccessHandler` issues tokens + HttpOnly cookie → redirects to frontend with no token in URL → frontend calls `/api/auth/refresh` to get access token.
 
 ---
 
