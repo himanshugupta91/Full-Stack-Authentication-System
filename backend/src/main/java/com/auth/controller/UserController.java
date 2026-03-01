@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -33,9 +32,8 @@ public class UserController {
      */
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<UserDashboardDto> getDashboard() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(userPortalService.getDashboard(auth.getName()));
+    public ResponseEntity<UserDashboardDto> getDashboard(Authentication authentication) {
+        return ResponseEntity.ok(userPortalService.getDashboard(authentication.getName()));
     }
 
     /**
@@ -44,9 +42,8 @@ public class UserController {
      */
     @GetMapping("/profile")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<UserDto> getProfile() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(userPortalService.getProfile(auth.getName()));
+    public ResponseEntity<UserDto> getProfile(Authentication authentication) {
+        return ResponseEntity.ok(userPortalService.getProfile(authentication.getName()));
     }
 
     /**
@@ -55,11 +52,10 @@ public class UserController {
      */
     @PostMapping("/change-password")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<MessageResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
-
-        MessageResponse response = authService.changePassword(email, request);
+    public ResponseEntity<MessageResponse> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        MessageResponse response = authService.changePassword(authentication.getName(), request);
         return ResponseEntity.ok(response);
     }
 }

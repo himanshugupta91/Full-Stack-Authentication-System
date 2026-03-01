@@ -1,6 +1,7 @@
 package com.auth.exception;
 
 import com.auth.dto.MessageResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,12 +11,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.util.stream.Collectors;
+import java.util.List;
 
 /**
  * Global exception handler for REST controllers.
  */
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     /**
@@ -23,9 +25,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<MessageResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
-                .map(FieldError::getDefaultMessage)
-                .collect(Collectors.joining(", "));
+        String errorMessage = buildValidationErrorMessage(ex.getBindingResult().getFieldErrors());
         return ResponseEntity.badRequest().body(new MessageResponse(errorMessage, false));
     }
 
@@ -90,10 +90,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handle generic runtime exceptions.
+     * Handle client-side validation/argument errors raised from service layer.
      */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<MessageResponse> handleRuntimeException(RuntimeException ex) {
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<MessageResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(new MessageResponse(ex.getMessage(), false));
     }
 
@@ -102,7 +102,33 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<MessageResponse> handleException(Exception ex) {
+        log.error("Unhandled exception in API layer", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new MessageResponse("An error occurred: " + ex.getMessage(), false));
+                .body(new MessageResponse("An unexpected error occurred. Please try again later.", false));
+    }
+
+    private String buildValidationErrorMessage(List<FieldError> fieldErrors) {
+        StringBuilder messageBuilder = new StringBuilder();
+        boolean firstMessageAdded = false;
+
+        for (FieldError fieldError : fieldErrors) {
+            String defaultMessage = fieldError.getDefaultMessage();
+            if (defaultMessage == null || defaultMessage.isBlank()) {
+                continue;
+            }
+
+            if (firstMessageAdded) {
+                messageBuilder.append(", ");
+            }
+
+            messageBuilder.append(defaultMessage);
+            firstMessageAdded = true;
+        }
+
+        if (!firstMessageAdded) {
+            return "Validation failed.";
+        }
+
+        return messageBuilder.toString();
     }
 }

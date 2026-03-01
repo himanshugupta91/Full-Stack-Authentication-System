@@ -19,6 +19,9 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
+    private static final String ACCESS_TOKEN_TYPE = "access";
+    private static final String TOKEN_TYPE_CLAIM = "tokenType";
+
     @Value("${jwt.secret}")
     private String jwtSecret;
 
@@ -41,7 +44,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
-                .claim("tokenType", "access")
+                .claim(TOKEN_TYPE_CLAIM, ACCESS_TOKEN_TYPE)
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSigningKey())
                 .compact();

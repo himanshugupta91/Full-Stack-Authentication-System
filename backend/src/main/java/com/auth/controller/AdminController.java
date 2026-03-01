@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -17,10 +16,14 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:3000" })
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminController {
+
+    private static final String DEFAULT_PAGE = "0";
+    private static final String DEFAULT_PAGE_SIZE = "20";
+    private static final String DEFAULT_SORT_FIELD = "createdAt";
+    private static final String DEFAULT_SORT_DIRECTION = "desc";
 
     private final AdminService adminService;
 
@@ -29,9 +32,8 @@ public class AdminController {
      * GET /api/admin/dashboard
      */
     @GetMapping("/dashboard")
-    public ResponseEntity<AdminDashboardDto> getDashboard() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return ResponseEntity.ok(adminService.getDashboard(auth.getName()));
+    public ResponseEntity<AdminDashboardDto> getDashboard(Authentication authentication) {
+        return ResponseEntity.ok(adminService.getDashboard(authentication.getName()));
     }
 
     /**
@@ -40,13 +42,13 @@ public class AdminController {
      */
     @GetMapping("/users")
     public ResponseEntity<Page<UserDto>> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = DEFAULT_PAGE) int page,
+            @RequestParam(defaultValue = DEFAULT_PAGE_SIZE) int size,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Boolean enabled,
             @RequestParam(required = false) String role,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
+            @RequestParam(defaultValue = DEFAULT_SORT_FIELD) String sortBy,
+            @RequestParam(defaultValue = DEFAULT_SORT_DIRECTION) String sortDir) {
         return ResponseEntity.ok(adminService.getUsers(page, size, search, enabled, role, sortBy, sortDir));
     }
 }

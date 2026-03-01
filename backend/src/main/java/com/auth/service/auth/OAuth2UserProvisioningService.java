@@ -24,6 +24,16 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OAuth2UserProvisioningService {
 
+    private static final String EMAIL_ATTRIBUTE = "email";
+    private static final String NAME_ATTRIBUTE = "name";
+    private static final String PREFERRED_USERNAME_ATTRIBUTE = "preferred_username";
+    private static final String LOGIN_ATTRIBUTE = "login";
+    private static final String GIVEN_NAME_ATTRIBUTE = "given_name";
+    private static final String FAMILY_NAME_ATTRIBUTE = "family_name";
+    private static final String GITHUB_PROVIDER = "github";
+    private static final String GITHUB_NO_REPLY_SUFFIX = "@users.noreply.github.com";
+    private static final char EMAIL_SEPARATOR = '@';
+
     private final UserService userService;
 
     private final RoleService roleService;
@@ -49,7 +59,7 @@ public class OAuth2UserProvisioningService {
                 changed = true;
             }
 
-            if (user.getAuthProvider() == null || user.getAuthProvider().isBlank()) {
+            if (!hasText(user.getAuthProvider())) {
                 user.setAuthProvider(provider);
                 changed = true;
             }
@@ -76,15 +86,15 @@ public class OAuth2UserProvisioningService {
 
     /** Extracts a reliable email from provider attributes with provider-specific fallback logic. */
     private String extractEmail(String provider, Map<String, Object> attributes) {
-        String email = toString(attributes.get("email"));
-        if (email != null && !email.isBlank()) {
+        String email = toString(attributes.get(EMAIL_ATTRIBUTE));
+        if (hasText(email)) {
             return email;
         }
 
-        if ("github".equals(provider)) {
-            String login = toString(attributes.get("login"));
-            if (login != null && !login.isBlank()) {
-                return login + "@users.noreply.github.com";
+        if (GITHUB_PROVIDER.equals(provider)) {
+            String login = toString(attributes.get(LOGIN_ATTRIBUTE));
+            if (hasText(login)) {
+                return login + GITHUB_NO_REPLY_SUFFIX;
             }
         }
 
@@ -94,16 +104,16 @@ public class OAuth2UserProvisioningService {
     /** Resolves a display name from known OAuth profile attributes. */
     private String extractDisplayName(Map<String, Object> attributes, String email) {
         String name = firstNonBlank(
-                toString(attributes.get("name")),
-                toString(attributes.get("preferred_username")),
-                toString(attributes.get("login")));
+                toString(attributes.get(NAME_ATTRIBUTE)),
+                toString(attributes.get(PREFERRED_USERNAME_ATTRIBUTE)),
+                toString(attributes.get(LOGIN_ATTRIBUTE)));
 
         if (name != null) {
             return name;
         }
 
-        String givenName = toString(attributes.get("given_name"));
-        String familyName = toString(attributes.get("family_name"));
+        String givenName = toString(attributes.get(GIVEN_NAME_ATTRIBUTE));
+        String familyName = toString(attributes.get(FAMILY_NAME_ATTRIBUTE));
         String combinedName = firstNonBlank(
                 joinWithSpace(givenName, familyName),
                 givenName,
@@ -113,15 +123,19 @@ public class OAuth2UserProvisioningService {
             return combinedName;
         }
 
-        return email.substring(0, email.indexOf('@'));
+        int separatorIndex = email.indexOf(EMAIL_SEPARATOR);
+        if (separatorIndex <= 0) {
+            return email;
+        }
+        return email.substring(0, separatorIndex);
     }
 
     /** Joins two non-blank strings with a single space. */
     private String joinWithSpace(String left, String right) {
-        if (left == null || left.isBlank()) {
+        if (!hasText(left)) {
             return right;
         }
-        if (right == null || right.isBlank()) {
+        if (!hasText(right)) {
             return left;
         }
         return left + " " + right;
@@ -130,7 +144,7 @@ public class OAuth2UserProvisioningService {
     /** Returns the first non-blank string in priority order. */
     private String firstNonBlank(String... values) {
         for (String value : values) {
-            if (value != null && !value.isBlank()) {
+            if (hasText(value)) {
                 return value;
             }
         }
@@ -139,6 +153,16 @@ public class OAuth2UserProvisioningService {
 
     /** Safely converts an arbitrary OAuth attribute value to String. */
     private String toString(Object value) {
-        return value == null ? null : String.valueOf(value);
+        if (value == null) {
+            return null;
+        }
+        return String.valueOf(value);
+    }
+
+    private boolean hasText(String value) {
+        if (value == null) {
+            return false;
+        }
+        return !value.isBlank();
     }
 }

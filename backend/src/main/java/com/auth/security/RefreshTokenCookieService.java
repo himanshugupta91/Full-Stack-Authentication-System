@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class RefreshTokenCookieService {
 
+    private static final long MILLISECONDS_PER_SECOND = 1000L;
+
     @Value("${auth.refresh-token.cookie-name:refreshToken}")
     private String cookieName;
 
@@ -32,7 +34,7 @@ public class RefreshTokenCookieService {
                 .secure(cookieSecure)
                 .path(cookiePath)
                 .sameSite(cookieSameSite)
-                .maxAge(refreshTokenExpirationMs / 1000)
+                .maxAge(refreshTokenExpirationMs / MILLISECONDS_PER_SECOND)
                 .build()
                 .toString();
     }

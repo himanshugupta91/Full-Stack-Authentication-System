@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -24,6 +25,8 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    private static final String OAUTH2_CALLBACK_PATH = "/oauth2/callback";
 
     private final OAuth2UserProvisioningService oAuth2UserProvisioningService;
 
@@ -45,10 +48,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         User user = oAuth2UserProvisioningService.loadOrCreateUser(oauthToken, oauth2User);
         AuthTokens tokenResult = authTokenService.issueTokens(user);
 
-        response.addHeader("Set-Cookie", refreshTokenCookieService.buildRefreshTokenCookie(tokenResult.refreshToken()));
+        response.addHeader(HttpHeaders.SET_COOKIE,
+                refreshTokenCookieService.buildRefreshTokenCookie(tokenResult.refreshToken()));
 
         String targetUrl = UriComponentsBuilder
-                .fromUriString(frontendUrl + "/oauth2/callback")
+                .fromUriString(frontendUrl + OAUTH2_CALLBACK_PATH)
                 .build(true)
                 .toUriString();
 

@@ -19,6 +19,10 @@ import java.io.IOException;
 @Slf4j
 public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
+    private static final String LOGIN_PATH = "/login";
+    private static final String OAUTH_ERROR_QUERY_PARAM = "oauthError";
+    private static final String FALLBACK_ERROR_MESSAGE = "OAuth login failed.";
+
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
@@ -27,9 +31,9 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
     public void onAuthenticationFailure(HttpServletRequest request,
             HttpServletResponse response,
             AuthenticationException exception) throws IOException, ServletException {
-        String errorMessage = exception.getMessage() == null ? "OAuth login failed." : exception.getMessage();
+        String errorMessage = resolveErrorMessage(exception);
         String provider = request.getParameter("registrationId");
-        Throwable rootCause = exception.getCause() == null ? exception : exception.getCause();
+        Throwable rootCause = resolveRootCause(exception);
         log.debug("OAuth2 authentication failed. uri={}, providerHint={}, message={}, rootCause={}",
                 request.getRequestURI(),
                 provider,
@@ -37,12 +41,28 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
                 rootCause.getMessage());
 
         String targetUrl = UriComponentsBuilder
-                .fromUriString(frontendUrl + "/login")
-                .queryParam("oauthError", errorMessage)
+                .fromUriString(frontendUrl + LOGIN_PATH)
+                .queryParam(OAUTH_ERROR_QUERY_PARAM, errorMessage)
                 .build()
                 .encode()
                 .toUriString();
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
+    }
+
+    private String resolveErrorMessage(AuthenticationException exception) {
+        String message = exception.getMessage();
+        if (message == null) {
+            return FALLBACK_ERROR_MESSAGE;
+        }
+        return message;
+    }
+
+    private Throwable resolveRootCause(AuthenticationException exception) {
+        Throwable cause = exception.getCause();
+        if (cause == null) {
+            return exception;
+        }
+        return cause;
     }
 }

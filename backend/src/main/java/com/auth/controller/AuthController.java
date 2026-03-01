@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final String LOGOUT_SUCCESS_MESSAGE = "Logged out successfully.";
+
     private final AuthService authService;
 
     private final AuthTokenService authTokenService;
@@ -63,8 +65,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse httpResponse) {
         AuthTokens authTokens = authService.login(request);
-        httpResponse.addHeader(HttpHeaders.SET_COOKIE,
-                refreshTokenCookieService.buildRefreshTokenCookie(authTokens.refreshToken()));
+        setRefreshTokenCookie(httpResponse, authTokens.refreshToken());
         return ResponseEntity.ok(authTokens.response());
     }
 
@@ -80,8 +81,7 @@ public class AuthController {
         String refreshToken = resolveRefreshToken(httpRequest, request);
 
         AuthTokens authTokens = authTokenService.refreshTokens(refreshToken);
-        httpResponse.addHeader(HttpHeaders.SET_COOKIE,
-                refreshTokenCookieService.buildRefreshTokenCookie(authTokens.refreshToken()));
+        setRefreshTokenCookie(httpResponse, authTokens.refreshToken());
         return ResponseEntity.ok(authTokens.response());
     }
 
@@ -98,7 +98,7 @@ public class AuthController {
         authTokenService.revokeRefreshToken(refreshToken);
 
         httpResponse.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookieService.clearRefreshTokenCookie());
-        return ResponseEntity.ok(new MessageResponse("Logged out successfully.", true));
+        return ResponseEntity.ok(new MessageResponse(LOGOUT_SUCCESS_MESSAGE, true));
     }
 
     /**
@@ -133,21 +133,36 @@ public class AuthController {
 
     /** Resolves refresh token from request body first, then from configured cookie. */
     private String resolveRefreshToken(HttpServletRequest request, TokenRefreshRequest body) {
-        if (body != null && body.getRefreshToken() != null && !body.getRefreshToken().isBlank()) {
+        if (body != null && hasText(body.getRefreshToken())) {
             return body.getRefreshToken();
         }
+        return extractTokenFromCookies(request);
+    }
 
+    private String extractTokenFromCookies(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
             return null;
         }
 
+        String refreshCookieName = refreshTokenCookieService.getCookieName();
         for (Cookie cookie : cookies) {
-            if (refreshTokenCookieService.getCookieName().equals(cookie.getName())) {
-                return cookie.getValue();
+            if (refreshCookieName.equals(cookie.getName())) {
+                String cookieValue = cookie.getValue();
+                if (hasText(cookieValue)) {
+                    return cookieValue;
+                }
             }
         }
 
         return null;
+    }
+
+    private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookieService.buildRefreshTokenCookie(refreshToken));
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

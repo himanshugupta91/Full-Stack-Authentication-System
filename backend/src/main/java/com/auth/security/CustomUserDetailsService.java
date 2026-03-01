@@ -10,8 +10,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Custom UserDetailsService implementation for Spring Security.
@@ -24,7 +26,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserService userService;
 
-    /** Loads a user by email and returns Spring Security-compatible user details. */
+    /**
+     * Loads a user by email and returns Spring Security-compatible user details.
+     */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         String normalizedEmail = normalizeEmail(email);
@@ -37,22 +41,23 @@ public class CustomUserDetailsService implements UserDetailsService {
         if (email == null) {
             throw new UsernameNotFoundException("Email must not be null.");
         }
-        return email.trim();
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     /** Finds an application user by email or throws UsernameNotFoundException. */
     protected User findUserOrThrow(String email) {
-        return userService.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+        Optional<User> userOpt = userService.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new UsernameNotFoundException("User not found with email: " + email);
+        }
+        return userOpt.get();
     }
 
     /** Converts application roles into Spring Security granted authorities. */
     protected List<SimpleGrantedAuthority> buildAuthorities(User user) {
-        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        for (com.auth.entity.Role role : user.getRoles()) {
-            authorities.add(new SimpleGrantedAuthority(role.getName().name()));
-        }
-        return authorities;
+        return user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.getName().name()))
+                .collect(Collectors.toList());
     }
 
     /** Converts the application user model into Spring Security UserDetails. */

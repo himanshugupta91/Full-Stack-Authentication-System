@@ -13,6 +13,9 @@ import java.util.regex.Pattern;
 public class PasswordPolicyService {
 
     private static final int MIN_PASSWORD_LENGTH = 6;
+    private static final int MIN_EMAIL_LOCAL_PART_LENGTH = 3;
+    private static final int EMAIL_LOCAL_PART_INDEX = 0;
+    private static final String EMAIL_SEPARATOR = "@";
     private static final Pattern LETTER_PATTERN = Pattern.compile(".*[A-Za-z].*");
     private static final Pattern DIGIT_PATTERN = Pattern.compile(".*\\d.*");
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile(".*\\s.*");
@@ -43,7 +46,8 @@ public class PasswordPolicyService {
         }
 
         if (password.length() < MIN_PASSWORD_LENGTH) {
-            throw new IllegalArgumentException("Password must be at least 6 characters long.");
+            throw new IllegalArgumentException(
+                    "Password must be at least " + MIN_PASSWORD_LENGTH + " characters long.");
         }
 
         if (WHITESPACE_PATTERN.matcher(password).matches()) {
@@ -64,9 +68,12 @@ public class PasswordPolicyService {
         }
 
         if (emailHint != null && !emailHint.isBlank()) {
-            String localPart = emailHint.toLowerCase(Locale.ROOT).split("@")[0];
-            if (localPart.length() >= 3 && normalized.contains(localPart)) {
-                throw new IllegalArgumentException("Password must not include your email username.");
+            String[] emailSegments = emailHint.toLowerCase(Locale.ROOT).split(EMAIL_SEPARATOR);
+            if (emailSegments.length > EMAIL_LOCAL_PART_INDEX) {
+                String localPart = emailSegments[EMAIL_LOCAL_PART_INDEX];
+                if (localPart.length() >= MIN_EMAIL_LOCAL_PART_LENGTH && normalized.contains(localPart)) {
+                    throw new IllegalArgumentException("Password must not include your email username.");
+                }
             }
         }
     }

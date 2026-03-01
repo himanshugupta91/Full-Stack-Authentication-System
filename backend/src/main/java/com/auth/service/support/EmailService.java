@@ -16,6 +16,9 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 public class EmailService {
 
+    private static final String OTP_SUBJECT = "Email Verification OTP";
+    private static final String PASSWORD_RESET_SUBJECT = "Password Reset Request";
+
     private final JavaMailSender mailSender;
 
     @Value("${spring.mail.username}")
@@ -27,6 +30,9 @@ public class EmailService {
     @Value("${app.frontend-reset-password-url:http://localhost:5173/reset-password}")
     private String resetPasswordUrl;
 
+    @Value("${auth.reset-token.expiration.minutes:30}")
+    private int resetTokenExpirationMinutes;
+
     /**
      * Send OTP verification email.
      */
@@ -34,7 +40,7 @@ public class EmailService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
         message.setTo(toEmail);
-        message.setSubject("Email Verification OTP");
+        message.setSubject(OTP_SUBJECT);
         message.setText("Your OTP for email verification is: " + otp +
                 "\n\nThis OTP will expire in " + otpExpirationMinutes + " minutes." +
                 "\n\nIf you didn't request this, please ignore this email.");
@@ -51,9 +57,9 @@ public class EmailService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
         message.setTo(toEmail);
-        message.setSubject("Password Reset Request");
+        message.setSubject(PASSWORD_RESET_SUBJECT);
         message.setText("Click the link below to reset your password:\n\n" + resetLink +
-                "\n\nThis link will expire in 30 minutes." +
+                "\n\nThis link will expire in " + resetTokenExpirationMinutes + " minutes." +
                 "\n\nIf you didn't request this, please ignore this email.");
 
         mailSender.send(message);

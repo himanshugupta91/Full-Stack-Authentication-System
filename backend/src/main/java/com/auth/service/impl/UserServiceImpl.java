@@ -1,6 +1,7 @@
 package com.auth.service.impl;
 
 import com.auth.entity.User;
+import com.auth.exception.ResourceNotFoundException;
 import com.auth.repository.UserRepository;
 import com.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -18,17 +19,11 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
-    /**
-     * Retrieves a user by their email address.
-     *
-     * @param email The email to search for.
-     * @return The User entity found.
-     * @throws RuntimeException if no user is found with the given email.
-     */
+    /** Retrieves a user by email or throws a domain-level not-found exception. */
     @Override
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
     }
 
     /**

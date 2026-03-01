@@ -2,6 +2,7 @@ package com.auth.service.auth;
 
 import com.auth.dto.AuthResponse;
 import com.auth.dto.AuthTokens;
+import com.auth.entity.Role;
 import com.auth.entity.User;
 import com.auth.exception.TokenValidationException;
 import com.auth.security.JwtUtil;
@@ -16,6 +17,8 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Handles issuing, rotating, and invalidating access/refresh tokens.
@@ -23,6 +26,10 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class AuthTokenService {
+
+    private static final int REFRESH_TOKEN_BYTE_LENGTH = 64;
+    private static final long MILLISECONDS_PER_SECOND = 1000L;
+    private static final String BEARER_TOKEN_TYPE = "Bearer";
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -45,7 +52,7 @@ public class AuthTokenService {
         String refreshToken = generateRefreshToken();
 
         user.setRefreshToken(tokenHashService.hash(refreshToken));
-        user.setRefreshTokenExpiry(LocalDateTime.now().plusSeconds(refreshTokenExpirationMs / 1000));
+        user.setRefreshTokenExpiry(LocalDateTime.now().plusSeconds(refreshTokenExpirationMs / MILLISECONDS_PER_SECOND));
         userService.save(user);
 
         AuthResponse response = buildAuthResponse(user, accessToken);
@@ -57,16 +64,15 @@ public class AuthTokenService {
      */
     @Transactional
     public AuthTokens refreshTokens(String refreshToken) {
-        if (refreshToken == null || refreshToken.isBlank()) {
+        if (isBlank(refreshToken)) {
             throw new TokenValidationException("Refresh token is required.");
         }
 
         String refreshTokenHash = tokenHashService.hash(refreshToken);
-
         User user = userService.findByRefreshToken(refreshTokenHash)
                 .orElseThrow(() -> new TokenValidationException("Invalid refresh token."));
 
-        if (user.getRefreshTokenExpiry() == null || user.getRefreshTokenExpiry().isBefore(LocalDateTime.now())) {
+        if (isRefreshTokenExpired(user.getRefreshTokenExpiry())) {
             user.setRefreshToken(null);
             user.setRefreshTokenExpiry(null);
             userService.save(user);
@@ -81,27 +87,32 @@ public class AuthTokenService {
      */
     @Transactional
     public void revokeRefreshToken(String refreshToken) {
-        if (refreshToken == null || refreshToken.isBlank()) {
+        if (isBlank(refreshToken)) {
             return;
         }
 
         String refreshTokenHash = tokenHashService.hash(refreshToken);
-        userService.findByRefreshToken(refreshTokenHash).ifPresent(user -> {
-            user.setRefreshToken(null);
-            user.setRefreshTokenExpiry(null);
-            userService.save(user);
-        });
+        Optional<User> userOpt = userService.findByRefreshToken(refreshTokenHash);
+        if (userOpt.isEmpty()) {
+            return;
+        }
+
+        User user = userOpt.get();
+        user.setRefreshToken(null);
+        user.setRefreshTokenExpiry(null);
+        userService.save(user);
     }
 
     /** Builds API auth response payload with token metadata and current user details. */
     private AuthResponse buildAuthResponse(User user, String accessToken) {
         List<String> roles = user.getRoles().stream()
-                .map(role -> role.getName().name())
-                .toList();
+                .map(Role::getName)
+                .map(Enum::name)
+                .collect(Collectors.toList());
 
         return new AuthResponse(
                 accessToken,
-                "Bearer",
+                BEARER_TOKEN_TYPE,
                 jwtUtil.getAccessTokenExpiration(),
                 refreshTokenExpirationMs,
                 user.getId(),
@@ -112,9 +123,25 @@ public class AuthTokenService {
 
     /** Generates a high-entropy URL-safe refresh token. */
     private String generateRefreshToken() {
-        byte[] randomBytes = new byte[64];
+        byte[] randomBytes = new byte[REFRESH_TOKEN_BYTE_LENGTH];
         SECURE_RANDOM.nextBytes(randomBytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    }
+
+    private boolean isBlank(String value) {
+        if (value == null) {
+            return true;
+        }
+        return value.isBlank();
+    }
+
+    private boolean isRefreshTokenExpired(LocalDateTime expiry) {
+        if (expiry == null) {
+            return true;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        return expiry.isBefore(now);
     }
 
 }

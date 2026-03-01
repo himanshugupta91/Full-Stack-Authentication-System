@@ -26,6 +26,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String AUTHORITY_ADMIN = "ROLE_ADMIN";
+    private static final String AUTHORITY_USER = "ROLE_USER";
+
     private final JwtAuthFilter jwtAuthFilter;
     private final OAuth2AuthenticationSuccessHandler successHandler;
     private final OAuth2AuthenticationFailureHandler failureHandler;
@@ -44,8 +47,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/api/user/**").hasAnyAuthority("ROLE_USER","ROLE_ADMIN")
+                        .requestMatchers("/api/admin/**").hasAuthority(AUTHORITY_ADMIN)
+                        .requestMatchers("/api/user/**").hasAnyAuthority(AUTHORITY_USER, AUTHORITY_ADMIN)
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth -> oauth

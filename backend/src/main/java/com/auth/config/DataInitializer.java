@@ -6,11 +6,13 @@ import com.auth.repository.RoleRepository;
 import com.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -21,39 +23,34 @@ import java.util.Set;
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
 
+    private static final String DEFAULT_ADMIN_NAME = "Admin";
 
     private final RoleRepository roleRepository;
 
-
     private final UserRepository userRepository;
-
 
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.seed.admin.name:" + DEFAULT_ADMIN_NAME + "}")
+    private String seedAdminName;
+
+    @Value("${app.seed.admin.email:admin@admin.com}")
+    private String seedAdminEmail;
+
+    @Value("${app.seed.admin.password:admin123}")
+    private String seedAdminPassword;
+
     /** Seeds default roles and a local admin account if they are missing at startup. */
     @Override
-    public void run(String... args) throws Exception {
-        // Create roles if they don't exist
-        Role userRole = roleRepository.findByName(Role.RoleName.ROLE_USER)
-                .orElseGet(() -> {
-                    Role role = new Role();
-                    role.setName(Role.RoleName.ROLE_USER);
-                    return roleRepository.save(role);
-                });
+    public void run(String... args) {
+        Role userRole = findOrCreateRole(Role.RoleName.ROLE_USER);
+        Role adminRole = findOrCreateRole(Role.RoleName.ROLE_ADMIN);
 
-        Role adminRole = roleRepository.findByName(Role.RoleName.ROLE_ADMIN)
-                .orElseGet(() -> {
-                    Role role = new Role();
-                    role.setName(Role.RoleName.ROLE_ADMIN);
-                    return roleRepository.save(role);
-                });
-
-        // Create default admin user if doesn't exist
-        if (!userRepository.existsByEmail("admin@admin.com")) {
+        if (!userRepository.existsByEmail(seedAdminEmail)) {
             User admin = new User();
-            admin.setName("Admin");
-            admin.setEmail("admin@admin.com");
-            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setName(seedAdminName);
+            admin.setEmail(seedAdminEmail);
+            admin.setPassword(passwordEncoder.encode(seedAdminPassword));
             admin.setEnabled(true);
 
             Set<Role> adminRoles = new HashSet<>();
@@ -62,7 +59,21 @@ public class DataInitializer implements CommandLineRunner {
             admin.setRoles(adminRoles);
 
             userRepository.save(admin);
-            log.info("Default admin user created: admin@admin.com");
+            log.info("Default admin user created: {}", seedAdminEmail);
         }
+    }
+
+    private Role findOrCreateRole(Role.RoleName roleName) {
+        Optional<Role> roleOpt = roleRepository.findByName(roleName);
+        if (roleOpt.isPresent()) {
+            return roleOpt.get();
+        }
+        return createRole(roleName);
+    }
+
+    private Role createRole(Role.RoleName roleName) {
+        Role role = new Role();
+        role.setName(roleName);
+        return roleRepository.save(role);
     }
 }
