@@ -1,4 +1,4 @@
-# 🔐 Matrix Auth System
+# 🔐 Full-Stack Auth System
 
 <p align="center">
   <img src="https://img.shields.io/badge/A%20Secure%20Full--Stack-Authentication%20%26%20Authorization%20Platform-00C853?style=for-the-badge&labelColor=1a1a2e" alt="tagline" />
@@ -25,31 +25,31 @@
 
 ## <img src="https://img.shields.io/badge/📖-About%20the%20Project-1a1a2e?style=for-the-badge&labelColor=00C853" />
 
-Matrix Auth System is a full-stack authentication and authorization platform built for real-world user management use cases.
-The backend is built with Spring Boot layered architecture (Controller, Service, Repository, Entity, DTO, Security).
-The frontend is built with React 19 and Vite, with role-aware routing and token lifecycle handling.
-The system supports email/password authentication, OTP verification, password reset, refresh-token rotation, and OAuth2 login.
-Security and abuse protection are first-class concerns, implemented with Redis-backed rate limiting and account lock strategies.
-This project is structured to be interview-ready, production-oriented, and easy to extend for enterprise features.
+This project is a backend-focused authentication and authorization service built with Spring Boot.
+It follows a clean layered architecture (Controller, Service, Repository, Entity, DTO, Security) for maintainable API development.
+The service handles signup, OTP verification, login, token refresh, logout, password reset, and OAuth2 provider login.
+Access control is enforced with role-based authorization for `ROLE_USER` and `ROLE_ADMIN`.
+Security is treated as a core requirement through refresh-token rotation, token hashing, Redis-backed rate limiting, and account lock protection.
+The codebase is structured to reflect production-grade backend engineering practices and is easy to extend.
 
 ---
 
 ## <img src="https://img.shields.io/badge/✨-Features-1a1a2e?style=for-the-badge&labelColor=6C63FF" />
 
-- User registration with email verification (OTP-based activation)
-- Login with access token + HttpOnly refresh token cookie
-- Refresh token rotation and logout token revocation
-- Password reset flow with secure token handling
-- Password change for authenticated users
-- OAuth2 login (Google, GitHub, Apple, LinkedIn)
-- RBAC authorization (`ROLE_USER`, `ROLE_ADMIN`)
-- Admin dashboard and paginated/filterable/searchable user listing
-- Brute-force protection and endpoint-specific rate limiting
-- Token hashing for refresh/reset/OTP values (no plaintext storage)
-- Global exception handling with consistent JSON error responses
-- Layered Spring Boot backend design and reusable service contracts
-- Responsive React frontend with Bootstrap and protected routes
-- Accessibility/performance aware Matrix background animation
+- Email/password registration with OTP-based account verification
+- Secure login with short-lived access token and HttpOnly refresh-token cookie
+- Refresh-token rotation with server-side revocation on logout
+- Password reset by email and authenticated password change support
+- OAuth2 login providers: Google, GitHub, Apple, and LinkedIn
+- Role-based authorization for `ROLE_USER` and `ROLE_ADMIN`
+- Admin module with dashboard metrics and paginated user management
+- Search, filter, and sort support for admin user listing endpoints
+- Redis-backed rate limiting and lockout strategy against brute-force abuse
+- Hashed storage for refresh tokens, reset tokens, and OTP values
+- Centralized global exception handling with consistent JSON responses
+- Clean layered backend architecture with reusable service contracts
+- Responsive frontend routing with protected role-aware pages
+- Accessibility- and performance-conscious UI behavior
 
 ---
 
@@ -145,14 +145,30 @@ OAuth2 flow: Frontend redirects to `/oauth2/authorization/google` → user authe
 - npm 9+
 - Docker + Docker Compose
 
-### 1) Start database + Redis
+### 1) Configure environment files
+
+```bash
+cd backend
+cp .env.example .env
+# edit backend/.env and set at least: SPRING_DATASOURCE_PASSWORD, JWT_SECRET
+
+cd ../frontend
+cp .env.example .env
+```
+
+Security note:
+
+- Never commit `.env` files.
+- Never put secrets in `VITE_*` variables (they are exposed to the browser).
+
+### 2) Start database + Redis
 
 ```bash
 cd backend
 docker compose up -d postgres redis
 ```
 
-### 2) Run backend
+### 3) Run backend
 
 ```bash
 cd backend
@@ -161,7 +177,7 @@ mvn spring-boot:run
 
 Default backend URL: `http://localhost:8080`
 
-### 3) Run frontend
+### 4) Run frontend
 
 ```bash
 cd frontend
@@ -171,7 +187,7 @@ npm run dev
 
 Default frontend URL: `http://localhost:5173`
 
-### 4) Optional build checks
+### 5) Optional build checks
 
 ```bash
 cd backend
@@ -182,3 +198,5 @@ cd ../frontend
 npm run lint
 npm run build
 ```
+
+---
