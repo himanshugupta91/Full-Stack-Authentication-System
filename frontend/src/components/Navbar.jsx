@@ -14,7 +14,7 @@ const Navbar = () => {
     return (
         <nav className="navbar navbar-expand-lg">
             <div className="container">
-                <Link className="navbar-brand fw-bold" to="/">
+                <Link className="navbar-brand" to="/">
                     <i className="bi bi-shield-lock me-2"></i>
                     AuthSystem
                 </Link>
@@ -82,7 +82,7 @@ const Navbar = () => {
                                 </li>
                                 <li className="nav-item ms-2">
                                     <button
-                                        className="btn btn-outline-danger btn-sm"
+                                        className="btn btn-outline-primary btn-sm"
                                         onClick={handleLogout}
                                     >
                                         <i className="bi bi-box-arrow-right me-1"></i>

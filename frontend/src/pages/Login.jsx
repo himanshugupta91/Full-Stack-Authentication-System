@@ -130,15 +130,6 @@ const Login = () => {
             </Link>
           </p>
         </div>
-
-        <div className="demo-credentials mt-4 p-3 bg-light rounded">
-          <small className="text-muted d-block mb-2">
-            <i className="bi bi-info-circle me-1"></i>
-            Demo Admin Credentials:
-          </small>
-          <code className="d-block">Email: admin@admin.com</code>
-          <code className="d-block">Password: admin123</code>
-        </div>
       </div>
     </div>
   );

@@ -43,7 +43,7 @@ const UserDashboard = () => {
                                 <i className="bi bi-person-fill"></i>
                             </div>
                             <div>
-                                <h2 className="mb-1">Welcome back, {user?.name}!</h2>
+                                <h2 className="mb-1" style={{ color: '#1f1f1f' }}>Welcome back, {user?.name}!</h2>
                                 <p className="text-muted mb-0">
                                     <i className="bi bi-envelope me-2"></i>
                                     {user?.email}
@@ -73,7 +73,7 @@ const UserDashboard = () => {
                         <div className="card-icon bg-primary">
                             <i className="bi bi-person-badge"></i>
                         </div>
-                        <h5>Account Status</h5>
+                        <h5 style={{ color: '#1f1f1f' }}>Account Status</h5>
                         <p className="text-success mb-0">
                             <i className="bi bi-check-circle me-1"></i>
                             Verified & Active

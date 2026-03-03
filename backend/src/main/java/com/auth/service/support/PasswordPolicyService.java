@@ -78,7 +78,6 @@ public class PasswordPolicyService {
         if (localPart.length() < 3) {
             return null;
         }
-        String emailLocalPart = localPart;
-        return emailLocalPart;
+        return localPart;
     }
 }

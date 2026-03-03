@@ -15,15 +15,27 @@ const Home = () => {
       <div className="hero-section">
         <div className="container">
           <div className="hero-content">
-            <span className="badge bg-primary mb-4 px-3 py-2 rounded-pill">
+            {/* Decorative ornament */}
+            <div className="hero-ornament">
+              <svg viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 20 Q50 5 80 20 Q110 35 140 20 Q170 5 180 20" stroke="#c7afff" strokeWidth="1.5" fill="none" opacity="0.6" />
+                <path d="M30 20 Q60 35 90 20 Q120 5 150 20 Q170 30 180 20" stroke="#ffc5a8" strokeWidth="1.5" fill="none" opacity="0.5" />
+                <circle cx="100" cy="20" r="3" fill="#c7afff" opacity="0.4" />
+                <circle cx="60" cy="15" r="2" fill="#a8d2ff" opacity="0.4" />
+                <circle cx="140" cy="15" r="2" fill="#ffc5a8" opacity="0.4" />
+              </svg>
+            </div>
+
+            <span className="badge bg-primary mb-4 px-4 py-2 rounded-pill" style={{ fontSize: '0.85rem', fontWeight: 500, letterSpacing: '0.5px' }}>
               <i className="bi bi-stars me-2"></i>
               v2.0.0 Token + OAuth Upgrade
             </span>
-            <h1 className="display-3 fw-bold mb-4">
+
+            <h1 className="display-3 mb-4" style={{ letterSpacing: '-1.5px' }}>
               Next-Generation <br />
               <span className="text-gradient">Authentication System</span>
             </h1>
-            <p className="lead text-muted mb-5 mx-auto" style={{ maxWidth: '700px' }}>
+            <p className="lead mb-5 mx-auto" style={{ maxWidth: '650px', color: '#78756f', fontSize: '1.15rem' }}>
               Secure access-token and refresh-token flow with OAuth2 login providers: Google, GitHub, Apple, and
               LinkedIn.
             </p>
@@ -36,11 +48,11 @@ const Home = () => {
                 </Link>
               ) : (
                 <>
-                  <Link to="/register" className="btn btn-primary btn-lg px-4 py-3">
+                  <Link to="/register" className="btn btn-primary btn-lg px-5 py-3">
                     <i className="bi bi-rocket-takeoff me-2"></i>
                     Get Started
                   </Link>
-                  <Link to="/login" className="btn btn-outline-primary btn-lg px-4 py-3">
+                  <Link to="/login" className="btn btn-outline-primary btn-lg px-5 py-3">
                     <i className="bi bi-box-arrow-in-right me-2"></i>
                     Sign In
                   </Link>
@@ -55,8 +67,8 @@ const Home = () => {
         <div className="social-login-section">
           <div className="container">
             <div className="text-center mb-4">
-              <h3 className="fw-bold mb-2">One-click OAuth2 Sign In</h3>
-              <p className="text-muted mb-0">Use your existing identity provider account to continue securely.</p>
+              <h3 className="mb-2">One-click OAuth2 Sign In</h3>
+              <p style={{ color: '#78756f' }} className="mb-0">Use your existing identity provider account to continue securely.</p>
             </div>
             <div className="home-oauth-grid">
               {oauthProviders.map((provider) => (
@@ -72,9 +84,9 @@ const Home = () => {
 
       <div className="tech-stack-section">
         <div className="container">
-          <div className="text-center mb-5">
-            <h6 className="text-primary text-uppercase letter-spacing-2 mb-2">Powered By</h6>
-            <h3 className="fw-bold">Modern Technology Stack</h3>
+          <div className="text-center mb-4">
+            <h6 className="text-uppercase letter-spacing-2 mb-2" style={{ color: '#78756f', fontSize: '0.8rem' }}>Powered By</h6>
+            <h3>Modern Technology Stack</h3>
           </div>
 
           <div className="tech-grid">
@@ -109,16 +121,16 @@ const Home = () => {
       <div className="features-section py-5">
         <div className="container">
           <div className="text-center mb-5">
-            <h2 className="fw-bold mb-3">Core Features</h2>
-            <p className="text-muted">Everything you need for a secure application</p>
+            <h2 className="mb-3">Core Features</h2>
+            <p style={{ color: '#78756f' }}>Everything you need for a secure application</p>
           </div>
 
           <div className="row g-4">
             <div className="col-md-4">
               <div className="feature-card h-100">
                 <i className="bi bi-shield-check mb-3"></i>
-                <h4 className="text-white">Access + Refresh Tokens</h4>
-                <p className="text-muted text-center">
+                <h4>Access + Refresh Tokens</h4>
+                <p style={{ color: '#78756f', textAlign: 'center' }}>
                   Short-lived access tokens with secure refresh-token rotation for safer long sessions.
                 </p>
               </div>
@@ -127,8 +139,8 @@ const Home = () => {
             <div className="col-md-4">
               <div className="feature-card h-100">
                 <i className="bi bi-person-check mb-3"></i>
-                <h4 className="text-white">OAuth2 Social Login</h4>
-                <p className="text-muted text-center">
+                <h4>OAuth2 Social Login</h4>
+                <p style={{ color: '#78756f', textAlign: 'center' }}>
                   Seamless login support for Google, GitHub, Apple, and LinkedIn accounts.
                 </p>
               </div>
@@ -137,8 +149,8 @@ const Home = () => {
             <div className="col-md-4">
               <div className="feature-card h-100">
                 <i className="bi bi-person-lock mb-3"></i>
-                <h4 className="text-white">Role-Based Access</h4>
-                <p className="text-muted text-center">
+                <h4>Role-Based Access</h4>
+                <p style={{ color: '#78756f', textAlign: 'center' }}>
                   Granular permission control with USER and ADMIN role separation.
                 </p>
               </div>
@@ -147,9 +159,9 @@ const Home = () => {
         </div>
       </div>
 
-      <footer className="py-4 text-center text-muted border-top border-secondary border-opacity-25 mt-5">
+      <footer className="py-4 text-center border-top mt-5" style={{ borderColor: '#e4e2df !important' }}>
         <div className="container">
-          <p className="mb-0">© 2026 Authentication System.</p>
+          <p className="mb-0" style={{ color: '#a3a09c' }}>© 2026 Authentication System.</p>
         </div>
       </footer>
     </div>
