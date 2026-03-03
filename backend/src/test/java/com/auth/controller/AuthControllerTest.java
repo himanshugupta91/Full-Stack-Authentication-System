@@ -1,9 +1,9 @@
 package com.auth.controller;
 
-import com.auth.dto.AuthResponse;
-import com.auth.dto.AuthTokens;
-import com.auth.dto.MessageResponse;
-import com.auth.dto.TokenRefreshRequest;
+import com.auth.dto.response.AuthResponse;
+import com.auth.dto.response.AuthTokens;
+import com.auth.dto.response.MessageResponse;
+import com.auth.dto.request.TokenRefreshRequest;
 import com.auth.security.RefreshTokenCookieService;
 import com.auth.service.AuthService;
 import com.auth.service.auth.AuthTokenService;

@@ -1,11 +1,11 @@
 package com.auth.service.auth;
 
-import com.auth.dto.AuthResponse;
-import com.auth.dto.AuthTokens;
+import com.auth.dto.response.AuthResponse;
+import com.auth.dto.response.AuthTokens;
 import com.auth.entity.Role;
 import com.auth.entity.User;
 import com.auth.exception.TokenValidationException;
-import com.auth.security.JwtUtil;
+import com.auth.security.jwt.JwtUtil;
 import com.auth.service.UserService;
 import com.auth.service.support.TokenHashService;
 import org.springframework.beans.factory.annotation.Value;
@@ -90,7 +90,10 @@ public class AuthTokenService {
         userService.findByRefreshToken(refreshTokenHash).ifPresent(this::clearStoredRefreshToken);
     }
 
-    /** Builds API auth response payload with token metadata and current user details. */
+    /**
+     * Builds API auth response payload with token metadata and current user
+     * details.
+     */
     private AuthResponse buildAuthResponse(User user, String accessToken) {
         List<String> roles = user.getRoles().stream()
                 .map(Role::getName)

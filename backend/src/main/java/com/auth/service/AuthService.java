@@ -1,13 +1,13 @@
 package com.auth.service;
 
-import com.auth.dto.AuthTokens;
-import com.auth.dto.LoginRequest;
-import com.auth.dto.OtpVerifyRequest;
-import com.auth.dto.RegisterRequest;
-import com.auth.dto.ResetPasswordRequest;
-import com.auth.dto.UpdatePasswordRequest;
-import com.auth.dto.MessageResponse;
-import com.auth.dto.ChangePasswordRequest;
+import com.auth.dto.response.AuthTokens;
+import com.auth.dto.request.LoginRequest;
+import com.auth.dto.request.OtpVerifyRequest;
+import com.auth.dto.request.RegisterRequest;
+import com.auth.dto.request.ResetPasswordRequest;
+import com.auth.dto.request.UpdatePasswordRequest;
+import com.auth.dto.response.MessageResponse;
+import com.auth.dto.request.ChangePasswordRequest;
 
 /**
  * Service interface for authentication operations.

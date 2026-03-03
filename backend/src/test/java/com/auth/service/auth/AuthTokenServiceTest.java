@@ -1,10 +1,10 @@
 package com.auth.service.auth;
 
-import com.auth.dto.AuthTokens;
+import com.auth.dto.response.AuthTokens;
 import com.auth.entity.Role;
 import com.auth.entity.User;
 import com.auth.exception.TokenValidationException;
-import com.auth.security.JwtUtil;
+import com.auth.security.jwt.JwtUtil;
 import com.auth.service.UserService;
 import com.auth.service.support.TokenHashService;
 import org.junit.jupiter.api.BeforeEach;

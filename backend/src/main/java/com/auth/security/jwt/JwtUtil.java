@@ -1,4 +1,4 @@
-package com.auth.security;
+package com.auth.security.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -77,7 +77,10 @@ public class JwtUtil {
         }
     }
 
-    /** Builds the JWT signing key from configured secret using Base64, Base64URL, or raw text fallback. */
+    /**
+     * Builds the JWT signing key from configured secret using Base64, Base64URL, or
+     * raw text fallback.
+     */
     private SecretKey getSigningKey() {
         byte[] keyBytes = decodeSecret(jwtSecret);
         if (keyBytes.length < 32) {
@@ -87,7 +90,10 @@ public class JwtUtil {
         return signingKey;
     }
 
-    /** Decodes secret value from Base64/Base64URL and falls back to UTF-8 bytes for plain text secrets. */
+    /**
+     * Decodes secret value from Base64/Base64URL and falls back to UTF-8 bytes for
+     * plain text secrets.
+     */
     private byte[] decodeSecret(String secret) {
         if (secret == null || secret.isBlank()) {
             throw new IllegalStateException("jwt.secret is missing or blank.");

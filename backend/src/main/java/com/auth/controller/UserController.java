@@ -1,7 +1,7 @@
 package com.auth.controller;
 
-import com.auth.dto.ChangePasswordRequest;
-import com.auth.dto.MessageResponse;
+import com.auth.dto.request.ChangePasswordRequest;
+import com.auth.dto.response.MessageResponse;
 import com.auth.dto.UserDashboardDto;
 import com.auth.dto.UserDto;
 import com.auth.service.AuthService;

@@ -1,16 +1,19 @@
-package com.auth.dto;
+package com.auth.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
- * DTO for password reset request.
+ * DTO for OTP verification request.
  */
 @Data
-public class ResetPasswordRequest {
+public class OtpVerifyRequest {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Please provide a valid email")
     private String email;
+
+    @NotBlank(message = "OTP is required")
+    private String otp;
 }

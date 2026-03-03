@@ -1,4 +1,4 @@
-package com.auth.security;
+package com.auth.security.oauth2;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.ServletException;
@@ -34,7 +34,10 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
                 .toUriString();
     }
 
-    /** Redirects failed OAuth2 attempts back to frontend login with the error message. */
+    /**
+     * Redirects failed OAuth2 attempts back to frontend login with the error
+     * message.
+     */
     @Override
     public void onAuthenticationFailure(HttpServletRequest request,
             HttpServletResponse response,

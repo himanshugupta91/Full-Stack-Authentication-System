@@ -1,6 +1,6 @@
 package com.auth.exception;
 
-import com.auth.dto.MessageResponse;
+import com.auth.dto.response.MessageResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;

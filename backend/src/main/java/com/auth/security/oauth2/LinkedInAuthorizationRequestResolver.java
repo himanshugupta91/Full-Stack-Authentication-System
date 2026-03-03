@@ -1,4 +1,4 @@
-package com.auth.security;
+package com.auth.security.oauth2;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -31,7 +31,10 @@ public class LinkedInAuthorizationRequestResolver implements OAuth2Authorization
         return customizedRequest;
     }
 
-    /** Resolves provider authorization request for an explicit client registration id. */
+    /**
+     * Resolves provider authorization request for an explicit client registration
+     * id.
+     */
     @Override
     public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String clientRegistrationId) {
         OAuth2AuthorizationRequest authorizationRequest = delegate.resolve(request, clientRegistrationId);
@@ -56,7 +59,10 @@ public class LinkedInAuthorizationRequestResolver implements OAuth2Authorization
         return linkedInRequest;
     }
 
-    /** Removes nonce parameter/attribute for LinkedIn to prevent nonce validation mismatches. */
+    /**
+     * Removes nonce parameter/attribute for LinkedIn to prevent nonce validation
+     * mismatches.
+     */
     private OAuth2AuthorizationRequest removeNonce(OAuth2AuthorizationRequest authorizationRequest) {
         boolean hasNonce = authorizationRequest.getAdditionalParameters().containsKey(OidcParameterNames.NONCE)
                 || authorizationRequest.getAttributes().containsKey(OidcParameterNames.NONCE);

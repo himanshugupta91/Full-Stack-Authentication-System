@@ -1,7 +1,8 @@
-package com.auth.security;
+package com.auth.security.oauth2;
 
-import com.auth.dto.AuthTokens;
+import com.auth.dto.response.AuthTokens;
 import com.auth.entity.User;
+import com.auth.security.RefreshTokenCookieService;
 import com.auth.service.auth.AuthTokenService;
 import com.auth.service.auth.OAuth2UserProvisioningService;
 import jakarta.annotation.PostConstruct;
@@ -21,7 +22,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 
 /**
- * Handles OAuth2 success by creating/finding a local user and issuing application tokens.
+ * Handles OAuth2 success by creating/finding a local user and issuing
+ * application tokens.
  */
 @Component
 @RequiredArgsConstructor
@@ -48,7 +50,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         oauthCallbackUrl = callbackUrl;
     }
 
-    /** Provisions local user data and redirects to frontend callback with a fresh access token. */
+    /**
+     * Provisions local user data and redirects to frontend callback with a fresh
+     * access token.
+     */
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
             HttpServletResponse response,

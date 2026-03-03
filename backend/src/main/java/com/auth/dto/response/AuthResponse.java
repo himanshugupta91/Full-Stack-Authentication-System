@@ -1,4 +1,4 @@
-package com.auth.dto;
+package com.auth.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * DTO for authentication response containing access token metadata and user details.
+ * DTO for authentication response containing access token metadata and user
+ * details.
  */
 @Data
 @NoArgsConstructor

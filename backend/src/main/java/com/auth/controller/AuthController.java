@@ -1,17 +1,17 @@
 package com.auth.controller;
 
 import com.auth.security.RefreshTokenCookieService;
-import com.auth.dto.AuthResponse;
-import com.auth.dto.AuthTokens;
-import com.auth.dto.LoginRequest;
-import com.auth.dto.OtpVerifyRequest;
-import com.auth.dto.RegisterRequest;
-import com.auth.dto.ResetPasswordRequest;
-import com.auth.dto.TokenRefreshRequest;
-import com.auth.dto.UpdatePasswordRequest;
+import com.auth.dto.response.AuthResponse;
+import com.auth.dto.response.AuthTokens;
+import com.auth.dto.request.LoginRequest;
+import com.auth.dto.request.OtpVerifyRequest;
+import com.auth.dto.request.RegisterRequest;
+import com.auth.dto.request.ResetPasswordRequest;
+import com.auth.dto.request.TokenRefreshRequest;
+import com.auth.dto.request.UpdatePasswordRequest;
 import com.auth.service.auth.AuthTokenService;
 import com.auth.service.AuthService;
-import com.auth.dto.MessageResponse;
+import com.auth.dto.response.MessageResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -62,7 +62,8 @@ public class AuthController {
      * POST /api/auth/login
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse httpResponse) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
+            HttpServletResponse httpResponse) {
         AuthTokens authTokens = authService.login(request);
         setRefreshTokenCookie(httpResponse, authTokens.refreshToken());
         AuthResponse authResponse = authTokens.response();
@@ -133,7 +134,9 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    /** Resolves refresh token from request body first, then from configured cookie. */
+    /**
+     * Resolves refresh token from request body first, then from configured cookie.
+     */
     private String resolveRefreshToken(HttpServletRequest request, TokenRefreshRequest body) {
         if (body != null && StringUtils.hasText(body.getRefreshToken())) {
             String requestBodyToken = body.getRefreshToken();

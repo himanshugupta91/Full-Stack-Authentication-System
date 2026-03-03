@@ -1,5 +1,6 @@
-package com.auth.security;
+package com.auth.security.jwt;
 
+import com.auth.security.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

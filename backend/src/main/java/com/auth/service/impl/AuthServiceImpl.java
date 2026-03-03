@@ -5,12 +5,12 @@ import com.auth.entity.User;
 import com.auth.exception.ResourceNotFoundException;
 import com.auth.exception.TokenValidationException;
 import com.auth.exception.UserAlreadyExistsException;
-import com.auth.dto.AuthTokens;
-import com.auth.dto.LoginRequest;
-import com.auth.dto.OtpVerifyRequest;
-import com.auth.dto.RegisterRequest;
-import com.auth.dto.ResetPasswordRequest;
-import com.auth.dto.UpdatePasswordRequest;
+import com.auth.dto.response.AuthTokens;
+import com.auth.dto.request.LoginRequest;
+import com.auth.dto.request.OtpVerifyRequest;
+import com.auth.dto.request.RegisterRequest;
+import com.auth.dto.request.ResetPasswordRequest;
+import com.auth.dto.request.UpdatePasswordRequest;
 import com.auth.service.auth.AuthAbuseProtectionService;
 import com.auth.service.AuthService;
 import com.auth.service.auth.AuthTokenService;
@@ -18,9 +18,9 @@ import com.auth.service.support.EmailService;
 import com.auth.service.support.OtpService;
 import com.auth.service.support.PasswordPolicyService;
 import com.auth.service.support.TokenHashService;
-import com.auth.dto.MessageResponse;
+import com.auth.dto.response.MessageResponse;
 import com.auth.mapper.UserMapper;
-import com.auth.dto.ChangePasswordRequest;
+import com.auth.dto.request.ChangePasswordRequest;
 import com.auth.service.RoleService;
 import com.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -100,8 +100,8 @@ public class AuthServiceImpl implements AuthService {
         userService.save(user);
         sendOtpEmailSafely(user, otp, "registration");
 
-        MessageResponse response =
-                new MessageResponse("Registration successful! Please check your email for OTP verification.", true);
+        MessageResponse response = new MessageResponse(
+                "Registration successful! Please check your email for OTP verification.", true);
         return response;
     }
 

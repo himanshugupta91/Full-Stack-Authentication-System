@@ -1,11 +1,11 @@
 package com.auth.service.impl;
 
-import com.auth.dto.ChangePasswordRequest;
-import com.auth.dto.LoginRequest;
-import com.auth.dto.MessageResponse;
-import com.auth.dto.RegisterRequest;
-import com.auth.dto.ResetPasswordRequest;
-import com.auth.dto.UpdatePasswordRequest;
+import com.auth.dto.request.ChangePasswordRequest;
+import com.auth.dto.request.LoginRequest;
+import com.auth.dto.response.MessageResponse;
+import com.auth.dto.request.RegisterRequest;
+import com.auth.dto.request.ResetPasswordRequest;
+import com.auth.dto.request.UpdatePasswordRequest;
 import com.auth.entity.Role;
 import com.auth.entity.User;
 import com.auth.exception.TokenValidationException;
