@@ -77,7 +77,7 @@ This project is structured to be interview-ready, production-oriented, and easy 
 ## <img src="https://img.shields.io/badge/📸-Preview-1a1a2e?style=for-the-badge&labelColor=E91E63" />
 
 <p align="center">
-  <img src="screenshots/home-page.png" alt="Home Page" width="700" />
+  <img src="screenshots/readme-preview.png" alt="Home Page" width="700" />
 </p>
 
 ---

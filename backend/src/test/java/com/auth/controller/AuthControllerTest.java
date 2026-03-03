@@ -59,6 +59,7 @@ class AuthControllerTest {
                 1L,
                 "Alice",
                 "alice@example.com",
+                true,
                 List.of("ROLE_USER"));
         AuthTokens tokens = new AuthTokens(authResponse, "new-refresh-token");
 

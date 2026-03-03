@@ -43,7 +43,7 @@ public class DataInitializer implements CommandLineRunner {
         Role userRole = findOrCreateRole(Role.RoleName.ROLE_USER);
         Role adminRole = findOrCreateRole(Role.RoleName.ROLE_ADMIN);
 
-        if (!userRepository.existsByEmail(seedAdminEmail)) {
+        if (!userRepository.existsByEmailIgnoreCase(seedAdminEmail)) {
             User admin = new User();
             admin.setName(seedAdminName);
             admin.setEmail(seedAdminEmail);

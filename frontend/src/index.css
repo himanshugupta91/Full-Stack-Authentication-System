@@ -85,6 +85,13 @@ h6 {
   line-height: 1.3;
 }
 
+/* Keep Bootstrap icon glyphs aligned and inheriting surrounding text color */
+.bi {
+  display: inline-block;
+  line-height: 1;
+  vertical-align: -0.125em;
+}
+
 /* ========================================
    Navbar
 ======================================== */
@@ -133,6 +140,7 @@ h6 {
 
 .navbar-toggler-icon {
   filter: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(31,31,31,0.92)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 /* ========================================
@@ -195,6 +203,10 @@ h6 {
 .card-icon i {
   font-size: 1.25rem;
   color: var(--charcoal);
+}
+
+.card-icon[class*='bg-'] i {
+  color: var(--white) !important;
 }
 
 .auth-header h2 {
@@ -647,12 +659,19 @@ h6 {
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, var(--charcoal) 0%, #6b5ce7 50%, #e08763 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--charcoal);
   font-weight: 400;
   font-family: var(--font-heading);
+}
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .text-gradient {
+    background: linear-gradient(135deg, var(--charcoal) 0%, #6b5ce7 50%, #e08763 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
 }
 
 /* ========================================
@@ -804,9 +823,12 @@ h6 {
 }
 
 .users-table-card h4,
-.users-table-card i,
-.users-table-card span {
+.users-table-card i {
   color: var(--charcoal) !important;
+}
+
+.users-table-card .badge {
+  color: var(--white) !important;
 }
 
 .table {
@@ -929,7 +951,7 @@ a:hover {
 }
 
 .text-muted {
-  color: var(--gray-500) !important;
+  color: var(--gray-600) !important;
 }
 
 .text-success {

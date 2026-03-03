@@ -53,6 +53,7 @@ export const saveAuthPayload = (payload) => {
     id: payload.id,
     name: payload.name,
     email: payload.email,
+    enabled: payload.enabled,
     roles: payload.roles || [],
   };
   localStorage.setItem(USER_KEY, JSON.stringify(user));

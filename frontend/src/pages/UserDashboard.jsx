@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { userAPI } from '../services/api';
+import { authAPI, userAPI } from '../services/api';
 
 const UserDashboard = () => {
     const { user, isAdmin } = useAuth();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [resendingOtp, setResendingOtp] = useState(false);
+    const isEmailVerified = user?.enabled === true;
 
     useEffect(() => {
         fetchDashboardData();
@@ -20,6 +23,22 @@ const UserDashboard = () => {
             setError('Failed to load dashboard data');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleResendOtp = async () => {
+        if (!user?.email || resendingOtp) {
+            return;
+        }
+
+        setResendingOtp(true);
+        try {
+            const response = await authAPI.resendOtp(user.email);
+            toast.success(response.data?.message || 'OTP sent successfully! Check your email.');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to resend OTP.');
+        } finally {
+            setResendingOtp(false);
         }
     };
 
@@ -67,6 +86,33 @@ const UserDashboard = () => {
                 )
             }
 
+            {user?.enabled === false && (
+                <div className="alert alert-warning d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <strong className="d-block mb-1">Email verification pending</strong>
+                        <span>Please verify your email to fully activate your account.</span>
+                    </div>
+                    <div className="d-flex gap-2">
+                        <Link
+                            to={`/verify-otp?email=${encodeURIComponent(user.email)}`}
+                            state={{ email: user.email }}
+                            className="btn btn-warning btn-sm"
+                        >
+                            <i className="bi bi-shield-check me-1"></i>
+                            Verify Now
+                        </Link>
+                        <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm"
+                            onClick={handleResendOtp}
+                            disabled={resendingOtp}
+                        >
+                            {resendingOtp ? 'Sending...' : 'Resend OTP'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="row g-4">
                 <div className="col-md-6 col-lg-4">
                     <div className="dashboard-card">
@@ -74,9 +120,9 @@ const UserDashboard = () => {
                             <i className="bi bi-person-badge"></i>
                         </div>
                         <h5 style={{ color: '#1f1f1f' }}>Account Status</h5>
-                        <p className="text-success mb-0">
-                            <i className="bi bi-check-circle me-1"></i>
-                            Verified & Active
+                        <p className={`${isEmailVerified ? 'text-success' : 'text-warning'} mb-0`}>
+                            <i className={`bi ${isEmailVerified ? 'bi-check-circle' : 'bi-hourglass-split'} me-1`}></i>
+                            {isEmailVerified ? 'Verified & Active' : 'Pending Verification'}
                         </p>
                     </div>
                 </div>

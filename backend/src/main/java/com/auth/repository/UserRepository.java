@@ -13,11 +13,11 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
 
-    /** Finds a user by unique email address. */
-    Optional<User> findByEmail(String email);
+    /** Finds a user by email address (case-insensitive). */
+    Optional<User> findByEmailIgnoreCase(String email);
 
-    /** Checks whether a user exists for the given email. */
-    boolean existsByEmail(String email);
+    /** Checks whether a user exists for the given email (case-insensitive). */
+    boolean existsByEmailIgnoreCase(String email);
 
     /** Finds a user by active password-reset token hash. */
     Optional<User> findByResetToken(String resetToken);

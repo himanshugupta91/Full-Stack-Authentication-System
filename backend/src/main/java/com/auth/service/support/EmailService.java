@@ -1,13 +1,19 @@
 package com.auth.service.support;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Year;
 
 /**
  * Service for sending emails (OTP verification, password reset).
@@ -17,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final SpringTemplateEngine templateEngine;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -30,21 +37,30 @@ public class EmailService {
     @Value("${auth.reset-token.expiration.minutes:30}")
     private int resetTokenExpirationMinutes;
 
+    @Value("${app.email.brand-name:Authentication System}")
+    private String brandName;
+
     /**
      * Send OTP verification email.
      */
     public void sendOtpEmail(String toEmail, String otp) {
-        String emailBody = "Your OTP for email verification is: " + otp +
-                "\n\nThis OTP will expire in " + otpExpirationMinutes + " minutes." +
-                "\n\nIf you didn't request this, please ignore this email.";
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(toEmail);
-        message.setSubject("Email Verification OTP");
-        message.setText(emailBody);
+        String subject = brandName + " - Verify Your Email";
+        String plainTextBody = buildOtpPlainTextBody(otp);
+        String htmlBody = buildOtpHtmlBodyFromTemplate(toEmail, otp);
 
-        mailSender.send(message);
+        try {
+            MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            messageHelper.setFrom(fromEmail);
+            messageHelper.setTo(toEmail);
+            messageHelper.setSubject(subject);
+            messageHelper.setText(plainTextBody, htmlBody);
+        } catch (MessagingException exception) {
+            throw new IllegalStateException("Failed to build OTP email message.", exception);
+        }
+
+        mailSender.send(mimeMessage);
     }
 
     /**
@@ -63,5 +79,21 @@ public class EmailService {
         message.setText(emailBody);
 
         mailSender.send(message);
+    }
+
+    private String buildOtpPlainTextBody(String otp) {
+        return "Your one-time verification code is: " + otp +
+                "\n\nThis OTP expires in " + otpExpirationMinutes + " minutes." +
+                "\n\nIf you did not request this code, you can ignore this message.";
+    }
+
+    private String buildOtpHtmlBodyFromTemplate(String toEmail, String otp) {
+        Context context = new Context();
+        context.setVariable("brandName", brandName);
+        context.setVariable("recipientEmail", toEmail);
+        context.setVariable("otp", otp);
+        context.setVariable("otpExpirationMinutes", otpExpirationMinutes);
+        context.setVariable("year", Year.now().getValue());
+        return templateEngine.process("emails/otp-verification", context);
     }
 }

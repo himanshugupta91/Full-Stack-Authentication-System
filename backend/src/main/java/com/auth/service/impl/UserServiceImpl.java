@@ -7,7 +7,9 @@ import com.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -22,7 +24,8 @@ public class UserServiceImpl implements UserService {
     /** Retrieves a user by email or throws a domain-level not-found exception. */
     @Override
     public User getUserByEmail(String email) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
+        String normalizedEmail = normalizeEmail(email);
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
         User user = userOpt
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
         return user;
@@ -37,7 +40,11 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public Optional<User> findByEmail(String email) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
+        String normalizedEmail = normalizeEmail(email);
+        if (!StringUtils.hasText(normalizedEmail)) {
+            return Optional.empty();
+        }
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
         return userOpt;
     }
 
@@ -49,7 +56,11 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public boolean existsByEmail(String email) {
-        boolean userExists = userRepository.existsByEmail(email);
+        String normalizedEmail = normalizeEmail(email);
+        if (!StringUtils.hasText(normalizedEmail)) {
+            return false;
+        }
+        boolean userExists = userRepository.existsByEmailIgnoreCase(normalizedEmail);
         return userExists;
     }
 
@@ -63,6 +74,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User save(User user) {
+        if (user != null && StringUtils.hasText(user.getEmail())) {
+            user.setEmail(normalizeEmail(user.getEmail()));
+        }
         User savedUser = userRepository.save(user);
         return savedUser;
     }
@@ -91,5 +105,13 @@ public class UserServiceImpl implements UserService {
     public Optional<User> findByAuthProviderAndAuthProviderUserId(String authProvider, String authProviderUserId) {
         Optional<User> userOpt = userRepository.findByAuthProviderAndAuthProviderUserId(authProvider, authProviderUserId);
         return userOpt;
+    }
+
+    private String normalizeEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            return null;
+        }
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        return normalizedEmail;
     }
 }

@@ -32,8 +32,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -85,13 +87,15 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public MessageResponse register(RegisterRequest request) {
-        if (userService.existsByEmail(request.getEmail())) {
+        String normalizedEmail = normalizeEmail(request.getEmail());
+        if (userService.existsByEmail(normalizedEmail)) {
             throw new UserAlreadyExistsException("Email already registered!");
         }
 
-        passwordPolicyService.validate(request.getPassword(), request.getEmail());
+        passwordPolicyService.validate(request.getPassword(), normalizedEmail);
 
         User user = userMapper.toEntity(request);
+        user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         String otp = generateAndStoreVerificationOtp(user);
@@ -117,9 +121,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public MessageResponse verifyOtp(OtpVerifyRequest request) {
-        authAbuseProtectionService.guardOtpVerification(request.getEmail());
+        String normalizedEmail = normalizeEmail(request.getEmail());
+        authAbuseProtectionService.guardOtpVerification(normalizedEmail);
 
-        User user = getExistingUserByEmail(request.getEmail());
+        User user = getExistingUserByEmail(normalizedEmail);
         ensureEmailNotYetVerified(user);
         ensureOtpMatches(user, request.getOtp());
         ensureTokenNotExpired(user.getOtpExpiry(), "OTP has expired! Please request a new one.");
@@ -151,19 +156,16 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public AuthTokens login(LoginRequest request) {
-        authAbuseProtectionService.guardLoginAttempt(request.getEmail());
+        String normalizedEmail = normalizeEmail(request.getEmail());
+        authAbuseProtectionService.guardLoginAttempt(normalizedEmail);
 
-        User user = userService.findByEmail(request.getEmail())
+        User user = userService.findByEmail(normalizedEmail)
                 .orElseThrow(() -> {
-                    authAbuseProtectionService.recordFailedLogin(request.getEmail());
+                    authAbuseProtectionService.recordFailedLogin(normalizedEmail);
                     return new BadCredentialsException("Invalid email or password!");
                 });
 
-        if (!user.isEnabled()) {
-            throw new TokenValidationException("Please verify your email first!");
-        }
-
-        authenticateLoginCredentials(request);
+        authenticateLoginCredentials(normalizedEmail, request.getPassword());
         authAbuseProtectionService.clearLoginFailures(user);
 
         AuthTokens tokens = authTokenService.issueTokens(user);
@@ -181,12 +183,13 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public MessageResponse resetPassword(ResetPasswordRequest request) {
-        authAbuseProtectionService.guardResetPassword(request.getEmail());
+        String normalizedEmail = normalizeEmail(request.getEmail());
+        authAbuseProtectionService.guardResetPassword(normalizedEmail);
         MessageResponse response = new MessageResponse(
                 "If an account exists with this email, a reset link will be sent.",
                 true);
 
-        User user = userService.findByEmail(request.getEmail()).orElse(null);
+        User user = userService.findByEmail(normalizedEmail).orElse(null);
         if (user == null) {
             return response;
         }
@@ -235,9 +238,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public MessageResponse resendOtp(String email) {
-        authAbuseProtectionService.guardResendOtp(email);
+        String normalizedEmail = normalizeEmail(email);
+        authAbuseProtectionService.guardResendOtp(normalizedEmail);
 
-        User user = getExistingUserByEmail(email);
+        User user = getExistingUserByEmail(normalizedEmail);
         ensureEmailNotYetVerified(user);
 
         String otp = generateAndStoreVerificationOtp(user);
@@ -283,7 +287,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private User getExistingUserByEmail(String email) {
-        Optional<User> userOpt = userService.findByEmail(email);
+        String normalizedEmail = normalizeEmail(email);
+        Optional<User> userOpt = userService.findByEmail(normalizedEmail);
         User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found!"));
         return user;
     }
@@ -354,12 +359,12 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private void authenticateLoginCredentials(LoginRequest request) {
+    private void authenticateLoginCredentials(String normalizedEmail, String password) {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                    new UsernamePasswordAuthenticationToken(normalizedEmail, password));
         } catch (BadCredentialsException exception) {
-            authAbuseProtectionService.recordFailedLogin(request.getEmail());
+            authAbuseProtectionService.recordFailedLogin(normalizedEmail);
             throw exception;
         }
     }
@@ -367,5 +372,12 @@ public class AuthServiceImpl implements AuthService {
     private void clearStoredResetToken(User user) {
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
+    }
+
+    private String normalizeEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            return email;
+        }
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

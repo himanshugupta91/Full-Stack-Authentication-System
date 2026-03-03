@@ -29,7 +29,7 @@ class UserServiceImplTest {
         User user = new User();
         user.setEmail("alice@example.com");
 
-        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
+        when(userRepository.findByEmailIgnoreCase("alice@example.com")).thenReturn(Optional.of(user));
 
         User result = userService.getUserByEmail("alice@example.com");
 
@@ -38,7 +38,7 @@ class UserServiceImplTest {
 
     @Test
     void getUserByEmail_whenUserMissing_throwsResourceNotFoundException() {
-        when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByEmailIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> userService.getUserByEmail("missing@example.com"));
     }

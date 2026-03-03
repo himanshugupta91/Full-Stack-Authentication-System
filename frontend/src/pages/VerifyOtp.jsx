@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
@@ -12,7 +12,8 @@ const VerifyOtp = () => {
     const inputRefs = useRef([]);
     const navigate = useNavigate();
     const location = useLocation();
-    const email = location.state?.email || '';
+    const [searchParams] = useSearchParams();
+    const email = location.state?.email || searchParams.get('email') || '';
 
     useEffect(() => {
         if (!email) {

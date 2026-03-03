@@ -108,6 +108,7 @@ public class AuthTokenService {
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
+                user.isEnabled(),
                 roles);
         return authResponse;
     }
