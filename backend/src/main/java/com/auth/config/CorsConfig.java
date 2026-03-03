@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @Configuration
 public class CorsConfig {
 
-    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:3000,https://authsystem-plum.vercel.app}")
     private String allowedOrigins;
 
     /** Registers allowed origins, methods, and headers for browser-to-backend requests. */
