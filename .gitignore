@@ -28,6 +28,9 @@ mvnw.cmd
 
 # Environment variables
 .env
+backend/.env
+frontend/.env
+*.env.local
 
 # Spring Boot
 application.properties

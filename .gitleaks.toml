@@ -1,0 +1,21 @@
+title = "Full-Stack-Authentication-System gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Ignore generated artifacts and known non-secret placeholders."
+paths = [
+  '''(^|/)\.idea/''',
+  '''(^|/)screenshots/''',
+  '''(^|/)frontend/dist/''',
+  '''(^|/)backend/target/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)frontend/package-lock\.json$'''
+]
+regexes = [
+  '''replace-with-64-byte-random-secret''',
+  '''your-app-password''',
+  '''your-email@example\.com'''
+]

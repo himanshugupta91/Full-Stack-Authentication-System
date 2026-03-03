@@ -97,6 +97,8 @@ public class AuthServiceImpl implements AuthService {
         User user = userMapper.toEntity(request);
         user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setAuthProvider("local");
+        user.setAuthProviderUserId(null);
 
         String otp = generateAndStoreVerificationOtp(user);
         assignDefaultUserRole(user);

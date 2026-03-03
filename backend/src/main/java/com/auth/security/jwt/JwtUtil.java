@@ -3,6 +3,7 @@ package com.auth.security.jwt;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -25,6 +26,14 @@ public class JwtUtil {
     @Getter
     @Value("${jwt.expiration}")
     private long accessTokenExpiration;
+
+    @PostConstruct
+    void validateConfiguration() {
+        if (accessTokenExpiration <= 0) {
+            throw new IllegalStateException("jwt.expiration must be greater than 0.");
+        }
+        getSigningKey();
+    }
 
     /**
      * Generate JWT token from authentication object.

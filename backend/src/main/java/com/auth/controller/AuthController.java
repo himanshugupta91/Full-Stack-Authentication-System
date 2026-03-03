@@ -3,6 +3,7 @@ package com.auth.controller;
 import com.auth.security.RefreshTokenCookieService;
 import com.auth.dto.response.AuthResponse;
 import com.auth.dto.response.AuthTokens;
+import com.auth.exception.TokenValidationException;
 import com.auth.dto.request.LoginRequest;
 import com.auth.dto.request.OtpVerifyRequest;
 import com.auth.dto.request.RegisterRequest;
@@ -21,6 +22,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * REST controller for authentication endpoints.
@@ -79,12 +85,24 @@ public class AuthController {
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse,
             @RequestBody(required = false) TokenRefreshRequest request) {
-        String refreshToken = resolveRefreshToken(httpRequest, request);
+        List<String> refreshTokenCandidates = resolveRefreshTokenCandidates(httpRequest, request);
+        if (refreshTokenCandidates.isEmpty()) {
+            throw new TokenValidationException("Refresh token is required.");
+        }
 
-        AuthTokens authTokens = authTokenService.refreshTokens(refreshToken);
-        setRefreshTokenCookie(httpResponse, authTokens.refreshToken());
-        AuthResponse authResponse = authTokens.response();
-        return ResponseEntity.ok(authResponse);
+        TokenValidationException lastValidationException = null;
+        for (String refreshToken : refreshTokenCandidates) {
+            try {
+                AuthTokens authTokens = authTokenService.refreshTokens(refreshToken);
+                setRefreshTokenCookie(httpResponse, authTokens.refreshToken());
+                AuthResponse authResponse = authTokens.response();
+                return ResponseEntity.ok(authResponse);
+            } catch (TokenValidationException exception) {
+                lastValidationException = exception;
+            }
+        }
+
+        throw lastValidationException;
     }
 
     /**
@@ -96,8 +114,10 @@ public class AuthController {
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse,
             @RequestBody(required = false) TokenRefreshRequest request) {
-        String refreshToken = resolveRefreshToken(httpRequest, request);
-        authTokenService.revokeRefreshToken(refreshToken);
+        List<String> refreshTokenCandidates = resolveRefreshTokenCandidates(httpRequest, request);
+        for (String refreshToken : refreshTokenCandidates) {
+            authTokenService.revokeRefreshToken(refreshToken);
+        }
 
         httpResponse.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookieService.clearRefreshTokenCookie());
         MessageResponse response = new MessageResponse("Logged out successfully.", true);
@@ -135,21 +155,25 @@ public class AuthController {
     }
 
     /**
-     * Resolves refresh token from request body first, then from configured cookie.
+     * Resolves possible refresh-token values from request body and matching cookies.
      */
-    private String resolveRefreshToken(HttpServletRequest request, TokenRefreshRequest body) {
+    private List<String> resolveRefreshTokenCandidates(HttpServletRequest request, TokenRefreshRequest body) {
+        Set<String> tokenCandidates = new LinkedHashSet<>();
+
         if (body != null && StringUtils.hasText(body.getRefreshToken())) {
-            String requestBodyToken = body.getRefreshToken();
-            return requestBodyToken;
+            tokenCandidates.add(body.getRefreshToken().trim());
         }
-        String cookieToken = findRefreshTokenInCookies(request);
-        return cookieToken;
+
+        tokenCandidates.addAll(findRefreshTokensInCookies(request));
+        List<String> resolvedTokenCandidates = new ArrayList<>(tokenCandidates);
+        return resolvedTokenCandidates;
     }
 
-    private String findRefreshTokenInCookies(HttpServletRequest request) {
+    private List<String> findRefreshTokensInCookies(HttpServletRequest request) {
+        List<String> refreshTokens = new ArrayList<>();
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
-            return null;
+            return refreshTokens;
         }
 
         String refreshCookieName = refreshTokenCookieService.getCookieName();
@@ -157,12 +181,12 @@ public class AuthController {
             if (refreshCookieName.equals(cookie.getName())) {
                 String cookieValue = cookie.getValue();
                 if (StringUtils.hasText(cookieValue)) {
-                    return cookieValue;
+                    refreshTokens.add(cookieValue.trim());
                 }
             }
         }
 
-        return null;
+        return refreshTokens;
     }
 
     private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {

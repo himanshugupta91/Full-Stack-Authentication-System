@@ -8,6 +8,7 @@ public class UserDto {
     private Long id;
     private String name;
     private String email;
+    private String loginSource;
     private Set<String> roles;
     private boolean enabled;
     private java.time.LocalDateTime createdAt;

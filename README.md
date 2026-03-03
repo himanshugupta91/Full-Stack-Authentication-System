@@ -25,12 +25,12 @@
 
 ## <img src="https://img.shields.io/badge/📖-About%20the%20Project-1a1a2e?style=for-the-badge&labelColor=00C853" />
 
-This project is a backend-focused authentication and authorization service built with Spring Boot.
-It follows a clean layered architecture (Controller, Service, Repository, Entity, DTO, Security) for maintainable API development.
-The service handles signup, OTP verification, login, token refresh, logout, password reset, and OAuth2 provider login.
-Access control is enforced with role-based authorization for `ROLE_USER` and `ROLE_ADMIN`.
-Security is treated as a core requirement through refresh-token rotation, token hashing, Redis-backed rate limiting, and account lock protection.
-The codebase is structured to reflect production-grade backend engineering practices and is easy to extend.
+- Backend-focused authentication and authorization service built with Spring Boot
+- Clean layered architecture: Controller, Service, Repository, Entity, DTO, and Security
+- Covers core auth flows: signup, OTP verification, login, refresh, logout, password reset, and OAuth2 login
+- Role-based access control enforced for `ROLE_USER` and `ROLE_ADMIN`
+- Security-first design with refresh-token rotation, token hashing, Redis-backed rate limiting, and account lock protection
+- Structured for production-grade backend practices and easy extensibility
 
 ---
 

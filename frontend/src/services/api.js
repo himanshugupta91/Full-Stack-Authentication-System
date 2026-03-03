@@ -3,8 +3,9 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 const OAUTH_BASE_URL = import.meta.env.VITE_OAUTH_BASE_URL || 'http://localhost:8080';
 
-export const ACCESS_TOKEN_KEY = 'accessToken';
 export const USER_KEY = 'user';
+
+let accessToken = null;
 
 export const OAUTH_PROVIDERS = [
   { id: 'google', label: 'Google', iconClass: 'bi bi-google' },
@@ -38,16 +39,17 @@ const readStoredUser = () => {
 };
 
 export const clearAuthStorage = () => {
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  accessToken = null;
   localStorage.removeItem(USER_KEY);
 };
 
 export const saveAuthPayload = (payload) => {
   if (!payload?.accessToken) {
+    clearAuthStorage();
     return;
   }
 
-  localStorage.setItem(ACCESS_TOKEN_KEY, payload.accessToken);
+  accessToken = payload.accessToken;
 
   const user = {
     id: payload.id,
@@ -85,9 +87,8 @@ const shouldSkipRefresh = (url = '') => {
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
   },

@@ -2,6 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { adminAPI } from '../services/api';
 
+const resolveLoginSourceView = (source) => {
+    const normalizedSource = (source || 'EMAIL_PASSWORD').toUpperCase();
+    const sourceViews = {
+        EMAIL_PASSWORD: { label: 'Email/Password', badgeClass: 'bg-secondary' },
+        LOCAL: { label: 'Email/Password', badgeClass: 'bg-secondary' },
+        GOOGLE: { label: 'Google', badgeClass: 'bg-danger' },
+        GITHUB: { label: 'GitHub', badgeClass: 'bg-dark' },
+        APPLE: { label: 'Apple', badgeClass: 'bg-dark' },
+        LINKEDIN: { label: 'LinkedIn', badgeClass: 'bg-primary' },
+    };
+
+    return sourceViews[normalizedSource] || { label: normalizedSource, badgeClass: 'bg-info' };
+};
+
 const AdminDashboard = () => {
     const { user } = useAuth();
     const [dashboardData, setDashboardData] = useState(null);
@@ -235,44 +249,51 @@ const AdminDashboard = () => {
                                         <th>ID</th>
                                         <th>Name</th>
                                         <th>Email</th>
+                                        <th>Login Source</th>
                                         <th>Status</th>
                                         <th>Roles</th>
                                         <th>Created At</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {users.map((u) => (
-                                        <tr key={u.id}>
-                                            <td>#{u.id}</td>
-                                            <td>
-                                                <div className="d-flex align-items-center">
-                                                    <div className="user-avatar me-2">
-                                                        {u.name?.charAt(0).toUpperCase()}
+                                    {users.map((u) => {
+                                        const loginSource = resolveLoginSourceView(u.loginSource);
+                                        return (
+                                            <tr key={u.id}>
+                                                <td>#{u.id}</td>
+                                                <td>
+                                                    <div className="d-flex align-items-center">
+                                                        <div className="user-avatar me-2">
+                                                            {u.name?.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        {u.name}
                                                     </div>
-                                                    {u.name}
-                                                </div>
-                                            </td>
-                                            <td>{u.email}</td>
-                                            <td>
-                                                <span className={`badge ${u.enabled ? 'bg-success' : 'bg-warning'}`}>
-                                                    {u.enabled ? 'Active' : 'Pending'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div className="d-flex flex-wrap gap-1">
-                                                    {u.roles?.map((role, idx) => (
-                                                        <span
-                                                            key={idx}
-                                                            className={`badge ${role.includes('ADMIN') ? 'bg-danger' : 'bg-primary'}`}
-                                                        >
-                                                            {role.replace('ROLE_', '')}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </td>
-                                            <td>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
-                                        </tr>
-                                    ))}
+                                                </td>
+                                                <td>{u.email}</td>
+                                                <td>
+                                                    <span className={`badge ${loginSource.badgeClass}`}>{loginSource.label}</span>
+                                                </td>
+                                                <td>
+                                                    <span className={`badge ${u.enabled ? 'bg-success' : 'bg-warning'}`}>
+                                                        {u.enabled ? 'Active' : 'Pending'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div className="d-flex flex-wrap gap-1">
+                                                        {u.roles?.map((role, idx) => (
+                                                            <span
+                                                                key={idx}
+                                                                className={`badge ${role.includes('ADMIN') ? 'bg-danger' : 'bg-primary'}`}
+                                                            >
+                                                                {role.replace('ROLE_', '')}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                                <td>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>

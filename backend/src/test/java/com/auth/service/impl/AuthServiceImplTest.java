@@ -133,6 +133,7 @@ class AuthServiceImplTest {
         assertEquals("encoded-password", savedUser.getPassword());
         assertEquals("otp-hash", savedUser.getVerificationOtp());
         assertEquals(Set.of(userRole), savedUser.getRoles());
+        assertEquals("local", savedUser.getAuthProvider());
         assertFalse(savedUser.isEnabled());
     }
 

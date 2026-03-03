@@ -4,6 +4,7 @@ import com.auth.dto.response.AuthResponse;
 import com.auth.dto.response.AuthTokens;
 import com.auth.dto.response.MessageResponse;
 import com.auth.dto.request.TokenRefreshRequest;
+import com.auth.exception.TokenValidationException;
 import com.auth.security.RefreshTokenCookieService;
 import com.auth.service.AuthService;
 import com.auth.service.auth.AuthTokenService;
@@ -89,5 +90,39 @@ class AuthControllerTest {
 
         assertEquals("Logged out successfully.", response.getBody().getMessage());
         assertTrue(response.getBody().isSuccess());
+    }
+
+    @Test
+    void refreshToken_whenMultipleRefreshCookies_usesFirstValidCandidate() {
+        when(refreshTokenCookieService.getCookieName()).thenReturn("refreshToken");
+        when(httpRequest.getCookies()).thenReturn(new Cookie[] {
+                new Cookie("refreshToken", "stale-refresh-token"),
+                new Cookie("refreshToken", "valid-refresh-token")
+        });
+
+        AuthResponse authResponse = new AuthResponse(
+                "access-token",
+                "Bearer",
+                900_000L,
+                3_600_000L,
+                2L,
+                "Bob",
+                "bob@example.com",
+                true,
+                List.of("ROLE_USER"));
+        AuthTokens tokens = new AuthTokens(authResponse, "rotated-refresh-token");
+
+        when(authTokenService.refreshTokens("stale-refresh-token"))
+                .thenThrow(new TokenValidationException("Invalid refresh token."));
+        when(authTokenService.refreshTokens("valid-refresh-token"))
+                .thenReturn(tokens);
+        when(refreshTokenCookieService.buildRefreshTokenCookie("rotated-refresh-token")).thenReturn("set-cookie-value");
+
+        ResponseEntity<AuthResponse> response = authController.refreshToken(httpRequest, httpResponse, null);
+
+        verify(authTokenService).refreshTokens("stale-refresh-token");
+        verify(authTokenService).refreshTokens("valid-refresh-token");
+        verify(httpResponse).addHeader(HttpHeaders.SET_COOKIE, "set-cookie-value");
+        assertEquals(authResponse, response.getBody());
     }
 }

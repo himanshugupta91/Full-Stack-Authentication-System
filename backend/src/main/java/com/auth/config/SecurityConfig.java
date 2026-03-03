@@ -19,6 +19,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 @Configuration
 @EnableWebSecurity
@@ -41,6 +42,17 @@ public class SecurityConfig {
                 http
                                 .cors(Customizer.withDefaults())
                                 .csrf(csrf -> csrf.disable())
+                                .headers(headers -> {
+                                        headers.contentTypeOptions(Customizer.withDefaults());
+                                        headers.frameOptions(frame -> frame.deny());
+                                        headers.referrerPolicy(referrer -> referrer
+                                                        .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER));
+                                        headers.permissionsPolicy(permissions -> permissions
+                                                        .policy("camera=(), microphone=(), geolocation=()"));
+                                        headers.httpStrictTransportSecurity(hsts -> hsts
+                                                        .includeSubDomains(true)
+                                                        .maxAgeInSeconds(31536000));
+                                })
                                 .sessionManagement(session ->
                                 // OAuth2 login requires temporary session storage for state/nonce validation.
                                 session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))

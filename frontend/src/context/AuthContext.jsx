@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import {
-  ACCESS_TOKEN_KEY,
   authAPI,
   clearAuthStorage,
   getStoredUser,
@@ -15,12 +14,17 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const isOAuthCallbackRoute = window.location.pathname.startsWith('/oauth2/callback');
+
     const bootstrapSession = async () => {
-      const token = localStorage.getItem(ACCESS_TOKEN_KEY);
       const storedUser = getStoredUser();
 
-      if (token && storedUser) {
+      if (storedUser) {
         setUser(storedUser);
+      }
+
+      // OAuth callback performs its own refresh exchange exactly once.
+      if (isOAuthCallbackRoute) {
         setLoading(false);
         return;
       }
@@ -89,7 +93,7 @@ export const AuthProvider = ({ children }) => {
 
   const isAdmin = () => user?.roles?.includes('ROLE_ADMIN');
 
-  const isAuthenticated = () => !!user && !!localStorage.getItem(ACCESS_TOKEN_KEY);
+  const isAuthenticated = () => !!user;
 
   const value = {
     user,

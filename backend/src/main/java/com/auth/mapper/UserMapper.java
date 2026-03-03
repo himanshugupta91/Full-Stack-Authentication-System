@@ -9,6 +9,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.util.List;
+import java.util.Locale;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
@@ -37,6 +38,7 @@ public interface UserMapper {
     User toEntity(RegisterRequest request);
 
     /** Maps User entity to API-safe user DTO. */
+    @Mapping(target = "loginSource", expression = "java(resolveLoginSource(user))")
     UserDto toDto(User user);
 
     /** Maps a list of users to their DTO representation. */
@@ -51,5 +53,19 @@ public interface UserMapper {
     /** Converts Role entity to its role-name string for DTO serialization. */
     default String map(Role role) {
         return role.getName().name();
+    }
+
+    /** Resolves the source used by the account for login display in admin views. */
+    default String resolveLoginSource(User user) {
+        if (user == null) {
+            return "UNKNOWN";
+        }
+
+        String provider = user.getAuthProvider();
+        if (provider == null || provider.trim().isEmpty()) {
+            return "EMAIL_PASSWORD";
+        }
+
+        return provider.trim().toUpperCase(Locale.ROOT);
     }
 }

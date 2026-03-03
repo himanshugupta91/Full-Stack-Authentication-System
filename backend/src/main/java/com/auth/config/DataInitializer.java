@@ -28,20 +28,29 @@ public class DataInitializer implements CommandLineRunner {
 
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${app.seed.admin.name:Admin}")
+    @Value("${app.seed.admin.name:}")
     private String seedAdminName;
 
-    @Value("${app.seed.admin.email:admin@admin.com}")
+    @Value("${app.seed.admin.email:}")
     private String seedAdminEmail;
 
-    @Value("${app.seed.admin.password:admin123}")
+    @Value("${app.seed.admin.password:}")
     private String seedAdminPassword;
+
+    @Value("${app.seed.admin.enabled:false}")
+    private boolean seedAdminEnabled;
 
     /** Seeds default roles and a local admin account if they are missing at startup. */
     @Override
     public void run(String... args) {
         Role userRole = findOrCreateRole(Role.RoleName.ROLE_USER);
         Role adminRole = findOrCreateRole(Role.RoleName.ROLE_ADMIN);
+
+        if (!seedAdminEnabled) {
+            return;
+        }
+
+        validateSeedAdminConfiguration();
 
         if (!userRepository.existsByEmailIgnoreCase(seedAdminEmail)) {
             User admin = new User();
@@ -54,6 +63,16 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(admin);
             log.info("Default admin user created: {}", seedAdminEmail);
         }
+    }
+
+    private void validateSeedAdminConfiguration() {
+        if (isBlank(seedAdminName) || isBlank(seedAdminEmail) || isBlank(seedAdminPassword)) {
+            throw new IllegalStateException("app.seed.admin.enabled=true requires name, email, and password.");
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private Role findOrCreateRole(Role.RoleName roleName) {
