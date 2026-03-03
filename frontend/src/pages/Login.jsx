@@ -115,7 +115,7 @@ const Login = () => {
 
         <div className="oauth-grid">
           {oauthProviders.map((provider) => (
-            <a key={provider.id} href={provider.href} className="btn btn-outline-secondary oauth-btn">
+            <a key={provider.id} href={provider.href} className={`btn btn-outline-secondary oauth-btn provider-${provider.id}`}>
               <i className={`${provider.iconClass} me-2`}></i>
               {provider.label}
             </a>

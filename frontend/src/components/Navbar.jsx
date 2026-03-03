@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 
 const Navbar = () => {
-    const { user, logout, isAuthenticated, isAdmin } = useAuth();
+    const { logout, isAuthenticated, isAdmin } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = async () => {
@@ -12,7 +12,7 @@ const Navbar = () => {
     };
 
     return (
-        <nav className="navbar navbar-expand-lg">
+        <nav className="navbar navbar-expand-lg jitter-navbar">
             <div className="container">
                 <Link className="navbar-brand" to="/">
                     <i className="bi bi-shield-lock me-2"></i>
@@ -31,58 +31,26 @@ const Navbar = () => {
                 </div>
 
                 <div className="collapse navbar-collapse" id="navbarNav">
-                    <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                    <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center nav-motion-group">
                         {isAuthenticated() ? (
                             <>
                                 <li className="nav-item">
-                                    <Link className="nav-link" to="/dashboard">
+                                    <Link className="nav-link nav-motion-link" to="/dashboard">
                                         <i className="bi bi-speedometer2 me-1"></i>
                                         Dashboard
                                     </Link>
                                 </li>
                                 {isAdmin() && (
                                     <li className="nav-item">
-                                        <Link className="nav-link" to="/admin">
+                                        <Link className="nav-link nav-motion-link" to="/admin">
                                             <i className="bi bi-gear me-1"></i>
                                             Admin Panel
                                         </Link>
                                     </li>
                                 )}
-                                <li className="nav-item dropdown">
-                                    <a
-                                        className="nav-link dropdown-toggle"
-                                        href="#"
-                                        role="button"
-                                        data-bs-toggle="dropdown"
-                                    >
-                                        <i className="bi bi-person-circle me-1"></i>
-                                        {user?.name || 'User'}
-                                    </a>
-                                    <ul className="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <span className="dropdown-item-text text-muted small">
-                                                {user?.email}
-                                            </span>
-                                        </li>
-                                        <li><hr className="dropdown-divider" /></li>
-                                        <li>
-                                            <Link className="dropdown-item" to="/change-password">
-                                                <i className="bi bi-key me-2"></i>
-                                                Change Password
-                                            </Link>
-                                        </li>
-                                        <li><hr className="dropdown-divider" /></li>
-                                        <li>
-                                            <button className="dropdown-item" onClick={handleLogout}>
-                                                <i className="bi bi-box-arrow-right me-2"></i>
-                                                Logout
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </li>
                                 <li className="nav-item ms-2">
                                     <button
-                                        className="btn btn-outline-primary btn-sm"
+                                        className="btn btn-outline-primary btn-sm nav-logout-btn"
                                         onClick={handleLogout}
                                     >
                                         <i className="bi bi-box-arrow-right me-1"></i>
@@ -93,13 +61,13 @@ const Navbar = () => {
                         ) : (
                             <>
                                 <li className="nav-item">
-                                    <Link className="nav-link" to="/login">
+                                    <Link className="nav-link nav-motion-link" to="/login">
                                         <i className="bi bi-box-arrow-in-right me-1"></i>
                                         Login
                                     </Link>
                                 </li>
                                 <li className="nav-item">
-                                    <Link className="nav-link" to="/register">
+                                    <Link className="nav-link nav-motion-link" to="/register">
                                         <i className="bi bi-person-plus me-1"></i>
                                         Register
                                     </Link>

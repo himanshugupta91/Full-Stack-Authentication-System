@@ -3,7 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import { OAUTH_PROVIDERS, getOAuthAuthorizationUrl } from '../services/api';
 
 const Home = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const isLoggedIn = isAuthenticated();
+  const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'User';
 
   const oauthProviders = OAUTH_PROVIDERS.map((provider) => ({
     ...provider,
@@ -13,10 +15,16 @@ const Home = () => {
   return (
     <div className="home-container">
       <div className="hero-section">
+        <div className="hero-motion-layer" aria-hidden="true">
+          <span className="motion-blob blob-one"></span>
+          <span className="motion-blob blob-two"></span>
+          <span className="motion-blob blob-three"></span>
+          <span className="motion-sheen"></span>
+        </div>
         <div className="container">
-          <div className="hero-content">
+          <div className="hero-content jitter-hero-stage">
             {/* Decorative ornament */}
-            <div className="hero-ornament">
+            <div className="hero-ornament motion-item motion-ornament">
               <svg viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M20 20 Q50 5 80 20 Q110 35 140 20 Q170 5 180 20" stroke="#c7afff" strokeWidth="1.5" fill="none" opacity="0.6" />
                 <path d="M30 20 Q60 35 90 20 Q120 5 150 20 Q170 30 180 20" stroke="#ffc5a8" strokeWidth="1.5" fill="none" opacity="0.5" />
@@ -26,33 +34,40 @@ const Home = () => {
               </svg>
             </div>
 
-            <span className="badge bg-primary mb-4 px-4 py-2 rounded-pill" style={{ fontSize: '0.85rem', fontWeight: 500, letterSpacing: '0.5px' }}>
+            <span className="badge bg-primary mb-3 px-4 py-2 rounded-pill motion-item hero-kickoff" style={{ fontSize: '0.85rem', fontWeight: 500, letterSpacing: '0.5px' }}>
               <i className="bi bi-stars me-2"></i>
               v2.0.0 Token + OAuth Upgrade
             </span>
 
-            <h1 className="display-3 mb-4" style={{ letterSpacing: '-1.5px' }}>
+            <h1 className="display-3 mb-3 hero-title motion-item" style={{ letterSpacing: '-1.5px' }}>
               Next-Generation <br />
               <span className="text-gradient">Authentication System</span>
             </h1>
-            <p className="lead mb-5 mx-auto" style={{ maxWidth: '650px', color: '#78756f', fontSize: '1.15rem' }}>
-              Secure access-token and refresh-token flow with OAuth2 login providers: Google, GitHub, Apple, and
-              LinkedIn.
-            </p>
+            {isLoggedIn && (
+              <p className="mb-2 fw-semibold hero-subtitle motion-item" style={{ color: '#4f46e5' }}>
+                Welcome back, {displayName}
+              </p>
+            )}
+            {!isLoggedIn && (
+              <p className="lead mb-4 mx-auto hero-subtitle motion-item" style={{ maxWidth: '650px', color: '#78756f', fontSize: '1.15rem' }}>
+                Secure access-token and refresh-token flow with OAuth2 login providers: Google, GitHub, Apple, and
+                LinkedIn.
+              </p>
+            )}
 
-            <div className="d-flex justify-content-center gap-3 flex-wrap">
-              {isAuthenticated() ? (
-                <Link to="/dashboard" className="btn btn-primary btn-lg px-5 py-3">
+            <div className="d-flex justify-content-center gap-3 flex-wrap hero-actions motion-item">
+              {isLoggedIn ? (
+                <Link to="/dashboard" className="btn btn-primary btn-lg px-5 py-3 jitter-cta">
                   <i className="bi bi-speedometer2 me-2"></i>
                   Go to Dashboard
                 </Link>
               ) : (
                 <>
-                  <Link to="/register" className="btn btn-primary btn-lg px-5 py-3">
+                  <Link to="/register" className="btn btn-primary btn-lg px-5 py-3 jitter-cta">
                     <i className="bi bi-rocket-takeoff me-2"></i>
                     Get Started
                   </Link>
-                  <Link to="/login" className="btn btn-outline-primary btn-lg px-5 py-3">
+                  <Link to="/login" className="btn btn-outline-primary btn-lg px-5 py-3 jitter-ghost">
                     <i className="bi bi-box-arrow-in-right me-2"></i>
                     Sign In
                   </Link>
@@ -63,8 +78,8 @@ const Home = () => {
         </div>
       </div>
 
-      {!isAuthenticated() && (
-        <div className="social-login-section">
+      {!isLoggedIn && (
+        <div className="social-login-section jitter-section">
           <div className="container">
             <div className="text-center mb-4">
               <h3 className="mb-2">One-click OAuth2 Sign In</h3>
@@ -72,7 +87,7 @@ const Home = () => {
             </div>
             <div className="home-oauth-grid">
               {oauthProviders.map((provider) => (
-                <a key={provider.id} href={provider.href} className="home-oauth-btn">
+                <a key={provider.id} href={provider.href} className={`home-oauth-btn provider-${provider.id} jitter-card`}>
                   <i className={`${provider.iconClass} me-2`}></i>
                   Continue with {provider.label}
                 </a>
@@ -82,7 +97,7 @@ const Home = () => {
         </div>
       )}
 
-      <div className="tech-stack-section">
+      <div className="tech-stack-section jitter-section">
         <div className="container">
           <div className="text-center mb-4">
             <h6 className="text-uppercase letter-spacing-2 mb-2" style={{ color: '#78756f', fontSize: '0.8rem' }}>Powered By</h6>
@@ -90,27 +105,27 @@ const Home = () => {
           </div>
 
           <div className="tech-grid">
-            <div className="tech-card">
+            <div className="tech-card jitter-card">
               <i className="bi bi-filetype-java tech-icon"></i>
               <span className="tech-name">Java Spring Boot</span>
             </div>
-            <div className="tech-card">
+            <div className="tech-card jitter-card">
               <i className="bi bi-filetype-jsx tech-icon"></i>
               <span className="tech-name">React + Vite</span>
             </div>
-            <div className="tech-card">
+            <div className="tech-card jitter-card">
               <i className="bi bi-shield-lock tech-icon"></i>
               <span className="tech-name">Spring Security</span>
             </div>
-            <div className="tech-card">
+            <div className="tech-card jitter-card">
               <i className="bi bi-database tech-icon"></i>
               <span className="tech-name">JPA / Hibernate</span>
             </div>
-            <div className="tech-card">
+            <div className="tech-card jitter-card">
               <i className="bi bi-envelope tech-icon"></i>
               <span className="tech-name">JavaMailSender</span>
             </div>
-            <div className="tech-card">
+            <div className="tech-card jitter-card">
               <i className="bi bi-bootstrap tech-icon"></i>
               <span className="tech-name">Bootstrap 5</span>
             </div>
@@ -118,7 +133,7 @@ const Home = () => {
         </div>
       </div>
 
-      <div className="features-section py-5">
+      <div className="features-section py-5 jitter-section">
         <div className="container">
           <div className="text-center mb-5">
             <h2 className="mb-3">Core Features</h2>
@@ -127,7 +142,7 @@ const Home = () => {
 
           <div className="row g-4">
             <div className="col-md-4">
-              <div className="feature-card h-100">
+              <div className="feature-card h-100 jitter-card">
                 <i className="bi bi-shield-check mb-3"></i>
                 <h4>Access + Refresh Tokens</h4>
                 <p style={{ color: '#78756f', textAlign: 'center' }}>
@@ -137,7 +152,7 @@ const Home = () => {
             </div>
 
             <div className="col-md-4">
-              <div className="feature-card h-100">
+              <div className="feature-card h-100 jitter-card">
                 <i className="bi bi-person-check mb-3"></i>
                 <h4>OAuth2 Social Login</h4>
                 <p style={{ color: '#78756f', textAlign: 'center' }}>
@@ -147,7 +162,7 @@ const Home = () => {
             </div>
 
             <div className="col-md-4">
-              <div className="feature-card h-100">
+              <div className="feature-card h-100 jitter-card">
                 <i className="bi bi-person-lock mb-3"></i>
                 <h4>Role-Based Access</h4>
                 <p style={{ color: '#78756f', textAlign: 'center' }}>

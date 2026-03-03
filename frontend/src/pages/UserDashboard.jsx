@@ -69,10 +69,6 @@ const UserDashboard = () => {
                                 </p>
                             </div>
                         </div>
-                        <Link to="/change-password" className="btn btn-outline-primary ms-auto">
-                            <i className="bi bi-key me-2"></i>
-                            Change Password
-                        </Link>
                     </div>
                 </div>
             </div>
