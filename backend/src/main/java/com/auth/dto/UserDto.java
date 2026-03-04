@@ -1,6 +1,8 @@
 package com.auth.dto;
 
 import lombok.Data;
+
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Data
@@ -11,5 +13,5 @@ public class UserDto {
     private String loginSource;
     private Set<String> roles;
     private boolean enabled;
-    private java.time.LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 }

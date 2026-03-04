@@ -1,18 +1,13 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LoadingSpinner from './LoadingSpinner';
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
     const { loading, isAuthenticated, isAdmin } = useAuth();
     const location = useLocation();
 
     if (loading) {
-        return (
-            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-                <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        );
+        return <LoadingSpinner />;
     }
 
     if (!isAuthenticated()) {

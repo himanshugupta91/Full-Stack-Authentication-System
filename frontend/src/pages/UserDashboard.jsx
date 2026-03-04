@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { authAPI, userAPI } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const UserDashboard = () => {
     const { user, isAdmin } = useAuth();
@@ -11,11 +12,7 @@ const UserDashboard = () => {
     const [resendingOtp, setResendingOtp] = useState(false);
     const isEmailVerified = user?.enabled === true;
 
-    useEffect(() => {
-        fetchDashboardData();
-    }, []);
-
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = useCallback(async () => {
         try {
             await userAPI.getDashboard();
             // Data is not currently used in UI, but call is made to verify token/access
@@ -24,7 +21,11 @@ const UserDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
 
     const handleResendOtp = async () => {
         if (!user?.email || resendingOtp) {
@@ -43,13 +44,7 @@ const UserDashboard = () => {
     };
 
     if (loading) {
-        return (
-            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
-                <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        );
+        return <LoadingSpinner minHeight="60vh" size="2.5rem" />;
     }
 
     return (
@@ -62,7 +57,7 @@ const UserDashboard = () => {
                                 <i className="bi bi-person-fill"></i>
                             </div>
                             <div>
-                                <h2 className="mb-1" style={{ color: '#1f1f1f' }}>Welcome back, {user?.name}!</h2>
+                                <h2 className="mb-1 dashboard-title">Welcome back, {user?.name}!</h2>
                                 <p className="text-muted mb-0">
                                     <i className="bi bi-envelope me-2"></i>
                                     {user?.email}
@@ -115,7 +110,7 @@ const UserDashboard = () => {
                         <div className="card-icon bg-primary">
                             <i className="bi bi-person-badge"></i>
                         </div>
-                        <h5 style={{ color: '#1f1f1f' }}>Account Status</h5>
+                        <h5>Account Status</h5>
                         <p className={`${isEmailVerified ? 'text-success' : 'text-warning'} mb-0`}>
                             <i className={`bi ${isEmailVerified ? 'bi-check-circle' : 'bi-hourglass-split'} me-1`}></i>
                             {isEmailVerified ? 'Verified & Active' : 'Pending Verification'}
@@ -156,7 +151,7 @@ const UserDashboard = () => {
                         <div className="col-12">
                             <div className="admin-notice">
                                 <div className="d-flex align-items-center">
-                                    <i className="bi bi-gear-fill me-3 text-warning" style={{ fontSize: '2rem' }}></i>
+                                    <i className="bi bi-gear-fill me-3 text-warning admin-access-icon"></i>
                                     <div>
                                         <h5 className="mb-1">Admin Access Available</h5>
                                         <p className="mb-0 text-muted">You have administrator privileges.</p>

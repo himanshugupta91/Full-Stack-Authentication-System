@@ -4,9 +4,11 @@ import com.auth.entity.User;
 import com.auth.exception.AccountLockedException;
 import com.auth.exception.RateLimitExceededException;
 import com.auth.service.UserService;
+import com.auth.service.support.EmailService;
 import com.auth.service.support.RateLimitService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -22,10 +24,12 @@ import java.util.Locale;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthAbuseProtectionService {
 
     private final RateLimitService rateLimitService;
     private final UserService userService;
+    private final EmailService emailService;
 
     @Value("${auth.protection.enabled:true}")
     private boolean protectionEnabled;
@@ -282,11 +286,22 @@ public class AuthAbuseProtectionService {
         if (nextFailedAttempts >= loginMaxAttempts) {
             user.setFailedLoginAttempts(0);
             user.setAccountLockedUntil(LocalDateTime.now().plusMinutes(loginLockMinutes));
+            userService.save(user);
+            sendAccountLockEmailSafely(user);
+            return;
         } else {
             user.setFailedLoginAttempts(nextFailedAttempts);
         }
 
         userService.save(user);
+    }
+
+    private void sendAccountLockEmailSafely(User user) {
+        try {
+            emailService.sendAccountLockedAlertEmail(user.getEmail(), user.getName(), user.getAccountLockedUntil());
+        } catch (RuntimeException exception) {
+            log.warn("Failed to send account lock alert email for {}", user.getEmail(), exception);
+        }
     }
 
     private boolean hasLoginFailureState(User user) {

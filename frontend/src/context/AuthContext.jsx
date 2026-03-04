@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import {
   authAPI,
@@ -44,43 +44,43 @@ export const AuthProvider = ({ children }) => {
     bootstrapSession();
   }, []);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     const response = await authAPI.login({ email, password });
     saveAuthPayload(response.data);
     const currentUser = getStoredUser();
     setUser(currentUser);
     return response.data;
-  };
+  }, []);
 
-  const completeOAuthLogin = async () => {
+  const completeOAuthLogin = useCallback(async () => {
     const response = await authAPI.refresh();
     saveAuthPayload(response.data);
     const currentUser = getStoredUser();
     setUser(currentUser);
     return currentUser;
-  };
+  }, []);
 
-  const register = async (name, email, password) => {
+  const register = useCallback(async (name, email, password) => {
     const response = await authAPI.register({ name, email, password });
     return response.data;
-  };
+  }, []);
 
-  const verifyOtp = async (email, otp) => {
+  const verifyOtp = useCallback(async (email, otp) => {
     const response = await authAPI.verifyOtp({ email, otp });
     return response.data;
-  };
+  }, []);
 
-  const resetPassword = async (email) => {
+  const resetPassword = useCallback(async (email) => {
     const response = await authAPI.resetPassword({ email });
     return response.data;
-  };
+  }, []);
 
-  const updatePassword = async (token, newPassword) => {
+  const updatePassword = useCallback(async (token, newPassword) => {
     const response = await authAPI.updatePassword({ token, newPassword });
     return response.data;
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await authAPI.logout();
     } catch {
@@ -89,25 +89,28 @@ export const AuthProvider = ({ children }) => {
       clearAuthStorage();
       setUser(null);
     }
-  };
+  }, []);
 
-  const isAdmin = () => user?.roles?.includes('ROLE_ADMIN');
+  const isAdmin = useCallback(() => user?.roles?.includes('ROLE_ADMIN'), [user]);
 
-  const isAuthenticated = () => !!user;
+  const isAuthenticated = useCallback(() => !!user, [user]);
 
-  const value = {
-    user,
-    loading,
-    login,
-    completeOAuthLogin,
-    register,
-    verifyOtp,
-    resetPassword,
-    updatePassword,
-    logout,
-    isAdmin,
-    isAuthenticated,
-  };
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      completeOAuthLogin,
+      register,
+      verifyOtp,
+      resetPassword,
+      updatePassword,
+      logout,
+      isAdmin,
+      isAuthenticated,
+    }),
+    [user, loading, login, completeOAuthLogin, register, verifyOtp, resetPassword, updatePassword, logout, isAdmin, isAuthenticated]
+  );
 
   return <AuthContext.Provider value={value}>{loading ? <LoadingSpinner /> : children}</AuthContext.Provider>;
 };

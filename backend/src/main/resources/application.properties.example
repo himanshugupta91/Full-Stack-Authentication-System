@@ -144,4 +144,4 @@ spring.security.oauth2.client.provider.linkedin.user-name-attribute=sub
 # Token/OTP durations
 # ================================
 otp.expiration.minutes=5
-auth.reset-token.expiration.minutes=30
+auth.reset-token.expiration.minutes=5

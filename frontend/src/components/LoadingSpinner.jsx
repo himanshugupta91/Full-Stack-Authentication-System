@@ -1,13 +1,13 @@
-import React from 'react';
+import { memo } from 'react';
 
-const LoadingSpinner = () => {
+const LoadingSpinner = ({ minHeight = '100vh', size = '3rem' }) => {
     return (
-        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-            <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}>
+        <div className="screen-center" style={{ minHeight }}>
+            <div className="spinner-border text-primary" role="status" style={{ width: size, height: size }}>
                 <span className="visually-hidden">Loading...</span>
             </div>
         </div>
     );
 };
 
-export default LoadingSpinner;
+export default memo(LoadingSpinner);

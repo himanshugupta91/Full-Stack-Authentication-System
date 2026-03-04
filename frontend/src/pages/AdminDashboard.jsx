@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { adminAPI } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const resolveLoginSourceView = (source) => {
     const normalizedSource = (source || 'EMAIL_PASSWORD').toUpperCase();
@@ -52,10 +53,13 @@ const AdminDashboard = () => {
                 adminAPI.getUsers(userQueryParams),
             ]);
 
+            const usersPage = usersRes.data || {};
+            const usersPageMeta = usersPage.page || {};
+
             setDashboardData(dashboardRes.data);
-            setUsers(usersRes.data?.content || []);
-            setTotalPages(usersRes.data?.totalPages || 0);
-            setTotalElements(usersRes.data?.totalElements || 0);
+            setUsers(usersPage.content || []);
+            setTotalPages(usersPage.totalPages ?? usersPageMeta.totalPages ?? 0);
+            setTotalElements(usersPage.totalElements ?? usersPageMeta.totalElements ?? 0);
         } catch {
             setError('Failed to load admin data');
         } finally {
@@ -82,17 +86,11 @@ const AdminDashboard = () => {
     };
 
     if (loading) {
-        return (
-            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
-                <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        );
+        return <LoadingSpinner minHeight="60vh" size="2.5rem" />;
     }
 
     return (
-        <div className="container py-5">
+        <div className="container py-5 admin-dashboard-page">
             <div className="row mb-4">
                 <div className="col-12">
                     <div className="admin-header">
@@ -243,7 +241,7 @@ const AdminDashboard = () => {
                         </form>
 
                         <div className="table-responsive">
-                            <table className="table table-hover">
+                            <table className="table table-hover admin-users-table">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
@@ -300,7 +298,7 @@ const AdminDashboard = () => {
 
                         {users.length === 0 && (
                             <div className="text-center py-4 text-muted">
-                                <i className="bi bi-inbox" style={{ fontSize: '3rem' }}></i>
+                                <i className="bi bi-inbox empty-state-icon"></i>
                                 <p className="mt-2">No users found</p>
                             </div>
                         )}

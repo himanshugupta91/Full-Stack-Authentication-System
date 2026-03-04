@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { OAUTH_PROVIDERS, getOAuthAuthorizationUrl } from '../services/api';
@@ -7,10 +8,14 @@ const Home = () => {
   const isLoggedIn = isAuthenticated();
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'User';
 
-  const oauthProviders = OAUTH_PROVIDERS.map((provider) => ({
-    ...provider,
-    href: getOAuthAuthorizationUrl(provider.id),
-  }));
+  const oauthProviders = useMemo(
+    () =>
+      OAUTH_PROVIDERS.map((provider) => ({
+        ...provider,
+        href: getOAuthAuthorizationUrl(provider.id),
+      })),
+    []
+  );
 
   return (
     <div className="home-container">
@@ -26,30 +31,30 @@ const Home = () => {
             {/* Decorative ornament */}
             <div className="hero-ornament motion-item motion-ornament">
               <svg viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 20 Q50 5 80 20 Q110 35 140 20 Q170 5 180 20" stroke="#c7afff" strokeWidth="1.5" fill="none" opacity="0.6" />
-                <path d="M30 20 Q60 35 90 20 Q120 5 150 20 Q170 30 180 20" stroke="#ffc5a8" strokeWidth="1.5" fill="none" opacity="0.5" />
-                <circle cx="100" cy="20" r="3" fill="#c7afff" opacity="0.4" />
-                <circle cx="60" cy="15" r="2" fill="#a8d2ff" opacity="0.4" />
-                <circle cx="140" cy="15" r="2" fill="#ffc5a8" opacity="0.4" />
+                <path className="ornament-wave ornament-wave-primary" d="M20 20 Q50 5 80 20 Q110 35 140 20 Q170 5 180 20" strokeWidth="1.5" fill="none" opacity="0.6" />
+                <path className="ornament-wave ornament-wave-secondary" d="M30 20 Q60 35 90 20 Q120 5 150 20 Q170 30 180 20" strokeWidth="1.5" fill="none" opacity="0.5" />
+                <circle className="ornament-dot ornament-dot-primary" cx="100" cy="20" r="3" opacity="0.4" />
+                <circle className="ornament-dot ornament-dot-tertiary" cx="60" cy="15" r="2" opacity="0.4" />
+                <circle className="ornament-dot ornament-dot-secondary" cx="140" cy="15" r="2" opacity="0.4" />
               </svg>
             </div>
 
-            <span className="badge bg-primary mb-3 px-4 py-2 rounded-pill motion-item hero-kickoff" style={{ fontSize: '0.85rem', fontWeight: 500, letterSpacing: '0.5px' }}>
+            <span className="badge bg-primary mb-3 px-4 py-2 rounded-pill motion-item hero-kickoff hero-badge">
               <i className="bi bi-stars me-2"></i>
               v2.0.0 Token + OAuth Upgrade
             </span>
 
-            <h1 className="display-3 mb-3 hero-title motion-item" style={{ letterSpacing: '-1.5px' }}>
+            <h1 className="display-3 mb-3 hero-title motion-item hero-heading">
               Next-Generation <br />
               <span className="text-gradient">Authentication System</span>
             </h1>
             {isLoggedIn && (
-              <p className="mb-2 fw-semibold hero-subtitle motion-item" style={{ color: '#4f46e5' }}>
+              <p className="mb-2 fw-semibold hero-subtitle motion-item hero-greeting">
                 Welcome back, {displayName}
               </p>
             )}
             {!isLoggedIn && (
-              <p className="lead mb-4 mx-auto hero-subtitle motion-item" style={{ maxWidth: '650px', color: '#78756f', fontSize: '1.15rem' }}>
+              <p className="lead mb-4 mx-auto hero-subtitle motion-item hero-copy">
                 Secure access-token and refresh-token flow with OAuth2 login providers: Google, GitHub, Apple, and
                 LinkedIn.
               </p>
@@ -83,7 +88,7 @@ const Home = () => {
           <div className="container">
             <div className="text-center mb-4">
               <h3 className="mb-2">One-click OAuth2 Sign In</h3>
-              <p style={{ color: '#78756f' }} className="mb-0">Use your existing identity provider account to continue securely.</p>
+              <p className="mb-0 section-muted">Use your existing identity provider account to continue securely.</p>
             </div>
             <div className="home-oauth-grid">
               {oauthProviders.map((provider) => (
@@ -100,7 +105,7 @@ const Home = () => {
       <div className="tech-stack-section jitter-section">
         <div className="container">
           <div className="text-center mb-4">
-            <h6 className="text-uppercase letter-spacing-2 mb-2" style={{ color: '#78756f', fontSize: '0.8rem' }}>Powered By</h6>
+            <h6 className="text-uppercase letter-spacing-2 mb-2 tech-kicker">Powered By</h6>
             <h3>Modern Technology Stack</h3>
           </div>
 
@@ -137,7 +142,7 @@ const Home = () => {
         <div className="container">
           <div className="text-center mb-5">
             <h2 className="mb-3">Core Features</h2>
-            <p style={{ color: '#78756f' }}>Everything you need for a secure application</p>
+            <p className="section-muted">Everything you need for a secure application</p>
           </div>
 
           <div className="row g-4">
@@ -145,7 +150,7 @@ const Home = () => {
               <div className="feature-card h-100 jitter-card">
                 <i className="bi bi-shield-check mb-3"></i>
                 <h4>Access + Refresh Tokens</h4>
-                <p style={{ color: '#78756f', textAlign: 'center' }}>
+                <p className="feature-copy">
                   Short-lived access tokens with secure refresh-token rotation for safer long sessions.
                 </p>
               </div>
@@ -155,7 +160,7 @@ const Home = () => {
               <div className="feature-card h-100 jitter-card">
                 <i className="bi bi-person-check mb-3"></i>
                 <h4>OAuth2 Social Login</h4>
-                <p style={{ color: '#78756f', textAlign: 'center' }}>
+                <p className="feature-copy">
                   Seamless login support for Google, GitHub, Apple, and LinkedIn accounts.
                 </p>
               </div>
@@ -165,7 +170,7 @@ const Home = () => {
               <div className="feature-card h-100 jitter-card">
                 <i className="bi bi-person-lock mb-3"></i>
                 <h4>Role-Based Access</h4>
-                <p style={{ color: '#78756f', textAlign: 'center' }}>
+                <p className="feature-copy">
                   Granular permission control with USER and ADMIN role separation.
                 </p>
               </div>
@@ -174,9 +179,9 @@ const Home = () => {
         </div>
       </div>
 
-      <footer className="py-4 text-center border-top mt-5" style={{ borderColor: '#e4e2df !important' }}>
+      <footer className="py-4 text-center border-top mt-5 home-footer">
         <div className="container">
-          <p className="mb-0" style={{ color: '#a3a09c' }}>© 2026 Authentication System.</p>
+          <p className="mb-0 home-footer-note">© {new Date().getFullYear()} Authentication System.</p>
         </div>
       </footer>
     </div>

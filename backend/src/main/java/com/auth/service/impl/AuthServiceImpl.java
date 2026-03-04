@@ -72,7 +72,7 @@ public class AuthServiceImpl implements AuthService {
     @Value("${otp.expiration.minutes:5}")
     private int otpExpirationMinutes;
 
-    @Value("${auth.reset-token.expiration.minutes:30}")
+    @Value("${auth.reset-token.expiration.minutes:5}")
     private int resetTokenExpirationMinutes;
 
     /**
@@ -136,6 +136,7 @@ public class AuthServiceImpl implements AuthService {
         user.setOtpExpiry(null);
         authAbuseProtectionService.clearOtpFailures(user);
         userService.save(user);
+        sendWelcomeEmailSafely(user);
 
         MessageResponse response = new MessageResponse("Email verified successfully! You can now login.", true);
         return response;
@@ -224,6 +225,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         clearStoredResetToken(user);
         userService.save(user);
+        sendPasswordChangedEmailSafely(user, "reset-token update");
 
         MessageResponse response = new MessageResponse("Password updated successfully! You can now login.", true);
         return response;
@@ -283,6 +285,7 @@ public class AuthServiceImpl implements AuthService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userService.save(user);
+        sendPasswordChangedEmailSafely(user, "authenticated password change");
 
         MessageResponse response = new MessageResponse("Password changed successfully!", true);
         return response;
@@ -347,7 +350,7 @@ public class AuthServiceImpl implements AuthService {
 
     private void sendOtpEmailSafely(User user, String otp, String context) {
         try {
-            emailService.sendOtpEmail(user.getEmail(), otp);
+            emailService.sendOtpEmail(user.getEmail(), user.getName(), otp);
         } catch (RuntimeException exception) {
             log.warn("Failed to send OTP email during {} for {}", context, user.getEmail(), exception);
         }
@@ -355,9 +358,26 @@ public class AuthServiceImpl implements AuthService {
 
     private void sendResetEmailSafely(User user, String resetToken) {
         try {
-            emailService.sendPasswordResetEmail(user.getEmail(), resetToken);
+            emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), resetToken);
         } catch (RuntimeException exception) {
             log.warn("Failed to send password reset email for {}", user.getEmail(), exception);
+        }
+    }
+
+    private void sendWelcomeEmailSafely(User user) {
+        try {
+            emailService.sendWelcomeEmail(user.getEmail(), user.getName());
+        } catch (RuntimeException exception) {
+            log.warn("Failed to send welcome email for {}", user.getEmail(), exception);
+        }
+    }
+
+    private void sendPasswordChangedEmailSafely(User user, String context) {
+        try {
+            emailService.sendPasswordChangedConfirmationEmail(user.getEmail(), user.getName());
+        } catch (RuntimeException exception) {
+            log.warn("Failed to send password changed confirmation email during {} for {}", context, user.getEmail(),
+                    exception);
         }
     }
 
