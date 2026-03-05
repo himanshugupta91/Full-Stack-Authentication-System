@@ -35,6 +35,39 @@ For each ticket, I will write:
 
 ---
 
+## When I Will Add Exception Handling (Exact Timing)
+
+1. Day 2 (after register logic works):  
+I will throw domain exceptions from service methods.
+- `UserAlreadyExistsException` for duplicate email.
+- `ResourceNotFoundException` where user is required but missing.
+- `IllegalArgumentException` for invalid business input (like weak password).
+
+2. Day 3 (after OTP/login methods work):  
+I will add auth-specific exceptions in service flow.
+- `TokenValidationException` for invalid/expired OTP or token.
+- `BadCredentialsException` for wrong email/password.
+
+3. Day 4 (after password flows work):  
+I will finalize reset/change-password error scenarios.
+- invalid/expired reset token -> `TokenValidationException`
+- wrong current password -> `BadCredentialsException`
+
+4. Day 5 (centralization step):  
+I will implement all mappings in `GlobalExceptionHandler` so every API returns consistent status + message.
+- 400 validation/illegal arguments
+- 401 bad credentials/token issues
+- 404 not found
+- 409 duplicate user
+- 423 account locked
+- 429 rate limit
+- 500 fallback
+
+5. Day 7 (final QA):  
+I will test both success and failure response bodies for every major endpoint.
+
+---
+
 ## Week Overview
 
 1. Day 1: Setup environment and architecture
@@ -196,6 +229,7 @@ Steps:
 7. Assign `ROLE_USER`.
 8. Save user.
 9. Send OTP email.
+10. Throw clear exceptions for duplicate/invalid inputs.
 
 Acceptance Criteria:
 1. User saved with `enabled=false`.
@@ -239,6 +273,7 @@ Steps:
 3. Enable user.
 4. Clear OTP fields.
 5. Add resend OTP logic.
+6. Return token-validation errors for invalid/expired OTP.
 
 Acceptance Criteria:
 1. Valid OTP verifies account.
@@ -279,6 +314,7 @@ Steps:
 2. Issue access + refresh token.
 3. Store hashed refresh token in DB.
 4. Set refresh token as HttpOnly cookie.
+5. Return auth errors for wrong credentials or disabled account.
 
 Acceptance Criteria:
 1. Login returns access token response.
@@ -334,6 +370,7 @@ Steps:
 3. Send reset email link.
 4. Update password only with valid token.
 5. Clear reset token after success.
+6. Return token-validation errors for invalid/expired reset token.
 
 Acceptance Criteria:
 1. Reset request returns generic message.
@@ -420,6 +457,13 @@ Files:
 Acceptance Criteria:
 1. Consistent JSON error response format.
 2. Correct status codes for known error cases.
+
+Steps:
+1. Map validation errors to 400.
+2. Map bad credentials/token errors to 401.
+3. Map not-found to 404 and duplicates to 409.
+4. Map account lock to 423 and rate-limit to 429 with retry-after.
+5. Keep one 500 fallback handler for unexpected errors.
 
 ---
 
