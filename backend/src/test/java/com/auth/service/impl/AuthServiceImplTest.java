@@ -124,7 +124,7 @@ class AuthServiceImplTest {
 
         assertTrue(response.isSuccess());
         verify(passwordPolicyService).validate(request.getPassword(), request.getEmail());
-        verify(emailService).sendOtpEmail(request.getEmail(), "123456");
+        verify(emailService).sendOtpEmail(request.getEmail(), request.getName(), "123456");
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userService).save(userCaptor.capture());

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -8,7 +8,60 @@ const Navbar = () => {
     const { logout, isAuthenticated, isAdmin } = useAuth();
     const { isDarkMode, toggleTheme } = useTheme();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [scrollProgress, setScrollProgress] = useState(0);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const updateScrollProgress = useCallback(() => {
+        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+        const scrollableHeight = scrollHeight - clientHeight;
+
+        if (scrollableHeight <= 0) {
+            setScrollProgress(0);
+            return;
+        }
+
+        const nextProgress = (scrollTop / scrollableHeight) * 100;
+        setScrollProgress(Math.min(100, Math.max(0, nextProgress)));
+    }, []);
+
+    useEffect(() => {
+        let animationFrameId = null;
+
+        const scheduleProgressUpdate = () => {
+            if (animationFrameId !== null) {
+                return;
+            }
+
+            animationFrameId = window.requestAnimationFrame(() => {
+                updateScrollProgress();
+                animationFrameId = null;
+            });
+        };
+
+        window.addEventListener('scroll', scheduleProgressUpdate, { passive: true });
+        window.addEventListener('resize', scheduleProgressUpdate);
+        scheduleProgressUpdate();
+
+        return () => {
+            window.removeEventListener('scroll', scheduleProgressUpdate);
+            window.removeEventListener('resize', scheduleProgressUpdate);
+
+            if (animationFrameId !== null) {
+                window.cancelAnimationFrame(animationFrameId);
+            }
+        };
+    }, [updateScrollProgress]);
+
+    useEffect(() => {
+        const animationFrameId = window.requestAnimationFrame(() => {
+            updateScrollProgress();
+        });
+
+        return () => {
+            window.cancelAnimationFrame(animationFrameId);
+        };
+    }, [location.pathname, updateScrollProgress]);
 
     const handleLogout = async () => {
         await logout();
@@ -100,6 +153,15 @@ const Navbar = () => {
                         )}
                     </ul>
                 </div>
+            </div>
+            <div
+                className={`navbar-scroll-progress ${scrollProgress > 0 ? 'is-visible' : ''}`}
+                aria-hidden="true"
+            >
+                <span
+                    className="navbar-scroll-progress-bar"
+                    style={{ transform: `scaleX(${scrollProgress / 100})` }}
+                ></span>
             </div>
         </nav>
     );

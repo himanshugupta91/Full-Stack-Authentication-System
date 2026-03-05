@@ -53,6 +53,8 @@
   --navbar-link-hover: rgba(0, 0, 0, 0.04);
   --navbar-line-gradient: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, rgba(56, 189, 248, 0.55) 50%, rgba(236, 72, 153, 0.12) 100%);
   --navbar-brand-gradient: linear-gradient(90deg, rgba(99, 102, 241, 0.7), rgba(14, 165, 233, 0.65));
+  --navbar-progress-track: rgba(99, 102, 241, 0.12);
+  --navbar-progress-fill: linear-gradient(90deg, #6366f1 0%, #0ea5e9 52%, #ec4899 100%);
   --nav-link-sheen: linear-gradient(120deg, rgba(99, 102, 241, 0.1), rgba(14, 165, 233, 0.12));
   --nav-logout-sheen: linear-gradient(115deg, transparent 20%, rgba(99, 102, 241, 0.22) 50%, transparent 78%);
   --ghost-button-sheen: linear-gradient(120deg, transparent 15%, rgba(99, 102, 241, 0.22) 45%, transparent 75%);
@@ -184,6 +186,8 @@
   --navbar-link-hover: rgba(148, 163, 184, 0.16);
   --navbar-line-gradient: linear-gradient(90deg, rgba(129, 140, 248, 0.2) 0%, rgba(34, 211, 238, 0.62) 48%, rgba(244, 114, 182, 0.22) 100%);
   --navbar-brand-gradient: linear-gradient(90deg, rgba(129, 140, 248, 0.95), rgba(34, 211, 238, 0.85));
+  --navbar-progress-track: rgba(148, 163, 184, 0.24);
+  --navbar-progress-fill: linear-gradient(90deg, #818cf8 0%, #22d3ee 52%, #f472b6 100%);
   --nav-link-sheen: linear-gradient(120deg, rgba(129, 140, 248, 0.22), rgba(34, 211, 238, 0.2));
   --nav-logout-sheen: linear-gradient(115deg, transparent 16%, rgba(129, 140, 248, 0.45) 48%, transparent 80%);
   --ghost-button-sheen: linear-gradient(120deg, transparent 15%, rgba(129, 140, 248, 0.35) 44%, transparent 76%);
@@ -500,6 +504,33 @@ h6 {
 
 .jitter-navbar .container {
   position: relative;
+}
+
+.navbar-scroll-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  background: var(--navbar-progress-track);
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.navbar-scroll-progress.is-visible {
+  opacity: 1;
+}
+
+.navbar-scroll-progress-bar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: var(--navbar-progress-fill);
+  transition: transform 0.12s linear;
 }
 
 .navbar-brand {
@@ -2270,6 +2301,14 @@ a:hover {
     transform: none !important;
     filter: none !important;
     opacity: 1 !important;
+  }
+
+  .navbar-scroll-progress-bar {
+    transition: none !important;
+  }
+
+  .navbar-scroll-progress {
+    transition: none !important;
   }
 }
 
