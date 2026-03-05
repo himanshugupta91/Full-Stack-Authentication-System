@@ -1,294 +1,385 @@
-# 🚀 Full-Stack Authentication: Backend Implementation Blueprint (Deep Dive)
+# 1-Week Backend Implementation Plan (From Scratch, Feature-Wise)
 
-This document breaks down the enterprise-grade construction of the Authentication Backend into actionable step-by-step tasks. Follow each phase chronologically to build out the architecture from scratch.
+This is a practical build order for implementing your backend from zero.
+Target stack: Spring Boot + Spring Security + JWT + PostgreSQL + Redis + Mail + OAuth2.
 
----
-
-## 🏗️ Phase 1: Infrastructure & Configuration Layer
-*Purpose: Bootstrapping the application, integrating external databases (PostgreSQL for persistence, Redis for caching), and securely managing environment secrets.*
-
-### Task 1: Initialize the Application
-* **Step A:** Go to `start.spring.io`. Select Java 21, Spring Boot 3.x, Maven.
-* **Step B:** Add Dependencies: Web, Data JPA, PostgreSQL Driver, Spring Security, Validation, Lombok, Mail, Redis, OAuth2 Client.
-* **Step C:** Generate, download, and open the project in your IDE.
-
-### Task 2: External Services Setup (`docker-compose.yml`)
-* **Step A:** Create `docker-compose.yml` in the root directory.
-* **Step B:** Define the `postgres` service using image `postgres:16`. Map ports `"5432:5432"`. Inject environment variables: `POSTGRES_DB=auth_db`, `POSTGRES_USER=auth_user`, and `POSTGRES_PASSWORD=${DB_PASSWORD}`.
-* **Step C:** Define the `redis` service using image `redis:7`. Map ports `"6379:6379"`.
-* **Step D:** Run `docker-compose up -d` in your terminal to start the databases.
-
-### Task 3: Environment Variables Loader (`.env`)
-* **Step A:** Create a `.env` file in the `backend/` directory.
-* **Step B:** Define secrets: `DB_PASSWORD=your_password`, `JWT_SECRET=your_base64_secret_key`, `GOOGLE_CLIENT_ID=your_id`, `GOOGLE_SECRET=your_secret`.
-* **Step C:** Ensure `.env` is added to your `.gitignore` file immediately.
-
-### Task 4: Spring Boot Properties (`application.yml`)
-* **Step A:** Rename `application.properties` to `application.yml`.
-* **Step B:** Configure Datasource: Set `url: jdbc:postgresql://localhost:5432/auth_db`, `username: auth_user`, `password: ${DB_PASSWORD}`.
-* **Step C:** Configure JPA: Set `spring.jpa.hibernate.ddl-auto: update` to let Hibernate generate your tables.
-* **Step D:** Configure Redis: Set `spring.data.redis.host: localhost` and `port: 6379`.
-* **Step E:** Configure custom properties: Add a `jwt.secret: ${JWT_SECRET}` key.
+## Ground Rules (Before Day 1)
+1. Keep code in layers: `controller -> service -> repository -> entity`.
+2. Keep all secrets in local env/properties, never in git.
+3. Build one feature completely (API + service + persistence + test) before moving to next.
+4. At end of each day, run smoke tests for all features completed so far.
 
 ---
 
-## 💾 Phase 2: Domain Layer (Entities & Persistence)
-*Purpose: Defining the shape of your data and how it translates into PostgreSQL tables.*
+## Day 1 - Project Bootstrapping + Core Infrastructure
 
-### Task 1: Core Enumerations (`Role.java` & `AuthProvider.java`)
-* **Step A:** Create `com.auth.entity.Role`. Define constants: `ROLE_USER`, `ROLE_ADMIN`.
-* **Step B:** Create `com.auth.entity.AuthProvider`. Define constants: `LOCAL`, `GOOGLE`, `GITHUB`, `APPLE`, `LINKEDIN`.
+### Feature Goal
+Run backend locally with DB/Redis and base security wiring.
 
-### Task 2: The Master User Model (`User.java`)
-* **Step A:** Create `com.auth.entity.User`. Annotate with `@Entity`, `@Table(name="users")`, and `@Data` (Lombok).
-* **Step B:** Define primary key: `@Id @GeneratedValue UUID id`.
-* **Step C:** Define unique column: `@Column(unique = true, nullable = false) String email`.
-* **Step D:** Define basic fields: `String password`, `boolean enabled = false`.
-* **Step E:** Map Enums: Use `@Enumerated(EnumType.STRING)` on `Role role` and `AuthProvider provider`.
+### Tasks (in order)
+1. Create Spring Boot project with dependencies:
+- Web, Security, Validation, Data JPA, PostgreSQL, Redis, Mail, OAuth2 Client, Lombok, MapStruct, Test.
 
-### Task 3: The Database Gateway (`UserRepository.java`)
-* **Step A:** Create interface `com.auth.repository.UserRepository` extending `JpaRepository<User, UUID>`.
-* **Step B:** Declare method: `Optional<User> findByEmail(String email);`.
-* **Step C:** Declare method: `boolean existsByEmail(String email);`.
+2. Configure local infrastructure:
+- Add `docker-compose.yaml` with `postgres` and `redis`.
+- Add optional tools (`adminer`, `redis-commander`) if needed.
 
----
+3. Add backend runtime config:
+- Create local properties from `application.properties.example`.
+- Configure datasource, redis, mail, jwt, cors, cookie, oauth placeholders.
 
-## 📦 Phase 3: Data Transfer Objects (DTOs) & Exception Handling
-*Purpose: Securing the API inputs and outputs and standardizing error formats.*
+4. Add startup config classes:
+- `SecurityConfig`, `CorsConfig`, `PasswordConfig`, `SpringDataWebConfig`.
 
-### Task 1: Incoming Request Payloads (`dto/request`)
-* **Step A:** Create record `RegisterRequest(@NotBlank @Email String email, @NotBlank @Size(min=6) String password)`.
-* **Step B:** Create record `LoginRequest(String email, String password)`.
-* **Step C:** Create record `VerifyOtpRequest(@NotBlank String email, @NotBlank String otp)`.
+5. Add startup seed logic:
+- `DataInitializer` to seed `ROLE_USER`, `ROLE_ADMIN`, and optional admin user.
 
-### Task 2: Outgoing Response Payloads (`dto/response`)
-* **Step A:** Create record `UserResponse`. Include *only* safe fields: `UUID id`, `String email`, `Role role`. (Never include the password).
+6. Run backend:
+- Start infra containers.
+- Start Spring app.
+- Confirm app boot without bean/config errors.
 
-### Task 3: Global Exception Handler (`GlobalExceptionHandler.java`)
-* **Step A:** Create `com.auth.exception.GlobalExceptionHandler` annotated with `@RestControllerAdvice`.
-* **Step B:** Create a method annotated with `@ExceptionHandler(MethodArgumentNotValidException.class)`. Loop through the field errors and return a `Map<String, String>` of validation messages. Return HTTP 400.
-* **Step C:** Create a method for `BadCredentialsException.class`. Return a generic message: "Invalid email or password."
+### Files to implement/check
+- `backend/pom.xml`
+- `backend/docker-compose.yaml`
+- `backend/src/main/resources/application.properties`
+- `backend/src/main/java/com/auth/config/SecurityConfig.java`
+- `backend/src/main/java/com/auth/config/CorsConfig.java`
+- `backend/src/main/java/com/auth/config/PasswordConfig.java`
+- `backend/src/main/java/com/auth/config/SpringDataWebConfig.java`
+- `backend/src/main/java/com/auth/config/DataInitializer.java`
 
----
-
-## 🔒 Phase 4: Foundational Security Configuration
-*Purpose: Disabling default Session behaviors and opening CORS pathways.*
-
-### Task 1: Cross-Origin Control (`CorsConfig.java`)
-* **Step A:** Create `com.auth.config.CorsConfig`. Define a `@Bean CorsConfigurationSource`.
-* **Step B:** Set `.setAllowedOrigins(List.of("http://localhost:5173"))` (Your Vite frontend).
-* **Step C:** Crucial: Execute `.setAllowCredentials(true)` to allow the browser to accept `HttpOnly` cookies.
-
-### Task 2: The Main Security Filter Chain (`SecurityConfig.java`)
-* **Step A:** Create `com.auth.config.SecurityConfig` annotated with `@EnableWebSecurity`.
-* **Step B:** Define a `@Bean PasswordEncoder` returning `new BCryptPasswordEncoder()`.
-* **Step C:** Define a `@Bean SecurityFilterChain(HttpSecurity http)`.
-* **Step D:** Disable CSRF: `http.csrf(csrf -> csrf.disable())`.
-* **Step E:** Go Stateless: `http.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))`.
-* **Step F:** Configure Routes: `.requestMatchers("/api/auth/**", "/oauth2/**").permitAll()`. Then `.requestMatchers("/api/admin/**").hasRole("ADMIN")`. Finally, `.anyRequest().authenticated()`.
+### End-of-day success check
+1. App starts.
+2. DB + Redis connected.
+3. Public route `/api/auth/**` accessible.
 
 ---
 
-## 🔑 Phase 5: JSON Web Token Architecture (JWT) Deep Dive
-*Purpose: Minting and validating the cryptographic tokens.*
+## Day 2 - User Domain + Registration + OTP Send
 
-### Task 1: Token Cryptography Service (`JwtService.java`)
-* **Step A (Secret Key):** Inject your `${jwt.secret}` variable from `application.yml` using the `@Value` annotation.
-* **Step B (Key Generator):** Create a private method `getSigningKey()`. Inside, decode your secret Base-64 string into bytes using `Decoders.BASE64.decode(secret)`. Return a cryptographic HMAC key using `Keys.hmacShaKeyFor(keyBytes)`.
-* **Step C (Access Token Creation):** Write `generateAccessToken(UserDetails user)`. Use `Jwts.builder()` to create the token payload. Set `.subject(user.getUsername())`, `.issuedAt(now)`, `.expiration(now + 15 mins)`, sign it using `.signWith(getSigningKey())`, and `.compact()` it.
-* **Step D (Refresh Token Creation):** Copy the Access Token method, but change the expiration math to equal 7 days.
-* **Step E (Token claim Extraction):** Write `extractUsername(String token)`. Use `Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody()`. Return `.getSubject()`.
-* **Step F (Token Validation):** Write `isTokenValid(String token, UserDetails userDetails)`. Ensure `extractUsername(token).equals(userDetails.getUsername())` AND expiration date is after `new Date()`.
+### Feature Goal
+User can register and receive OTP email.
 
-### Task 2: User Authentication Gateway (`JwtAuthenticationFilter.java`)
-* **Step A:** Create class extending `OncePerRequestFilter`. Annotate `@Component`. Inject `JwtService` and `UserDetailsService`.
-* **Step B (Header Extraction):** Override `doFilterInternal()`. Extract the "Authorization" header. If it doesn't start with "Bearer ", call `filterChain.doFilter` and `return;`.
-* **Step C:** Cut the `"Bearer "` prefix off to get the raw JWT string.
-* **Step D (Context Verification):** If `JwtService` extracts a username, and `SecurityContextHolder` is currently empty: load the user from the DB. If `JwtService.isTokenValid()` returns true, create a `UsernamePasswordAuthenticationToken`, give it the user's authorities, and set it into the `SecurityContextHolder`. Let the filter chain continue.
+### Tasks (in order)
+1. Build domain model:
+- Create `User` and `Role` entities.
+- Add user-role relation and audit timestamps.
 
----
+2. Build repositories:
+- `UserRepository`, `RoleRepository`.
 
-## 📧 Phase 6: OTP Generation & Redis Integration Deep Dive
-*Purpose: Halting fake accounts by forcing users to verify their physical email address.*
+3. Build DTO contracts:
+- Request DTOs: `RegisterRequest`, `OtpVerifyRequest`, `LoginRequest`.
+- Response DTO: `MessageResponse`, `AuthResponse`, `AuthTokens`.
 
-### Task 1: The OTP Cashier (`OtpService.java`)
-* **Step A:** Annotate with `@Service`. Inject `StringRedisTemplate`.
-* **Step B (Generation):** Write `generateAndSaveOtp(String email)`. Generate a 6-digit string using `new Random()`. Store it in Redis: `redisTemplate.opsForValue().set("OTP:" + email, otp, Duration.ofMinutes(5));`. Return the OTP.
-* **Step C (Validation):** Write `validateOtp(String email, String userInputOtp)`. Fetch the value from Redis. If it matches, immediately run `redisTemplate.delete("OTP:" + email);` (to stop double verification bounds) and return `true`.
+4. Build mapper:
+- `UserMapper` for entity/DTO conversion.
 
-### Task 2: Physical Email Dispatcher (`EmailService.java`)
-* **Step A:** Annotate with `@Service`. Inject `JavaMailSender`. (Ensure `spring.mail` fields are in `application.yml`).
-* **Step B:** Write `sendOtpEmail(String recipientEmail, String rawOtp)`. Instantiate a `SimpleMailMessage`. Set `.setTo()`, `.setSubject()`, and `.setText("Here is your validation code: " + rawOtp)`. Execute `mailSender.send()`.
+5. Build registration service path:
+- Add `AuthService` interface.
+- In `AuthServiceImpl.register(...)`:
+  - normalize email
+  - check duplicate
+  - validate password policy
+  - hash password
+  - generate OTP
+  - hash OTP
+  - set expiry
+  - assign `ROLE_USER`
+  - save user
+  - send OTP email
 
----
+6. Build OTP and email support:
+- `OtpService` for OTP/reset token generation.
+- `EmailService.sendOtpEmail(...)`.
 
-## ⚙️ Phase 7: The Master Authentication Service Deep Dive
-*Purpose: Combining the entities and tokens securely.*
+7. Expose endpoint:
+- `POST /api/auth/register`.
 
-### Task 1: Building the logic (`AuthServiceImpl.java`)
-* **Step A:** Create `com.auth.service.impl.AuthServiceImpl` implementing `AuthService`. Inject Repositories, Providers, and Support Services.
-* **Step B (Register Flow):** Write `register(RegisterRequest req)`. Throw Exception if `userRepository.existsByEmail()`. Create new `User`. Hash the password: `user.setPassword(passwordEncoder.encode(req.password()))`. Set `enabled = false` and `provider = LOCAL`. Save user. Finally, call `OtpService` to generate the code and `EmailService` to send it.
-* **Step C (Verification Flow):** Write `verifyUser(VerifyOtpRequest req)`. Check `OtpService.validateOtp()`. Extract user from repository and update `enabled = true`. Save.
-* **Step D (Login Flow):** Write `login(LoginRequest req)`. 
-  1. Trigger `authenticationManager.authenticate(...)`.
-  2. If successful, fetch the `User`. Ensure the DB shows `enabled = true`.
-  3. Mint the Access & Refresh JWTs via `JwtService`. Pack them into an internal DTO or Map to send back to the Controller.
+### Files to implement/check
+- `backend/src/main/java/com/auth/entity/User.java`
+- `backend/src/main/java/com/auth/entity/Role.java`
+- `backend/src/main/java/com/auth/repository/UserRepository.java`
+- `backend/src/main/java/com/auth/repository/RoleRepository.java`
+- `backend/src/main/java/com/auth/mapper/UserMapper.java`
+- `backend/src/main/java/com/auth/service/AuthService.java`
+- `backend/src/main/java/com/auth/service/impl/AuthServiceImpl.java`
+- `backend/src/main/java/com/auth/service/support/OtpService.java`
+- `backend/src/main/java/com/auth/service/support/EmailService.java`
+- `backend/src/main/java/com/auth/controller/AuthController.java`
 
----
-
-## 🛂 Phase 8: Exposing the REST API Controllers Deep Dive
-*Purpose: Mapping the business logic to web URLs securely using HTTP standards.*
-
-### Task 1: The Authentication Gateway (`AuthController.java`)
-* **Step A:** Create `com.auth.controller.AuthController`. Annotate with `@RestController` and `@RequestMapping("/api/auth")`.
-* **Step B (Register):** Write `@PostMapping("/register")`. Accept `@Valid RegisterRequest @RequestBody`. Call service. Return success message.
-* **Step C (Login):** Write `@PostMapping("/login")`. Accept `LoginRequest`.
-  1. Call service to authenticate and retrieve `accessToken` and `refreshToken` strings.
-  2. Instantiate `Cookie cookie = new Cookie("refresh_token", refreshToken)`.
-  3. Security lock: `cookie.setHttpOnly(true)` (Blocks frontend JS from reading it via XSS).
-  4. Routing lock: `cookie.setPath("/api/auth/refresh")` (Browser only sends this cookie on refresh calls).
-  5. Append it: `response.addCookie(cookie)`.
-  6. Return the `accessToken` inside a standard JSON `ResponseEntity`.
-* **Step D (Refresh):** Write `@PostMapping("/refresh")`. Extract the cookie using `@CookieValue("refresh_token") String refreshToken`. Validate it. Call `JwtService.generateAccessToken(user)`. Return the new Access Token in JSON.
-* **Step E (Logout):** Write `@PostMapping("/logout")`. Instantiate the exact same `refresh_token` cookie, but execute `.setMaxAge(0)` to command the browser to delete it from memory.
+### End-of-day success check
+1. Register API returns success.
+2. User saved as `enabled=false`.
+3. OTP hash + expiry stored.
 
 ---
 
-## 🛡️ Phase 9: Active Rate Limiting Deep Dive
-*Purpose: Stopping Brute-Force password bots.*
+## Day 3 - OTP Verify + Login + JWT Access Token
 
-### Task 1: The Redis Blocker (`RateLimitingService.java`)
-* **Step A:** Create `RateLimitingService`. Inject `StringRedisTemplate`.
-* **Step B:** Write `recordFailedAttempt(String email)`. Query Redis to increment `"ATTEMPTS:" + email`. If attempts reach 5, write a new key `"LOCK:" + email` to Redis with a `Duration.ofMinutes(30)`. Delete the `ATTEMPTS` counter.
-* **Step C:** Write `isAccountLocked(String email)`. Simply check if the `"LOCK:"` key exists via Redis `hasKey`. If true, throw a `LockedException`.
-* **Step D:** Write `clearAttempts(String email)`. Call this on successful login to delete the attempt counter.
+### Feature Goal
+User can verify account and login to receive access token + refresh cookie.
 
-### Task 2: Service Integration
-* **Step A:** Go back into `AuthServiceImpl.login()`.
-* **Step B:** At the very top, run `RateLimitingService.isAccountLocked(email)`.
-* **Step C:** Wrap `authenticationManager.authenticate` in a try-catch. In the catch block (where BadCredentialsException occurs), trigger `recordFailedAttempt()`. In the success block, trigger `clearAttempts()`.
+### Tasks (in order)
+1. Implement OTP verification:
+- In `AuthServiceImpl.verifyOtp(...)`:
+  - load user
+  - ensure not already verified
+  - compare raw OTP with stored hash
+  - check expiry
+  - enable account
+  - clear OTP fields
+  - send welcome email
 
----
+2. Implement JWT core:
+- `JwtUtil` for generate/validate/extract email.
 
-## 🌐 Phase 10: Seamless OAuth2 Integration Deep Dive
-*Purpose: Enabling Click-to-Login functionality.*
+3. Implement Spring auth user details:
+- `CustomUserDetailsService` map user roles -> authorities.
 
-### Task 1: Client Configurations
-* **Step A:** Update `application.yml`. Add your `google` and `github` client IDs under `spring.security.oauth2.client.registration`.
-* **Step B:** Define scope (`email`, `profile`). Spring Security natively generates the `/oauth2/authorization/google` redirect endpoints for you.
+4. Implement login flow:
+- In `AuthServiceImpl.login(...)`:
+  - authenticate via `AuthenticationManager`
+  - issue tokens via `AuthTokenService`
 
-### Task 2: Custom JSON Parser & Mapping (`CustomOAuth2UserService.java`)
-* **Step A:** Create `com.auth.security.oauth2.CustomOAuth2UserService` extending `DefaultOAuth2UserService`.
-* **Step B:** Override `loadUser()`. Get attributes via `super.loadUser(userRequest).getAttributes()`.
-* **Step C:** Create an interface `OAuth2UserInfo` with a `getEmail()` method. Build implementations for Google (extracts `email` key) vs GitHub (extracts `user/email` structure).
-* **Step D:** Check Postgres for that email. If missing, save a new `User` with a dummy password (`BCryptPasswordEncoder()`), set `enabled=true`, provider `GOOGLE`. 
-* **Step E:** Return a Spring `DefaultOAuth2User` containing the user's ID/Authorities so the Security Context accepts them.
+5. Implement refresh-token cookie service:
+- `RefreshTokenCookieService` for secure cookie headers.
 
-### Task 3: Redirection Control (`OAuth2AuthenticationSuccessHandler.java`)
-* **Step A:** Implement `AuthenticationSuccessHandler`. Override `onAuthenticationSuccess`.
-* **Step B:** Extract the user email from the `Authentication` object.
-* **Step C:** Generate your internal Access & Refresh tokens via `JwtService`.
-* **Step D:** Build the `HttpOnly` cookie exactly like the Login Controller and append it.
-* **Step E:** Run `response.sendRedirect("http://localhost:5173/dashboard")` to command the user's browser to leave the Spring Boot server and go back to your React app.
+6. Expose endpoints:
+- `POST /api/auth/verify-otp`
+- `POST /api/auth/login`
 
----
+### Files to implement/check
+- `backend/src/main/java/com/auth/security/jwt/JwtUtil.java`
+- `backend/src/main/java/com/auth/security/CustomUserDetailsService.java`
+- `backend/src/main/java/com/auth/service/auth/AuthTokenService.java`
+- `backend/src/main/java/com/auth/security/RefreshTokenCookieService.java`
+- `backend/src/main/java/com/auth/controller/AuthController.java`
+- `backend/src/main/java/com/auth/service/impl/AuthServiceImpl.java`
 
-## 👑 Phase 11: Admin Module & Output Responses Deep Dive
-*Purpose: Establishing RBAC endpoints.*
-
-### Task 1: Protected Admin Controller (`AdminController.java`)
-* **Step A:** Annotate the entire class with `@PreAuthorize("hasRole('ADMIN')")`.
-* **Step B:** Write `@GetMapping("/users")`. Accept pagination: `@RequestParam(defaultValue = "0") int page`.
-* **Step C:** Query `UserRepository.findAll(PageRequest.of(page, 20))`. 
-* **Step D:** Map the raw `User` list into the safe `UserResponse` DTO manually or using MapStruct before returning it to the frontend.
-
----
----
-
-# 🛣️ API-Driven Implementation Checklist
-
-*Once the foundational layers are built from the blueprint above, you can verify your progress by reviewing these specific API Endpoints from end-to-end. This shows how all the pieces connect together for each HTTP request.*
-
-## 📌 API: `POST /api/auth/register`
-*Purpose: Accept a user's email and password, save them as disabled, and dispatch an OTP verification email.*
-
-### Task 1: Payloads & Handlers
-* **Step A:** Create `RegisterRequest` DTO with `@Email` and `@NotBlank` annotations.
-* **Step B:** Create `GlobalExceptionHandler` with `@RestControllerAdvice` to catch validation errors and return clean HTTP 400 JSON mapping.
-
-### Task 2: OTP & Email Architecture
-* **Step A:** Create `OtpService` using `StringRedisTemplate`. Write `generateAndSaveOtp()` to generate a 6-digit code and save it to Redis with a 5-minute TTL.
-* **Step B:** Create `EmailService` using `JavaMailSender`. Write `sendOtpEmail()` to format and dispatch the code to the user's inbox.
-
-### Task 3: Business Logic & Controller
-* **Step A:** Create `AuthService.register()`. Assert email doesn't exist. Hash password using `BCrypt`. Save `User` (enabled=false). Call `OtpService` and `EmailService`.
-* **Step B:** Create `AuthController`. Add `@PostMapping("/register")` that accepts `@Valid RegisterRequest`, delegates to `AuthService`, and returns a HTTP 200 "Success" message.
+### End-of-day success check
+1. Verify OTP enables account.
+2. Login returns access token.
+3. Login sets refresh token HttpOnly cookie.
 
 ---
 
-## 📌 API: `POST /api/auth/verify-otp`
-*Purpose: Consume the 6-digit code, validate it against Redis, and activate the user's account.*
+## Day 4 - Refresh + Logout + Password Reset Flow
 
-### Task 1: Execution Logic
-* **Step A:** Create `VerifyOtpRequest` DTO containing `email` and `otp` strings.
-* **Step B:** Add `validateOtp(email, otp)` to `OtpService`. Query Redis and delete the key immediately if it matches to prevent reuse.
-* **Step C:** Add `verifyUser()` to `AuthService`. Call `OtpService.validateOtp`. If true, fetch `User` from DB, set `enabled=true`, and save.
-* **Step D:** Add `@PostMapping("/verify-otp")` to `AuthController` to expose the endpoint.
+### Feature Goal
+Complete token lifecycle and password recovery.
 
----
+### Tasks (in order)
+1. Implement refresh token rotation:
+- In `AuthTokenService.refreshTokens(...)`:
+  - hash incoming refresh token
+  - lookup user by hash
+  - check expiry
+  - rotate token
 
-## 📌 API: `POST /api/auth/login`
-*Purpose: Authenticate credentials, enforce rate limits, and securely dispatch JWT tokens.*
+2. Implement logout:
+- Revoke refresh token in DB.
+- Clear refresh cookie in response.
 
-### Task 1: Rate Limiting Defense
-* **Step A:** Create `RateLimitingService` using Redis. Write `recordFailedAttempt()` (increments counter, locks account for 30 mins at 5 fails). Write `isAccountLocked()` and `clearAttempts()`.
+3. Implement forgot-password request:
+- `resetPassword(...)`:
+  - always return generic success message
+  - for existing user: generate reset token, store hash + expiry, send mail link
 
-### Task 2: Business Logic
-* **Step A:** Create `LoginRequest` DTO containing `email` and `password`.
-* **Step B:** Add `login()` to `AuthService`. 
-  1. Check `RateLimitingService.isAccountLocked()`.
-  2. Use Spring's `AuthenticationManager` to attempt login. (Wrap in try/catch to trigger `recordFailedAttempt()`).
-  3. On success, verify `enabled=true`. Generate Access and Refresh tokens via `JwtService`. Return them.
+4. Implement set-new-password endpoint:
+- `updatePassword(...)`:
+  - hash incoming reset token
+  - lookup user
+  - check expiry
+  - validate policy
+  - update encoded password
+  - clear reset token fields
 
-### Task 3: Secure Cookie Controller
-* **Step A:** Add `@PostMapping("/login")` to `AuthController`.
-* **Step B:** Retrieve tokens from service. Place `accessToken` in JSON body.
-* **Step C:** Create a Java `Cookie` for the `refreshToken`. Set `setHttpOnly(true)` and `setPath("/api/auth/refresh")`. Add cookie to the HTTP response.
+5. Implement authenticated password change:
+- `changePassword(...)` with current-password check.
 
----
+6. Expose endpoints:
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
+- `POST /api/auth/reset-password`
+- `POST /api/auth/update-password`
+- `POST /api/user/change-password`
 
-## 📌 API: `POST /api/auth/refresh` & `POST /api/auth/logout`
-*Purpose: Maintain user sessions securely without requiring re-login.*
+### Files to implement/check
+- `backend/src/main/java/com/auth/service/auth/AuthTokenService.java`
+- `backend/src/main/java/com/auth/controller/AuthController.java`
+- `backend/src/main/java/com/auth/service/impl/AuthServiceImpl.java`
+- `backend/src/main/java/com/auth/controller/UserController.java`
+- `backend/src/main/java/com/auth/service/support/TokenHashService.java`
+- `backend/src/main/java/com/auth/service/support/PasswordPolicyService.java`
 
-### Task 1: Token Refresh Flow
-* **Step A:** Add `@PostMapping("/refresh")` to `AuthController`.
-* **Step B:** Read the cookie using `@CookieValue("refresh_token") String token`.
-* **Step C:** Pass the token to `JwtService` for validation. Load the `User`.
-* **Step D:** Generate a new `accessToken` and return it in the JSON response.
-
-### Task 2: Logout Flow
-* **Step A:** Add `@PostMapping("/logout")` to `AuthController`.
-* **Step B:** Create a dummy `Cookie` with the exact same name, path, and HttpOnly settings.
-* **Step C:** Execute `.setMaxAge(0)` on the cookie and append it to the response to instruct the browser to delete the refresh token.
-
----
-
-## 📌 API: OAuth2 `/oauth2/authorization/{provider}`
-*Purpose: Spring-managed endpoints to support "Continue with Google/GitHub".*
-
-### Task 1: Configuration & Handlers
-* **Step A:** Add credentials to `application.yml` under `spring.security.oauth2.client.registration`.
-* **Step B:** Create `CustomOAuth2UserService` to normalize Google/GitHub attributes into a standard email field. Save non-existent emails into Postgres with a dummy password and `enabled=true`.
-* **Step C:** Create `OAuth2AuthenticationSuccessHandler`. Generate JWTs, attach the `HttpOnly` refresh cookie, and execute `response.sendRedirect("http://localhost:5173")`.
-* **Step D:** Register the UserService and SuccessHandler in your `SecurityConfig` filter chain under `.oauth2Login()`.
+### End-of-day success check
+1. Refresh gives new access + new refresh cookie.
+2. Logout invalidates refresh token.
+3. Reset flow works end-to-end.
 
 ---
 
-## 📌 API: `GET /api/admin/users`
-*Purpose: Establishing Role-Based Access Control (RBAC) data fetching.*
+## Day 5 - Abuse Protection + JWT Filter Security
 
-### Task 1: Protected Data Retrieval
-* **Step A:** Create `UserResponse` DTO containing `id`, `email`, `role` (No Password).
-* **Step B:** Create `AdminController`. Annotate the whole class with `@PreAuthorize("hasRole('ADMIN')")`.
-* **Step C:** Add `@GetMapping("/users")`. Accept pagination params `@RequestParam int page`.
-* **Step D:** Use `UserRepository.findAll(PageRequest.of(page, 20))` and map the resulting generic Users safely into `UserResponse` objects before returning.
+### Feature Goal
+Protect auth endpoints and secure protected APIs.
+
+### Tasks (in order)
+1. Implement Redis fixed-window limiter:
+- `RateLimitService.consume(...)`.
+
+2. Implement abuse protection coordinator:
+- `AuthAbuseProtectionService` methods:
+  - `guardLoginAttempt`
+  - `recordFailedLogin`
+  - `guardOtpVerification`
+  - `recordFailedOtp`
+  - `guardResendOtp`
+  - `guardResetPassword`
+
+3. Add account lock strategy:
+- failed login attempts -> lock account until time.
+- failed OTP attempts -> lock OTP verification until time.
+
+4. Build JWT auth filter:
+- `JwtAuthFilter` parse bearer token, validate, load user, set security context.
+
+5. Ensure route protection works:
+- `/api/auth/**` public.
+- `/api/user/**` requires USER/ADMIN.
+- `/api/admin/**` requires ADMIN.
+
+6. Add resend OTP endpoint:
+- `POST /api/auth/resend-otp` with abuse guard.
+
+### Files to implement/check
+- `backend/src/main/java/com/auth/service/support/RateLimitService.java`
+- `backend/src/main/java/com/auth/service/auth/AuthAbuseProtectionService.java`
+- `backend/src/main/java/com/auth/security/jwt/JwtAuthFilter.java`
+- `backend/src/main/java/com/auth/config/SecurityConfig.java`
+- `backend/src/main/java/com/auth/controller/AuthController.java`
+
+### End-of-day success check
+1. Repeated failed logins trigger lock and `Retry-After` behavior.
+2. Protected routes reject missing/invalid JWT.
+3. Valid JWT allows user/admin routes by role.
+
+---
+
+## Day 6 - OAuth2 Login + User/Admin Dashboards
+
+### Feature Goal
+Add OAuth2 social login and dashboard APIs.
+
+### Tasks (in order)
+1. Add OAuth2 provider config placeholders:
+- Google, GitHub, Apple, LinkedIn in properties.
+
+2. Implement OAuth2 provisioning service:
+- `OAuth2UserProvisioningService.loadOrCreateUser(...)`:
+  - normalize provider
+  - extract provider user id
+  - resolve email/name with fallback strategy
+  - create or update local user
+
+3. Implement OAuth2 success/failure handlers:
+- Success: issue tokens + set refresh cookie + redirect frontend callback.
+- Failure: redirect frontend login with error.
+
+4. Add LinkedIn request resolver customization:
+- remove nonce for compatibility path.
+
+5. Implement user portal APIs:
+- `GET /api/user/dashboard`
+- `GET /api/user/profile`
+
+6. Implement admin APIs:
+- `GET /api/admin/dashboard`
+- `GET /api/admin/users` with paging/filtering/search/sort.
+
+### Files to implement/check
+- `backend/src/main/java/com/auth/service/auth/OAuth2UserProvisioningService.java`
+- `backend/src/main/java/com/auth/security/oauth2/OAuth2AuthenticationSuccessHandler.java`
+- `backend/src/main/java/com/auth/security/oauth2/OAuth2AuthenticationFailureHandler.java`
+- `backend/src/main/java/com/auth/security/oauth2/LinkedInAuthorizationRequestResolver.java`
+- `backend/src/main/java/com/auth/controller/UserController.java`
+- `backend/src/main/java/com/auth/controller/AdminController.java`
+- `backend/src/main/java/com/auth/service/impl/UserPortalServiceImpl.java`
+- `backend/src/main/java/com/auth/service/impl/AdminServiceImpl.java`
+
+### End-of-day success check
+1. OAuth2 login creates/links user and redirects correctly.
+2. Admin user listing works with filters and safe sorting.
+
+---
+
+## Day 7 - Hardening, Exceptions, Testing, and Release Readiness
+
+### Feature Goal
+Stabilize and prepare for deployment.
+
+### Tasks (in order)
+1. Implement global exception standardization:
+- Add `GlobalExceptionHandler` mappings for validation/auth/lock/rate-limit/server errors.
+
+2. Complete email templates:
+- OTP, welcome, reset, password changed, account locked.
+
+3. Add/finish unit tests:
+- Auth controller
+- Auth service
+- Auth token service
+- OAuth2 provisioning service
+- Admin service
+- User service
+- User details service
+
+4. Run full test suite and fix failing cases.
+
+5. Build container image and boot with compose:
+- verify app + db + redis integrated startup.
+
+6. Final verification checklist:
+- register -> verify -> login -> refresh -> logout
+- forgot password -> update password
+- resend OTP + lockout paths
+- user dashboard
+- admin dashboard/users
+- oauth2 login flow
+
+### Files to implement/check
+- `backend/src/main/java/com/auth/exception/GlobalExceptionHandler.java`
+- `backend/src/test/java/com/auth/controller/AuthControllerTest.java`
+- `backend/src/test/java/com/auth/service/impl/AuthServiceImplTest.java`
+- `backend/src/test/java/com/auth/service/auth/AuthTokenServiceTest.java`
+- `backend/src/test/java/com/auth/service/auth/OAuth2UserProvisioningServiceTest.java`
+- `backend/src/test/java/com/auth/service/impl/AdminServiceImplTest.java`
+- `backend/src/test/java/com/auth/service/impl/UserServiceImplTest.java`
+- `backend/src/test/java/com/auth/security/CustomUserDetailsServiceTest.java`
+
+### End-of-day success check
+1. Tests are green or known failures are documented with root cause.
+2. Full auth feature set works end-to-end.
+3. You can deploy confidently to staging.
+
+---
+
+## Quick Daily Execution Template (Use Every Day)
+1. Implement feature tasks in listed order.
+2. Run only related tests first.
+3. Smoke test APIs for that feature.
+4. Commit with clear message.
+5. Write short notes: completed, blocked, next day focus.
+
+---
+
+## Suggested Git Commit Plan (Optional)
+1. `day1: bootstrap backend config + infra`
+2. `day2: registration + otp send`
+3. `day3: otp verify + login + jwt core`
+4. `day4: refresh logout password reset/change`
+5. `day5: abuse protection + jwt auth filter`
+6. `day6: oauth2 + user/admin dashboards`
+7. `day7: tests + exception handling + release hardening`
