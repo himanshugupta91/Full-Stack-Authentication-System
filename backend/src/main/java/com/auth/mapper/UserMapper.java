@@ -5,9 +5,11 @@ import com.auth.dto.UserDashboardDto;
 import com.auth.dto.UserDto;
 import com.auth.entity.Role;
 import com.auth.entity.User;
+import com.auth.util.DateTimeUtil;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 
@@ -53,6 +55,11 @@ public interface UserMapper {
     /** Converts Role entity to its role-name string for DTO serialization. */
     default String map(Role role) {
         return role.getName().name();
+    }
+
+    /** Formats LocalDateTime as IST in 12-hour form for API responses. */
+    default String map(LocalDateTime value) {
+        return DateTimeUtil.formatIst12Hour(value);
     }
 
     /** Resolves the source used by the account for login display in admin views. */

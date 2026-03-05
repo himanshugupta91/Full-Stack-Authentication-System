@@ -53,8 +53,6 @@
   --navbar-link-hover: rgba(0, 0, 0, 0.04);
   --navbar-line-gradient: linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, rgba(56, 189, 248, 0.55) 50%, rgba(236, 72, 153, 0.12) 100%);
   --navbar-brand-gradient: linear-gradient(90deg, rgba(99, 102, 241, 0.7), rgba(14, 165, 233, 0.65));
-  --navbar-progress-track: rgba(99, 102, 241, 0.12);
-  --navbar-progress-fill: linear-gradient(90deg, #6366f1 0%, #0ea5e9 52%, #ec4899 100%);
   --nav-link-sheen: linear-gradient(120deg, rgba(99, 102, 241, 0.1), rgba(14, 165, 233, 0.12));
   --nav-logout-sheen: linear-gradient(115deg, transparent 20%, rgba(99, 102, 241, 0.22) 50%, transparent 78%);
   --ghost-button-sheen: linear-gradient(120deg, transparent 15%, rgba(99, 102, 241, 0.22) 45%, transparent 75%);
@@ -186,8 +184,6 @@
   --navbar-link-hover: rgba(148, 163, 184, 0.16);
   --navbar-line-gradient: linear-gradient(90deg, rgba(129, 140, 248, 0.2) 0%, rgba(34, 211, 238, 0.62) 48%, rgba(244, 114, 182, 0.22) 100%);
   --navbar-brand-gradient: linear-gradient(90deg, rgba(129, 140, 248, 0.95), rgba(34, 211, 238, 0.85));
-  --navbar-progress-track: rgba(148, 163, 184, 0.24);
-  --navbar-progress-fill: linear-gradient(90deg, #818cf8 0%, #22d3ee 52%, #f472b6 100%);
   --nav-link-sheen: linear-gradient(120deg, rgba(129, 140, 248, 0.22), rgba(34, 211, 238, 0.2));
   --nav-logout-sheen: linear-gradient(115deg, transparent 16%, rgba(129, 140, 248, 0.45) 48%, transparent 80%);
   --ghost-button-sheen: linear-gradient(120deg, transparent 15%, rgba(129, 140, 248, 0.35) 44%, transparent 76%);
@@ -504,33 +500,6 @@ h6 {
 
 .jitter-navbar .container {
   position: relative;
-}
-
-.navbar-scroll-progress {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 3px;
-  background: var(--navbar-progress-track);
-  opacity: 0;
-  pointer-events: none;
-  overflow: hidden;
-  transition: opacity 0.2s ease;
-}
-
-.navbar-scroll-progress.is-visible {
-  opacity: 1;
-}
-
-.navbar-scroll-progress-bar {
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform: scaleX(0);
-  transform-origin: left center;
-  background: var(--navbar-progress-fill);
-  transition: transform 0.12s linear;
 }
 
 .navbar-brand {
@@ -2303,15 +2272,6 @@ a:hover {
     opacity: 1 !important;
   }
 
-  .navbar-scroll-progress-bar,
-  .navbar-scroll-dot::before,
-  .navbar-scroll-dot::after {
-    transition: none !important;
-  }
-
-  .navbar-scroll-progress {
-    transition: none !important;
-  }
 }
 
 /* ========================================
@@ -2628,13 +2588,6 @@ a:hover {
   --bento-cell-border: var(--gray-200);
   --bento-cell-hover-bg: var(--surface);
   --bento-cell-hover-border: var(--gray-300);
-  --bento-progress-track-bg: rgba(255, 255, 255, 0.96);
-  --bento-progress-track-border: rgba(203, 213, 225, 0.92);
-  --bento-progress-dot-bg: rgba(226, 232, 240, 0.62);
-  --bento-progress-dot-border: rgba(148, 163, 184, 0.3);
-  --bento-progress-fill: #111111;
-  --bento-progress-glow: rgba(17, 17, 17, 0.14);
-  --bento-progress-sheen: linear-gradient(90deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0) 46%, rgba(255, 255, 255, 0.16) 100%);
 }
 
 :root[data-theme='dark'] {
@@ -2644,28 +2597,12 @@ a:hover {
   --bento-cell-border: #324761;
   --bento-cell-hover-bg: #1a2d43;
   --bento-cell-hover-border: #4b6684;
-  --bento-progress-track-bg: rgba(13, 23, 37, 0.92);
-  --bento-progress-track-border: rgba(71, 85, 105, 0.85);
-  --bento-progress-dot-bg: rgba(22, 35, 53, 0.9);
-  --bento-progress-dot-border: rgba(100, 116, 139, 0.66);
-  --bento-progress-fill: #ffffff;
-  --bento-progress-glow: rgba(255, 255, 255, 0.42);
-  --bento-progress-sheen: linear-gradient(90deg, rgba(224, 242, 254, 0.34) 0%, rgba(224, 242, 254, 0) 45%, rgba(224, 242, 254, 0.28) 100%);
 }
 
 .bento-navbar {
   background: transparent !important;
   border-bottom: none;
   padding: 0.55rem 0;
-}
-
-.bento-navbar-frame {
-  --bento-progress-inset: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
-  --bento-progress-offset: 0;
-  --bento-progress-height: 0.54rem;
-  position: relative;
-  display: block !important;
-  padding-bottom: 0.82rem;
 }
 
 .bento-navbar-shell {
@@ -2678,71 +2615,6 @@ a:hover {
   box-shadow: var(--shadow-sm);
   width: 100%;
   align-items: center;
-}
-
-.bento-navbar .navbar-scroll-progress {
-  position: absolute;
-  left: var(--bento-progress-inset);
-  right: var(--bento-progress-inset);
-  bottom: var(--bento-progress-offset);
-  height: var(--bento-progress-height);
-  padding: 0.08rem 0.16rem;
-  border-radius: 999px;
-  border: 1px solid var(--bento-progress-track-border);
-  background: var(--bento-progress-track-bg);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), inset 0 -1px 0 rgba(15, 23, 42, 0.08);
-  transform: translateY(4px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-:root[data-theme='dark'] .bento-navbar .navbar-scroll-progress {
-  box-shadow: inset 0 1px 0 rgba(191, 219, 254, 0.18), inset 0 -1px 0 rgba(15, 23, 42, 0.42);
-}
-
-.bento-navbar .navbar-scroll-progress.is-visible {
-  transform: translateY(0);
-}
-
-.bento-navbar .navbar-scroll-progress-dots {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 0.2rem;
-}
-
-.bento-navbar .navbar-scroll-dot {
-  --dot-fill: 0;
-  position: relative;
-  border-radius: 999px;
-  border: 1px solid var(--bento-progress-dot-border);
-  background: var(--bento-progress-dot-bg);
-  overflow: hidden;
-}
-
-.bento-navbar .navbar-scroll-dot::before,
-.bento-navbar .navbar-scroll-dot::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  transform: scaleX(var(--dot-fill));
-  transform-origin: left center;
-  transition: transform 0.12s linear, opacity 0.12s linear;
-}
-
-.bento-navbar .navbar-scroll-dot::before {
-  z-index: 1;
-  background: var(--bento-progress-fill);
-  box-shadow: 0 0 8px var(--bento-progress-glow), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-}
-
-.bento-navbar .navbar-scroll-dot::after {
-  z-index: 2;
-  background: var(--bento-progress-sheen);
-  opacity: calc(var(--dot-fill) * 0.9);
 }
 
 .bento-brand,
@@ -2866,11 +2738,6 @@ a:hover {
 }
 
 @media (max-width: 991.98px) {
-  .bento-navbar-frame {
-    --bento-progress-height: 0.5rem;
-    padding-bottom: 0.78rem;
-  }
-
   .bento-navbar-shell {
     padding: 0.62rem;
   }

@@ -288,7 +288,7 @@ const AdminDashboard = () => {
                                                         ))}
                                                     </div>
                                                 </td>
-                                                <td>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
+                                                <td>{u.createdAt || 'N/A'}</td>
                                             </tr>
                                         );
                                     })}

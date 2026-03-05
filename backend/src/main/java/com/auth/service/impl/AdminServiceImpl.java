@@ -7,6 +7,7 @@ import com.auth.entity.User;
 import com.auth.mapper.UserMapper;
 import com.auth.repository.UserRepository;
 import com.auth.service.AdminService;
+import com.auth.util.DateTimeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,7 +17,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.Locale;
 
@@ -40,7 +40,7 @@ public class AdminServiceImpl implements AdminService {
                 adminEmail,
                 totalUsers,
                 activeUsers,
-                LocalDateTime.now().toString());
+                DateTimeUtil.nowInIst12HourFormat());
         return dashboard;
     }
 

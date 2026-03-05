@@ -6,10 +6,9 @@ import com.auth.entity.User;
 import com.auth.mapper.UserMapper;
 import com.auth.service.UserPortalService;
 import com.auth.service.UserService;
+import com.auth.util.DateTimeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 
 /**
  * User-facing dashboard/profile composition logic.
@@ -26,7 +25,7 @@ public class UserPortalServiceImpl implements UserPortalService {
         User user = userService.getUserByEmail(email);
         UserDashboardDto response = userMapper.toUserDashboardDto(user);
         response.setMessage("Welcome to User Dashboard!");
-        response.setTimestamp(LocalDateTime.now().toString());
+        response.setTimestamp(DateTimeUtil.nowInIst12HourFormat());
         return response;
     }
 

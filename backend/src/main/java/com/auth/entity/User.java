@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.auth.util.DateTimeUtil;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -85,13 +86,13 @@ public class User {
     /** Initializes create/update timestamps before first persistence. */
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = DateTimeUtil.nowInIst();
+        updatedAt = DateTimeUtil.nowInIst();
     }
 
     /** Updates the modification timestamp before each entity update. */
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = DateTimeUtil.nowInIst();
     }
 }

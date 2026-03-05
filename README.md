@@ -21,6 +21,11 @@
   <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License" />
 </p>
 
+<p align="center">
+  <strong>Live Demo:</strong>
+  <a href="https://authsystem-plum.vercel.app/">https://authsystem-plum.vercel.app/</a>
+</p>
+
 ---
 
 ## <img src="https://img.shields.io/badge/📖-About%20the%20Project-1a1a2e?style=for-the-badge&labelColor=00C853" />
@@ -36,20 +41,17 @@
 
 ## <img src="https://img.shields.io/badge/✨-Features-1a1a2e?style=for-the-badge&labelColor=6C63FF" />
 
-- Email/password registration with OTP-based account verification
-- Secure login with short-lived access token and HttpOnly refresh-token cookie
-- Refresh-token rotation with server-side revocation on logout
-- Password reset by email and authenticated password change support
-- OAuth2 login providers: Google, GitHub, Apple, and LinkedIn
-- Role-based authorization for `ROLE_USER` and `ROLE_ADMIN`
-- Admin module with dashboard metrics and paginated user management
-- Search, filter, and sort support for admin user listing endpoints
-- Redis-backed rate limiting and lockout strategy against brute-force abuse
-- Hashed storage for refresh tokens, reset tokens, and OTP values
-- Centralized global exception handling with consistent JSON responses
-- Clean layered backend architecture with reusable service contracts
-- Responsive frontend routing with protected role-aware pages
-- Accessibility- and performance-conscious UI behavior
+- Email/password signup with OTP verification and resend flow
+- JWT access token + HttpOnly refresh cookie with refresh-token rotation
+- Password reset via email and authenticated password change
+- OAuth2 login support: Google, GitHub, Apple, and LinkedIn
+- Role-based access control (`ROLE_USER`, `ROLE_ADMIN`)
+- Admin dashboard with user pagination, search, filtering, and sorting
+- Redis-backed rate limiting and temporary lockout against abuse
+- Token/OTP hash storage and centralized exception handling
+- Timestamps exposed to UI in Indian timezone (`Asia/Kolkata`) using 12-hour format where applicable
+- Dockerized deployment with separate backend and frontend containers
+- Responsive React frontend with protected routes and theme support
 
 ---
 
@@ -67,24 +69,19 @@
 | Email | Spring Mail |
 | Mapping | MapStruct |
 | Boilerplate Reduction | Lombok |
-| Frontend | React 19, React Router 7, Vite |
+| Frontend | React 19, React Router 7, Vite, Axios |
 | UI | Bootstrap 5, Bootstrap Icons |
-| HTTP Client (Frontend) | Axios |
-| Containers | Docker, Docker Compose |
-
----
-
-## <img src="https://img.shields.io/badge/📸-Preview-1a1a2e?style=for-the-badge&labelColor=E91E63" />
-
-<p align="center">
-  <img src="screenshots/readme-preview.png" alt="Home Page" width="700" />
-</p>
+| Web Server (Frontend Container) | Nginx (alpine) |
+| Containers | Docker, Docker Compose (separate `app` + `frontend` services) |
 
 ---
 
 ## <img src="https://img.shields.io/badge/🔗-API%20Endpoints-1a1a2e?style=for-the-badge&labelColor=00BCD4" />
 
-Base URL: `http://localhost:8080`
+Base URLs:
+
+- Backend API: `http://localhost:8080`
+- Frontend UI: `http://localhost:5173`
 
 ### Auth APIs — `POST /api/auth/*`
 
@@ -133,17 +130,19 @@ Admin users query params:
 
 OAuth2 flow: Frontend redirects to `/oauth2/authorization/google` → user authenticates with provider → Spring Security handles callback → `OAuth2AuthenticationSuccessHandler` issues tokens + HttpOnly cookie → redirects to frontend with no token in URL → frontend calls `/api/auth/refresh` to get access token.
 
+Timestamp notes:
+
+- Admin user list `createdAt` is returned in IST 12-hour format (`dd MMM yyyy, hh:mm:ss a`)
+- Dashboard timestamps are emitted in IST 12-hour format
+
 ---
 
 ## <img src="https://img.shields.io/badge/🚀-Getting%20Started-1a1a2e?style=for-the-badge&labelColor=4CAF50" />
 
 ### Prerequisites
 
-- Java 21+
-- Maven 3.9+
-- Node.js 18+
-- npm 9+
-- Docker + Docker Compose
+- Docker + Docker Compose (recommended)
+- Java 21+, Maven 3.9+, Node.js 18+, npm 9+ (for local non-container dev)
 
 ### 1) Configure environment files
 
@@ -161,23 +160,44 @@ Security note:
 - Never commit `.env` files.
 - Never put secrets in `VITE_*` variables (they are exposed to the browser).
 
-### 2) Start database + Redis
+### 2) Run with Docker (recommended)
+
+```bash
+cd backend
+docker compose up --build -d postgres redis app frontend
+```
+
+URLs:
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8080`
+- Adminer: `http://localhost:5050`
+- Redis Commander: `http://localhost:8081`
+
+To rebuild app/frontend after code changes:
+
+```bash
+cd backend
+docker compose up -d --build --force-recreate app frontend
+```
+
+### 3) Local dev mode (separate processes)
+
+Run supporting services:
 
 ```bash
 cd backend
 docker compose up -d postgres redis
 ```
 
-### 3) Run backend
+Run backend:
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-Default backend URL: `http://localhost:8080`
-
-### 4) Run frontend
+Run frontend:
 
 ```bash
 cd frontend
@@ -185,9 +205,12 @@ npm install
 npm run dev
 ```
 
-Default frontend URL: `http://localhost:5173`
+Local URLs:
 
-### 5) Optional build checks
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8080`
+
+### 4) Optional build checks
 
 ```bash
 cd backend
