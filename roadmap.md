@@ -1,519 +1,575 @@
-# Deep-Dive Implementation Roadmap (Task-by-Task)
+# My Beginner-Friendly 1-Week Plan (Company Style)
 
-This roadmap is based on a deep scan of the current project structure and is designed as a **from-scratch reproduction plan** for the same feature set.
+This is my personal project plan.
+I am a beginner, so I wrote this in simple English.
+But I still want to work like a real company team.
 
-Project root: `/Users/himanshu/Downloads/Full-Stack-Authentication-System`
-
----
-
-## 0) What Exists Right Now (Deep Scan Snapshot)
-
-### Backend modules already represented in this project
-1. Core config: security, CORS, password encoder, page serialization, startup seeding.
-2. Auth flows: register, OTP verify/resend, login, refresh, logout, reset/update password, change password.
-3. Security internals: JWT utility/filter, custom user details, refresh cookie service.
-4. Abuse protection: rate limiting + lockout counters + retry-after handling.
-5. OAuth2: Google/GitHub/Apple/LinkedIn with custom success/failure handlers and LinkedIn request resolver.
-6. Admin and user APIs: dashboard/profile + paginated/searchable admin users.
-7. Support services: OTP token generation, token hashing, email templates, password policy.
-8. Tests: controller/service/security tests for core auth behavior.
-
-### Frontend modules already represented
-1. Auth context with refresh-on-bootstrap session logic.
-2. Axios API client with access-token storage + refresh retry interceptor.
-3. Pages for all auth flows and dashboard/admin views.
-4. Route guarding and role-based redirect logic.
-5. Password policy parity utility aligned with backend policy.
-
-### Infra and delivery
-1. Dockerfile + docker-compose (Postgres/Redis + optional admin tools + app service).
-2. Env examples for backend and frontend.
-3. GitHub workflow for secret scanning.
+Project: `Full-Stack-Authentication-System`
+Main focus: backend first, then frontend integration.
 
 ---
 
-## 1) 7-Day Detailed Execution Plan (Feature-Wise)
+## How I Will Work
 
-## Day 1 - Foundation and Runtime Setup
-
-### Day goal
-Bring up local infrastructure and application skeleton with security baseline.
-
-### D1-T1: Initialize backend + frontend project scaffolds
-- Create backend Spring Boot app with dependencies:
-  - Web, Security, Validation, Data JPA, PostgreSQL, Redis, Mail, OAuth2 Client, Thymeleaf, Lombok, MapStruct, Test.
-- Create frontend Vite + React app.
-
-### D1-T2: Add runtime configuration and environment strategy
-- Implement backend property model with env fallbacks.
-- Implement frontend public env variables (`VITE_API_URL`, `VITE_OAUTH_BASE_URL`).
-- Ensure `.env` is ignored and `.env.example` is committed.
-
-### D1-T3: Provision local infrastructure
-- Add `backend/docker-compose.yaml`:
-  - `postgres`
-  - `redis`
-  - optional `adminer`
-  - optional `redis-commander`
-  - optional `app` service.
-
-### D1-T4: Build baseline backend config
-- Implement:
-  - `backend/src/main/java/com/auth/config/SecurityConfig.java`
-  - `backend/src/main/java/com/auth/config/CorsConfig.java`
-  - `backend/src/main/java/com/auth/config/PasswordConfig.java`
-  - `backend/src/main/java/com/auth/config/SpringDataWebConfig.java`
-- Security baseline:
-  - `/api/auth/**` public.
-  - `/api/user/**` requires user/admin authority.
-  - `/api/admin/**` requires admin authority.
-
-### D1-T5: Seed bootstrap data
-- Implement `backend/src/main/java/com/auth/config/DataInitializer.java`:
-  - ensure roles exist
-  - optional seed admin account.
-
-### D1-T6: Verify startup
-- Run:
-  - `cd backend && docker compose up -d postgres redis`
-  - `cd backend && mvn spring-boot:run`
-  - `cd frontend && npm install && npm run dev`
-
-### Day 1 done criteria
-1. Backend starts without config exceptions.
-2. Postgres and Redis are healthy.
-3. Frontend boots and can call backend public routes.
+1. I will finish one feature fully before starting the next.
+2. Every feature must include:
+- API endpoint
+- service logic
+- database work
+- error handling
+- test
+- frontend connection
+3. I will keep secrets in `.env` only.
+4. End of every day: I will run checks and write short notes.
 
 ---
 
-## Day 2 - Domain Model + Registration + OTP Send
+## Company-Style Ticket Template (Simple)
 
-### Day goal
-Implement user creation with OTP generation and email dispatch.
+For each ticket, I will write:
+1. Scope (what I am building)
+2. Files (where I will code)
+3. Steps (what I will do)
+4. Acceptance Criteria (when done)
+5. QA (how I will test)
 
-### D2-T1: Implement entities and repositories
-- Files:
-  - `backend/src/main/java/com/auth/entity/User.java`
-  - `backend/src/main/java/com/auth/entity/Role.java`
-  - `backend/src/main/java/com/auth/repository/UserRepository.java`
-  - `backend/src/main/java/com/auth/repository/RoleRepository.java`
-- Include:
-  - user-role relationship
-  - verification OTP fields
-  - reset token fields
-  - refresh token fields
-  - failed-attempt counters
-  - lock timestamps
-  - created/updated timestamps.
+---
 
-### D2-T2: Implement DTOs + mapper
-- Request DTOs:
-  - `RegisterRequest`, `OtpVerifyRequest`, `LoginRequest`.
-- Response DTOs:
-  - `MessageResponse`, `AuthResponse`, `AuthTokens`.
-- Mapper:
-  - `backend/src/main/java/com/auth/mapper/UserMapper.java`.
+## Week Overview
 
-### D2-T3: Implement support services needed for registration
+1. Day 1: Setup environment and architecture
+2. Day 2: Register user + send OTP
+3. Day 3: Verify OTP + login + JWT
+4. Day 4: Refresh/logout + password flows
+5. Day 5: Security hardening (rate limit + lock + filter)
+6. Day 6: OAuth2 + user/admin dashboard APIs
+7. Day 7: Testing + QA + release readiness
+
+---
+
+## Day 1 - Setup Environment and Architecture
+
+### Ticket D1-1: Start local services
+Scope: run PostgreSQL and Redis locally.
+
+Files:
+- `backend/docker-compose.yaml`
+
+Steps:
+1. Configure postgres service.
+2. Configure redis service.
+3. Add health checks.
+4. Start services.
+
+Acceptance Criteria:
+1. `docker compose up -d postgres redis` works.
+2. Both containers are healthy.
+
+QA:
+1. `docker compose ps`
+2. Backend can connect to DB and Redis.
+
+---
+
+### Ticket D1-2: Backend config and env
+Scope: set all required backend config values.
+
+Files:
+- `backend/src/main/resources/application.properties`
+- `backend/.env.example`
+
+Steps:
+1. Set DB, Redis, Mail, JWT, OAuth placeholders.
+2. Keep local defaults for development.
+3. Keep secrets out of source code.
+
+Acceptance Criteria:
+1. Backend starts with no missing property error.
+2. Secrets are only in `.env`.
+
+QA:
+1. Run backend and check startup logs.
+
+---
+
+### Ticket D1-3: Security baseline
+Scope: define base access rules.
+
+Files:
+- `backend/src/main/java/com/auth/config/SecurityConfig.java`
+- `backend/src/main/java/com/auth/config/CorsConfig.java`
+- `backend/src/main/java/com/auth/config/PasswordConfig.java`
+
+Steps:
+1. Keep `/api/auth/**` public.
+2. Protect `/api/user/**` for USER/ADMIN.
+3. Protect `/api/admin/**` for ADMIN.
+4. Enable CORS for frontend URL.
+
+Acceptance Criteria:
+1. Public endpoints are open.
+2. Protected endpoints need auth.
+
+QA:
+1. Test one public endpoint.
+2. Test one protected endpoint without token.
+
+---
+
+### Ticket D1-4: Seed roles and optional admin
+Scope: create default roles on startup.
+
+Files:
+- `backend/src/main/java/com/auth/config/DataInitializer.java`
+
+Steps:
+1. Ensure `ROLE_USER` exists.
+2. Ensure `ROLE_ADMIN` exists.
+3. Create admin only when env flag is true.
+
+Acceptance Criteria:
+1. Roles are present after app startup.
+2. Admin is created only when enabled in config.
+
+---
+
+## Day 2 - Registration and OTP Send
+
+### Ticket D2-1: User and role data model
+Scope: create entity and repository base.
+
+Files:
+- `backend/src/main/java/com/auth/entity/User.java`
+- `backend/src/main/java/com/auth/entity/Role.java`
+- `backend/src/main/java/com/auth/repository/UserRepository.java`
+- `backend/src/main/java/com/auth/repository/RoleRepository.java`
+
+Steps:
+1. Add user fields (email/password/enabled etc).
+2. Add token and lock-related fields.
+3. Map user-role relation.
+4. Add repository methods for email/token lookups.
+
+Acceptance Criteria:
+1. Tables are created correctly.
+2. Repository methods return expected data.
+
+---
+
+### Ticket D2-2: DTOs and mapper
+Scope: clean request and response contracts.
+
+Files:
+- `backend/src/main/java/com/auth/dto/request/*`
+- `backend/src/main/java/com/auth/dto/response/*`
+- `backend/src/main/java/com/auth/mapper/UserMapper.java`
+
+Steps:
+1. Add validation on request fields.
+2. Keep response safe (no secret fields).
+3. Map register request to user entity.
+
+Acceptance Criteria:
+1. Invalid request gives validation error.
+2. Mapping works for auth and user data.
+
+---
+
+### Ticket D2-3: Register service flow
+Scope: register user and send OTP.
+
+Files:
+- `backend/src/main/java/com/auth/service/AuthService.java`
+- `backend/src/main/java/com/auth/service/impl/AuthServiceImpl.java`
 - `backend/src/main/java/com/auth/service/support/OtpService.java`
-  - `generateOtp()`.
 - `backend/src/main/java/com/auth/service/support/TokenHashService.java`
-  - deterministic hash + constant-time compare.
 - `backend/src/main/java/com/auth/service/support/PasswordPolicyService.java`
-  - minimum length, letter, digit, no spaces, blocklist checks.
 - `backend/src/main/java/com/auth/service/support/EmailService.java`
-  - OTP email method.
 
-### D2-T4: Implement service contracts and core user services
-- `UserService` + `UserServiceImpl`.
-- `RoleService` + `RoleServiceImpl`.
-- `AuthService` + `AuthServiceImpl.register(...)`.
+Steps:
+1. Normalize email.
+2. Check duplicate email.
+3. Validate password strength.
+4. Hash password.
+5. Generate OTP.
+6. Hash OTP + set expiry.
+7. Assign `ROLE_USER`.
+8. Save user.
+9. Send OTP email.
 
-### D2-T5: Implement register endpoint
+Acceptance Criteria:
+1. User saved with `enabled=false`.
+2. OTP hash + expiry saved.
+3. Success message returned.
+
+---
+
+### Ticket D2-4: Register API + frontend page
+Scope: connect backend and frontend for registration.
+
+Files:
 - `backend/src/main/java/com/auth/controller/AuthController.java`
-  - `POST /api/auth/register`.
-
-### D2-T6: Frontend register flow
 - `frontend/src/pages/Register.jsx`
 - `frontend/src/context/AuthContext.jsx`
 - `frontend/src/services/api.js`
-- Validate password in frontend with `frontend/src/utils/passwordPolicy.js`.
+- `frontend/src/utils/passwordPolicy.js`
 
-### D2-T7: Verify register behavior
-- API checks:
-  - valid register -> success response.
-  - duplicate email -> conflict.
-  - weak password -> validation error.
-- DB checks:
-  - `enabled=false`
-  - hashed password stored
-  - hashed OTP + expiry present.
+Acceptance Criteria:
+1. Register form submits successfully.
+2. On success, user goes to OTP page.
 
-### Day 2 done criteria
-1. Registration API fully functional.
-2. OTP email send path invoked.
-3. Frontend registration screen integrated.
+QA:
+1. Try duplicate email.
+2. Try weak password.
 
 ---
 
-## Day 3 - OTP Verify + Login + JWT Session Establishment
+## Day 3 - OTP Verify, Login, JWT
 
-### Day goal
-Activate accounts and issue authenticated sessions.
+### Ticket D3-1: OTP verify and resend
+Scope: activate account and support resend.
 
-### D3-T1: Implement OTP verify and resend flow
-- In `AuthServiceImpl` implement:
-  - `verifyOtp(...)`
-  - `resendOtp(...)`
-- Ensure:
-  - OTP hash comparison
-  - expiry validation
-  - enable user
-  - clear OTP state
-  - resend path regenerates OTP.
+Files:
+- `backend/src/main/java/com/auth/service/impl/AuthServiceImpl.java`
+- `backend/src/main/java/com/auth/controller/AuthController.java`
 
-### D3-T2: Implement JWT utility and user details
-- `backend/src/main/java/com/auth/security/jwt/JwtUtil.java`:
-  - generate token
-  - parse token
-  - validate token.
-- `backend/src/main/java/com/auth/security/CustomUserDetailsService.java`:
-  - load user by email
-  - map roles to authorities.
+Steps:
+1. Verify OTP hash.
+2. Check OTP expiry.
+3. Enable user.
+4. Clear OTP fields.
+5. Add resend OTP logic.
 
-### D3-T3: Implement token issuance service
+Acceptance Criteria:
+1. Valid OTP verifies account.
+2. Invalid/expired OTP returns proper error.
+
+---
+
+### Ticket D3-2: JWT core and user details
+Scope: implement auth token internals.
+
+Files:
+- `backend/src/main/java/com/auth/security/jwt/JwtUtil.java`
+- `backend/src/main/java/com/auth/security/CustomUserDetailsService.java`
+
+Steps:
+1. Create access token.
+2. Parse token subject.
+3. Validate token signature.
+4. Map user roles to authorities.
+
+Acceptance Criteria:
+1. Token generated and validated correctly.
+2. UserDetails loads roles correctly.
+
+---
+
+### Ticket D3-3: Login and refresh cookie
+Scope: successful login should create session tokens.
+
+Files:
 - `backend/src/main/java/com/auth/service/auth/AuthTokenService.java`
-  - `issueTokens(User)`
-  - persist hashed refresh token and expiry.
+- `backend/src/main/java/com/auth/security/RefreshTokenCookieService.java`
+- `backend/src/main/java/com/auth/service/impl/AuthServiceImpl.java`
+- `backend/src/main/java/com/auth/controller/AuthController.java`
 
-### D3-T4: Implement login flow
-- `AuthServiceImpl.login(...)`.
-- `AuthController.login(...)`.
-- Refresh cookie creation via:
-  - `backend/src/main/java/com/auth/security/RefreshTokenCookieService.java`.
+Steps:
+1. Authenticate email/password.
+2. Issue access + refresh token.
+3. Store hashed refresh token in DB.
+4. Set refresh token as HttpOnly cookie.
 
-### D3-T5: Frontend OTP/login integration
+Acceptance Criteria:
+1. Login returns access token response.
+2. Refresh cookie is set in response.
+
+---
+
+### Ticket D3-4: Frontend OTP + login integration
+Files:
 - `frontend/src/pages/VerifyOtp.jsx`
 - `frontend/src/pages/Login.jsx`
 - `frontend/src/services/api.js`
 - `frontend/src/context/AuthContext.jsx`
 
-### D3-T6: Verify auth establishment
-- API checks:
-  - `POST /api/auth/verify-otp`
-  - `POST /api/auth/resend-otp`
-  - `POST /api/auth/login`
-- Confirm:
-  - access token in response
-  - refresh token in HttpOnly cookie.
-
-### Day 3 done criteria
-1. Verified users can login.
-2. Unverified users are blocked.
-3. Frontend login redirects by role.
+Acceptance Criteria:
+1. OTP verify page works.
+2. Login redirects to user/admin dashboard by role.
 
 ---
 
-## Day 4 - Refresh/Logout + Password Recovery + Authenticated Password Change
+## Day 4 - Refresh, Logout, Password Features
 
-### Day goal
-Complete token lifecycle and password management features.
+### Ticket D4-1: Refresh and logout endpoints
+Scope: complete session lifecycle.
 
-### D4-T1: Implement refresh and logout
-- `AuthTokenService.refreshTokens(...)`
-- `AuthTokenService.revokeRefreshToken(...)`
-- `AuthController.refreshToken(...)`
-- `AuthController.logout(...)`
-- Accept refresh token from body and/or cookie.
+Files:
+- `backend/src/main/java/com/auth/service/auth/AuthTokenService.java`
+- `backend/src/main/java/com/auth/controller/AuthController.java`
 
-### D4-T2: Implement password reset request flow
-- `AuthServiceImpl.resetPassword(...)`
-- Generate raw reset token
-- Store hash + expiry
-- Send reset link email
-- Return generic response to prevent user enumeration.
+Steps:
+1. Refresh using token from cookie or body.
+2. Rotate refresh token on refresh.
+3. Revoke refresh token on logout.
+4. Clear cookie on logout.
 
-### D4-T3: Implement password update by reset token
-- `AuthServiceImpl.updatePassword(...)`
-- Validate hashed token + expiry
-- Apply password policy
-- encode and store new password
-- clear reset token state.
+Acceptance Criteria:
+1. Refresh gives new access token.
+2. Logout removes active refresh session.
 
-### D4-T4: Implement authenticated change-password
-- `AuthServiceImpl.changePassword(...)`
-- `UserController.changePassword(...)`
-- verify current password before update.
+---
 
-### D4-T5: Frontend password flows
+### Ticket D4-2: Forgot and reset password APIs
+Scope: recover account securely.
+
+Files:
+- `backend/src/main/java/com/auth/service/impl/AuthServiceImpl.java`
+- `backend/src/main/java/com/auth/service/support/EmailService.java`
+- `backend/src/main/resources/templates/emails/*`
+
+Steps:
+1. Create reset token.
+2. Save reset token hash + expiry.
+3. Send reset email link.
+4. Update password only with valid token.
+5. Clear reset token after success.
+
+Acceptance Criteria:
+1. Reset request returns generic message.
+2. Update password fails for invalid/expired token.
+
+---
+
+### Ticket D4-3: Change password (logged-in user)
+Scope: secure password change for authenticated user.
+
+Files:
+- `backend/src/main/java/com/auth/controller/UserController.java`
+- `backend/src/main/java/com/auth/service/impl/AuthServiceImpl.java`
+
+Acceptance Criteria:
+1. Current password is required.
+2. New password must pass policy.
+
+---
+
+### Ticket D4-4: Frontend password pages
+Files:
 - `frontend/src/pages/ForgotPassword.jsx`
 - `frontend/src/pages/ResetPassword.jsx`
 - `frontend/src/pages/ChangePassword.jsx`
 
-### D4-T6: Verify all password/token lifecycle endpoints
-- `POST /api/auth/refresh`
-- `POST /api/auth/logout`
-- `POST /api/auth/reset-password`
-- `POST /api/auth/update-password`
-- `POST /api/user/change-password`
-
-### Day 4 done criteria
-1. Refresh rotation works reliably.
-2. Logout invalidates refresh state.
-3. Reset and change password flows pass manual tests.
+Acceptance Criteria:
+1. All pages connected to backend APIs.
+2. Clear success/error messages shown.
 
 ---
 
-## Day 5 - Abuse Protection + JWT Request Guard + Exception Standardization
+## Day 5 - Security Hardening
 
-### Day goal
-Harden API with brute-force and request-rate defenses.
+### Ticket D5-1: Rate limiting core service
+Scope: create Redis-based request limiter.
 
-### D5-T1: Implement Redis rate limiting primitive
+Files:
 - `backend/src/main/java/com/auth/service/support/RateLimitService.java`
-  - fixed-window consume logic
-  - include retry metadata.
 
-### D5-T2: Implement abuse orchestration
-- `backend/src/main/java/com/auth/service/auth/AuthAbuseProtectionService.java`
-  - guard login
-  - guard OTP verify
-  - guard resend OTP
-  - guard reset-password
-  - record failed login/otp
-  - clear counters on success.
-
-### D5-T3: Integrate abuse checks into auth service methods
-- `AuthServiceImpl.login(...)`
-- `AuthServiceImpl.verifyOtp(...)`
-- `AuthServiceImpl.resendOtp(...)`
-- `AuthServiceImpl.resetPassword(...)`.
-
-### D5-T4: Implement JWT auth filter
-- `backend/src/main/java/com/auth/security/jwt/JwtAuthFilter.java`
-  - parse bearer header
-  - validate token
-  - set security context.
-- Register filter in `SecurityConfig` before username/password filter.
-
-### D5-T5: Implement exception model and global handler
-- Files:
-  - `GlobalExceptionHandler`
-  - `AccountLockedException`
-  - `RateLimitExceededException`
-  - `TokenValidationException`
-  - `UserAlreadyExistsException`
-  - `ResourceNotFoundException`
-- Ensure consistent `MessageResponse` body and status codes.
-
-### D5-T6: Verify hardening behavior
-- Repeated bad logins should lock account.
-- Burst traffic should return rate-limit with retry-after semantics.
-- Invalid/expired JWT should fail protected routes.
-
-### Day 5 done criteria
-1. Abuse controls active on all intended auth endpoints.
-2. JWT-protected routes behave correctly.
-3. Errors are standardized for frontend consumption.
+Acceptance Criteria:
+1. Service returns allow/deny + retry time.
 
 ---
 
-## Day 6 - OAuth2 + User Portal + Admin Module
+### Ticket D5-2: Abuse protection logic
+Scope: stop brute-force and abuse.
 
-### Day goal
-Add social login and full role-based dashboard features.
+Files:
+- `backend/src/main/java/com/auth/service/auth/AuthAbuseProtectionService.java`
 
-### D6-T1: Implement OAuth2 provisioning service
+Steps:
+1. Guard login by IP and email.
+2. Guard OTP verify and resend.
+3. Guard reset-password requests.
+4. Lock account after max failed attempts.
+
+Acceptance Criteria:
+1. Abuse scenarios return lock/rate-limit errors.
+2. Retry-after value is available.
+
+---
+
+### Ticket D5-3: JWT request filter
+Scope: protect all private routes.
+
+Files:
+- `backend/src/main/java/com/auth/security/jwt/JwtAuthFilter.java`
+- `backend/src/main/java/com/auth/config/SecurityConfig.java`
+
+Acceptance Criteria:
+1. Valid bearer token sets auth context.
+2. Invalid token cannot access protected APIs.
+
+---
+
+### Ticket D5-4: Global exception handling
+Scope: standardize API errors.
+
+Files:
+- `backend/src/main/java/com/auth/exception/GlobalExceptionHandler.java`
+- `backend/src/main/java/com/auth/exception/*`
+
+Acceptance Criteria:
+1. Consistent JSON error response format.
+2. Correct status codes for known error cases.
+
+---
+
+## Day 6 - OAuth2 + User/Admin Features
+
+### Ticket D6-1: OAuth2 user provisioning
+Scope: create or update local user from social login.
+
+Files:
 - `backend/src/main/java/com/auth/service/auth/OAuth2UserProvisioningService.java`
-- Responsibilities:
-  - normalize provider
-  - extract provider user id
-  - map email/name with provider-specific fallback
-  - create or update local user
-  - assign default role on first creation.
 
-### D6-T2: Implement OAuth2 handlers + resolver
-- `OAuth2AuthenticationSuccessHandler`
-  - issue tokens
-  - set refresh cookie
-  - redirect to frontend callback.
-- `OAuth2AuthenticationFailureHandler`
-  - redirect to login with error param.
-- `LinkedInAuthorizationRequestResolver`
-  - LinkedIn nonce compatibility handling.
+Acceptance Criteria:
+1. First social login creates user.
+2. Repeat login updates/links user safely.
 
-### D6-T3: Implement user portal APIs
-- `UserPortalService` + `UserPortalServiceImpl`
-- `UserController` endpoints:
-  - `GET /api/user/dashboard`
-  - `GET /api/user/profile`
+---
 
-### D6-T4: Implement admin APIs
-- `AdminService` + `AdminServiceImpl`
-- `AdminController` endpoints:
-  - `GET /api/admin/dashboard`
-  - `GET /api/admin/users`
-- Add search/filter/sort/pagination normalization and role filter handling.
+### Ticket D6-2: OAuth2 handlers and LinkedIn resolver
+Scope: finish OAuth flow behavior.
 
-### D6-T5: Frontend dashboard + OAuth callback wiring
+Files:
+- `backend/src/main/java/com/auth/security/oauth2/OAuth2AuthenticationSuccessHandler.java`
+- `backend/src/main/java/com/auth/security/oauth2/OAuth2AuthenticationFailureHandler.java`
+- `backend/src/main/java/com/auth/security/oauth2/LinkedInAuthorizationRequestResolver.java`
+
+Acceptance Criteria:
+1. Success flow sets cookie and redirects to frontend callback.
+2. Failure flow redirects with readable error.
+
+---
+
+### Ticket D6-3: User dashboard/profile APIs
+Scope: authenticated user info APIs.
+
+Files:
+- `backend/src/main/java/com/auth/controller/UserController.java`
+- `backend/src/main/java/com/auth/service/impl/UserPortalServiceImpl.java`
+
+Acceptance Criteria:
+1. `/api/user/dashboard` works.
+2. `/api/user/profile` works.
+
+---
+
+### Ticket D6-4: Admin dashboard/users APIs
+Scope: admin data and user list management.
+
+Files:
+- `backend/src/main/java/com/auth/controller/AdminController.java`
+- `backend/src/main/java/com/auth/service/impl/AdminServiceImpl.java`
+
+Acceptance Criteria:
+1. Admin dashboard metrics are correct.
+2. User list supports page/size/search/role/enabled/sort.
+
+---
+
+### Ticket D6-5: Frontend dashboards and route guard
+Files:
 - `frontend/src/pages/OAuthCallback.jsx`
 - `frontend/src/pages/UserDashboard.jsx`
 - `frontend/src/pages/AdminDashboard.jsx`
 - `frontend/src/components/ProtectedRoute.jsx`
-- `frontend/src/services/api.js` (admin/user endpoints).
 
-### D6-T6: Verify OAuth and role UX
-- OAuth login returns to callback route then redirects user/admin accordingly.
-- Admin listing filters work for search, enabled, role, and pagination.
-
-### Day 6 done criteria
-1. OAuth2 works end-to-end.
-2. User and admin pages are fully backed by secured APIs.
+Acceptance Criteria:
+1. Role-based route protection works.
+2. Non-admin cannot access admin page.
 
 ---
 
-## Day 7 - QA, Test Coverage, Packaging, and Release Checklist
+## Day 7 - Testing, QA, Release Readiness
 
-### Day goal
-Stabilize and make project release-ready.
+### Ticket D7-1: Backend tests
+Scope: verify core auth/service/security logic.
 
-### D7-T1: Complete and run backend test suite
-- Validate/extend tests in:
-  - `backend/src/test/java/com/auth/controller/AuthControllerTest.java`
-  - `backend/src/test/java/com/auth/service/impl/AuthServiceImplTest.java`
-  - `backend/src/test/java/com/auth/service/auth/AuthTokenServiceTest.java`
-  - `backend/src/test/java/com/auth/service/auth/OAuth2UserProvisioningServiceTest.java`
-  - `backend/src/test/java/com/auth/service/impl/AdminServiceImplTest.java`
-  - `backend/src/test/java/com/auth/service/impl/UserServiceImplTest.java`
-  - `backend/src/test/java/com/auth/security/CustomUserDetailsServiceTest.java`
+Files:
+- `backend/src/test/java/com/auth/controller/AuthControllerTest.java`
+- `backend/src/test/java/com/auth/service/impl/AuthServiceImplTest.java`
+- `backend/src/test/java/com/auth/service/auth/AuthTokenServiceTest.java`
+- `backend/src/test/java/com/auth/service/auth/OAuth2UserProvisioningServiceTest.java`
+- `backend/src/test/java/com/auth/service/impl/AdminServiceImplTest.java`
+- `backend/src/test/java/com/auth/service/impl/UserServiceImplTest.java`
+- `backend/src/test/java/com/auth/security/CustomUserDetailsServiceTest.java`
 
-### D7-T2: Frontend quality checks
-- `npm run lint`
-- `npm run build`
-- Verify no broken routes and token refresh behavior in browser.
-
-### D7-T3: Full manual regression pass (critical flows)
-1. Register -> OTP verify -> login -> dashboard.
-2. Login failure paths and lock behavior.
-3. Refresh + logout.
-4. Forgot/reset/update/change password.
-5. OAuth2 login for at least one configured provider.
-6. Admin list filters + pagination + role visibility.
-
-### D7-T4: Containerization verification
-- Build backend image.
-- Start compose stack including app service.
-- Validate app connectivity to postgres/redis in container network.
-
-### D7-T5: Security and delivery hygiene
-- Verify secret handling in `.env` only.
-- Keep `JWT_SECRET` strong and non-default.
-- Verify cookie secure/samesite for deployment target.
-- Ensure secret scan workflow remains passing.
-
-### Day 7 done criteria
-1. Tests/lint/build pass.
-2. All critical flows pass regression checks.
-3. Deployment path is documented and reproducible.
+Acceptance Criteria:
+1. Critical tests pass.
+2. Failures (if any) are documented.
 
 ---
 
-## 2) Endpoint-by-Endpoint Task Map (Implementation Sequence)
+### Ticket D7-2: Frontend quality checks
+Steps:
+1. Run lint.
+2. Run production build.
+3. Manually verify routes.
 
-## Auth endpoints (build in this exact order)
-1. `POST /api/auth/register`
-2. `POST /api/auth/verify-otp`
-3. `POST /api/auth/login`
-4. `POST /api/auth/refresh`
-5. `POST /api/auth/logout`
-6. `POST /api/auth/reset-password`
-7. `POST /api/auth/update-password`
-8. `POST /api/auth/resend-otp`
-
-For each endpoint complete this checklist:
-1. Request DTO validation.
-2. Service logic.
-3. Repository interaction.
-4. Security and abuse checks.
-5. Controller wiring.
-6. Happy-path test.
-7. Failure-path tests.
-8. Frontend screen integration.
-
-## User endpoints
-1. `GET /api/user/dashboard`
-2. `GET /api/user/profile`
-3. `POST /api/user/change-password`
-
-## Admin endpoints
-1. `GET /api/admin/dashboard`
-2. `GET /api/admin/users`
-
-## OAuth2 managed routes
-1. `/oauth2/authorization/{provider}`
-2. `/login/oauth2/code/{provider}`
+Acceptance Criteria:
+1. Lint passes.
+2. Build passes.
 
 ---
 
-## 3) File-by-File Build Order (If starting with empty project)
+### Ticket D7-3: Full manual regression
+I will test these full journeys:
+1. Register -> OTP verify -> login.
+2. Refresh token flow.
+3. Logout and login again.
+4. Forgot/reset/change password.
+5. OAuth callback flow.
+6. Admin filters and pagination.
 
-1. Config + app entry files.
-2. Entities and repositories.
-3. DTOs and mapper.
-4. Service interfaces.
-5. Support services (OTP/hash/password/email/rate-limit).
-6. Core auth service implementation.
-7. Security internals (jwt util/filter/user details/cookies).
-8. Controllers.
-9. OAuth2 services and handlers.
-10. User/admin services and controllers.
-11. Exception handlers.
-12. Frontend context + API client.
-13. Frontend pages and route guards.
-14. Tests.
+Acceptance Criteria:
+1. Major flows pass.
+2. Known issues are listed clearly.
 
 ---
 
-## 4) Daily Command Checklist
+### Ticket D7-4: Deployment readiness
+Checklist:
+1. `.env` values set correctly.
+2. Strong `JWT_SECRET` configured.
+3. Production cookie flags configured.
+4. Docker image builds.
+5. Secret scan workflow remains clean.
 
-## Backend
+---
+
+## Daily Command Checklist
+
+### Backend
 1. `cd backend && mvn -q -DskipTests compile`
 2. `cd backend && mvn -q test`
 3. `cd backend && mvn spring-boot:run`
 
-## Frontend
+### Frontend
 1. `cd frontend && npm run lint`
 2. `cd frontend && npm run build`
 3. `cd frontend && npm run dev`
 
-## Infrastructure
+### Infra
 1. `cd backend && docker compose up -d postgres redis`
 2. `cd backend && docker compose ps`
 
 ---
 
-## 5) Suggested Commit Plan (Granular)
+## My Final Definition of Done
 
-1. `chore: bootstrap backend/frontend and environment setup`
-2. `feat(auth): add domain entities repositories and dto contracts`
-3. `feat(auth): implement register otp send and verify flows`
-4. `feat(security): implement jwt util login and refresh cookie`
-5. `feat(auth): add refresh logout reset and password change flows`
-6. `feat(security): add abuse protection rate limits and jwt filter`
-7. `feat(oauth): implement oauth2 provisioning and handlers`
-8. `feat(user-admin): add user/admin dashboard apis and filters`
-9. `feat(frontend): integrate auth pages context and protected routes`
-10. `test: add service controller and security test coverage`
-11. `docs: finalize setup and deployment notes`
-
----
-
-## 6) Final Definition of Done
-
-1. All auth/user/admin APIs implemented and tested.
-2. Frontend flows fully integrated with backend.
-3. Refresh-token rotation and logout revocation verified.
-4. Abuse protection and lockout behavior verified.
-5. OAuth2 provider flow verified for at least one provider.
-6. Backend tests + frontend lint/build pass.
-7. Docker-based local runbook works from clean setup.
+I will call this project complete when:
+1. Auth, user, and admin APIs are fully implemented and secured.
+2. Frontend is fully connected to backend.
+3. Refresh/logout/password/OAuth flows are stable.
+4. Tests and quality checks pass.
+5. Another developer can run project using docs + env examples.
