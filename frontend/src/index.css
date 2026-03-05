@@ -128,10 +128,31 @@
   /* Transitions */
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --theme-transition-duration: 280ms;
+  --theme-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Typography */
   --font-heading: 'DM Serif Display', Georgia, 'Times New Roman', serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+:root.theme-switching,
+:root.theme-switching *,
+:root.theme-switching *::before,
+:root.theme-switching *::after {
+  transition-property:
+    color,
+    background-color,
+    border-color,
+    outline-color,
+    text-decoration-color,
+    fill,
+    stroke,
+    box-shadow,
+    backdrop-filter,
+    -webkit-backdrop-filter;
+  transition-duration: var(--theme-transition-duration);
+  transition-timing-function: var(--theme-transition-easing);
 }
 
 :root[data-theme='dark'] {
