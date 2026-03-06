@@ -53,6 +53,7 @@ class AuthControllerTest {
         requestBody.setRefreshToken("body-refresh-token");
 
         AuthResponse authResponse = new AuthResponse(
+                200,
                 "access-token",
                 "Bearer",
                 900_000L,
@@ -101,6 +102,7 @@ class AuthControllerTest {
         });
 
         AuthResponse authResponse = new AuthResponse(
+                200,
                 "access-token",
                 "Bearer",
                 900_000L,

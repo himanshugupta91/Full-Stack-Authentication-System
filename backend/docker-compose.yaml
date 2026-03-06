@@ -87,7 +87,7 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${FRONTEND_VITE_API_URL:-http://localhost:8080/api}
+        VITE_API_URL: ${FRONTEND_VITE_API_URL:-http://localhost:8080/api/v1}
         VITE_OAUTH_BASE_URL: ${FRONTEND_VITE_OAUTH_BASE_URL:-http://localhost:8080}
     container_name: auth-frontend
     ports:

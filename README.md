@@ -83,33 +83,33 @@ Base URLs:
 - Backend API: `http://localhost:8080`
 - Frontend UI: `http://localhost:5173`
 
-### Auth APIs — `POST /api/auth/*`
+### Auth APIs — `POST /api/v1/auth/*`
 
 | # | Method | Endpoint | Description | Access |
 |---|--------|----------|-------------|--------|
-| 1 | POST | `/api/auth/register` | Register a new user account | Public |
-| 2 | POST | `/api/auth/verify-otp` | Verify email with OTP code | Public |
-| 3 | POST | `/api/auth/login` | Login and receive JWT + refresh cookie | Public |
-| 4 | POST | `/api/auth/refresh` | Refresh access token (cookie or body) | Public |
-| 5 | POST | `/api/auth/logout` | Revoke refresh token and clear cookie | Public |
-| 6 | POST | `/api/auth/reset-password` | Request password reset email | Public |
-| 7 | POST | `/api/auth/update-password` | Set new password using reset token | Public |
-| 8 | POST | `/api/auth/resend-otp?email={email}` | Resend OTP with rate limiting | Public |
+| 1 | POST | `/api/v1/auth/register` | Register a new user account | Public |
+| 2 | POST | `/api/v1/auth/verify-otp` | Verify email with OTP code | Public |
+| 3 | POST | `/api/v1/auth/login` | Login and receive JWT + refresh cookie | Public |
+| 4 | POST | `/api/v1/auth/refresh` | Refresh access token (cookie or body) | Public |
+| 5 | POST | `/api/v1/auth/logout` | Revoke refresh token and clear cookie | Public |
+| 6 | POST | `/api/v1/auth/reset-password` | Request password reset email | Public |
+| 7 | POST | `/api/v1/auth/update-password` | Set new password using reset token | Public |
+| 8 | POST | `/api/v1/auth/resend-otp?email={email}` | Resend OTP with rate limiting | Public |
 
-### User APIs — `/api/user/*`
-
-| # | Method | Endpoint | Description | Access |
-|---|--------|----------|-------------|--------|
-| 1 | GET | `/api/user/dashboard` | Get user dashboard data | `ROLE_USER` or `ROLE_ADMIN` |
-| 2 | GET | `/api/user/profile` | Get current user profile | `ROLE_USER` or `ROLE_ADMIN` |
-| 3 | POST | `/api/user/change-password` | Change password (authenticated) | `ROLE_USER` or `ROLE_ADMIN` |
-
-### Admin APIs — `/api/admin/*`
+### User APIs — `/api/v1/user/*`
 
 | # | Method | Endpoint | Description | Access |
 |---|--------|----------|-------------|--------|
-| 1 | GET | `/api/admin/dashboard` | Admin metrics (total users, active count) | `ROLE_ADMIN` |
-| 2 | GET | `/api/admin/users` | Paginated, searchable, filterable user list | `ROLE_ADMIN` |
+| 1 | GET | `/api/v1/user/dashboard` | Get user dashboard data | `ROLE_USER` or `ROLE_ADMIN` |
+| 2 | GET | `/api/v1/user/profile` | Get current user profile | `ROLE_USER` or `ROLE_ADMIN` |
+| 3 | POST | `/api/v1/user/change-password` | Change password (authenticated) | `ROLE_USER` or `ROLE_ADMIN` |
+
+### Admin APIs — `/api/v1/admin/*`
+
+| # | Method | Endpoint | Description | Access |
+|---|--------|----------|-------------|--------|
+| 1 | GET | `/api/v1/admin/dashboard` | Admin metrics (total users, active count) | `ROLE_ADMIN` |
+| 2 | GET | `/api/v1/admin/users` | Paginated, searchable, filterable user list | `ROLE_ADMIN` |
 
 Admin users query params:
 
@@ -128,7 +128,7 @@ Admin users query params:
 | 1 | GET | `/oauth2/authorization/{provider}` | Start OAuth2 login flow (Google, GitHub, Apple, LinkedIn) | Public |
 | 2 | GET | `/login/oauth2/code/{provider}` | OAuth2 callback (handled by Spring Security) | Public |
 
-OAuth2 flow: Frontend redirects to `/oauth2/authorization/google` → user authenticates with provider → Spring Security handles callback → `OAuth2AuthenticationSuccessHandler` issues tokens + HttpOnly cookie → redirects to frontend with no token in URL → frontend calls `/api/auth/refresh` to get access token.
+OAuth2 flow: Frontend redirects to `/oauth2/authorization/google` → user authenticates with provider → Spring Security handles callback → `OAuth2AuthenticationSuccessHandler` issues tokens + HttpOnly cookie → redirects to frontend with no token in URL → frontend calls `/api/v1/auth/refresh` to get access token.
 
 Timestamp notes:
 

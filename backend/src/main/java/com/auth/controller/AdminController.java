@@ -1,5 +1,6 @@
 package com.auth.controller;
 
+import com.auth.config.ApiPaths;
 import com.auth.dto.AdminDashboardDto;
 import com.auth.dto.UserDto;
 import com.auth.service.AdminService;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
  * Protected endpoints accessible only to ADMIN users.
  */
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping(ApiPaths.ADMIN_V1)
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminController {
@@ -24,7 +25,7 @@ public class AdminController {
 
     /**
      * Get admin dashboard data.
-     * GET /api/admin/dashboard
+     * GET /api/v1/admin/dashboard
      */
     @GetMapping("/dashboard")
     public ResponseEntity<AdminDashboardDto> getDashboard(Authentication authentication) {
@@ -35,7 +36,7 @@ public class AdminController {
 
     /**
      * Get users list with pagination/filtering/search.
-     * GET /api/admin/users
+     * GET /api/v1/admin/users
      */
     @GetMapping("/users")
     public ResponseEntity<Page<UserDto>> getAllUsers(

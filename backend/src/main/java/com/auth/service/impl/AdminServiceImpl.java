@@ -2,7 +2,7 @@ package com.auth.service.impl;
 
 import com.auth.dto.AdminDashboardDto;
 import com.auth.dto.UserDto;
-import com.auth.entity.Role;
+import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.mapper.UserMapper;
 import com.auth.repository.UserRepository;
@@ -82,7 +82,7 @@ public class AdminServiceImpl implements AdminService {
         }
 
         if (hasText(role)) {
-            Role.RoleName roleName = normalizeRoleName(role);
+            RoleName roleName = normalizeRoleName(role);
             specification = andSpecification(specification, (root, query, cb) -> {
                 query.distinct(true);
                 return cb.equal(root.join("roles").get("name"), roleName);
@@ -93,14 +93,14 @@ public class AdminServiceImpl implements AdminService {
     }
 
     /** Accepts USER/ADMIN or ROLE_USER/ROLE_ADMIN query values. */
-    private Role.RoleName normalizeRoleName(String rawRole) {
+    private RoleName normalizeRoleName(String rawRole) {
         String trimmedRole = rawRole.trim().toUpperCase(Locale.ROOT);
         if (!trimmedRole.startsWith("ROLE_")) {
             trimmedRole = "ROLE_" + trimmedRole;
         }
 
         try {
-            Role.RoleName roleName = Role.RoleName.valueOf(trimmedRole);
+            RoleName roleName = RoleName.valueOf(trimmedRole);
             return roleName;
         } catch (IllegalArgumentException exception) {
             throw new IllegalArgumentException("Invalid role filter. Use USER, ADMIN, ROLE_USER, or ROLE_ADMIN.");

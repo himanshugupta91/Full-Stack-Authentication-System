@@ -1,5 +1,6 @@
 package com.auth.controller;
 
+import com.auth.config.ApiPaths;
 import com.auth.security.RefreshTokenCookieService;
 import com.auth.dto.response.AuthResponse;
 import com.auth.dto.response.AuthTokens;
@@ -33,7 +34,7 @@ import java.util.Set;
  * Handles registration, login, OTP verification, and password reset.
  */
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping(ApiPaths.AUTH_V1)
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -45,7 +46,7 @@ public class AuthController {
 
     /**
      * Register a new user.
-     * POST /api/auth/register
+     * POST /api/v1/auth/register
      */
     @PostMapping("/register")
     public ResponseEntity<MessageResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -55,7 +56,7 @@ public class AuthController {
 
     /**
      * Verify email with OTP.
-     * POST /api/auth/verify-otp
+     * POST /api/v1/auth/verify-otp
      */
     @PostMapping("/verify-otp")
     public ResponseEntity<MessageResponse> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
@@ -65,7 +66,7 @@ public class AuthController {
 
     /**
      * Login user and return JWT token.
-     * POST /api/auth/login
+     * POST /api/v1/auth/login
      */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
@@ -78,7 +79,7 @@ public class AuthController {
 
     /**
      * Refresh access token using refresh token from secure cookie.
-     * POST /api/auth/refresh
+     * POST /api/v1/auth/refresh
      */
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refreshToken(
@@ -107,7 +108,7 @@ public class AuthController {
 
     /**
      * Logout and invalidate refresh token.
-     * POST /api/auth/logout
+     * POST /api/v1/auth/logout
      */
     @PostMapping("/logout")
     public ResponseEntity<MessageResponse> logout(
@@ -126,7 +127,7 @@ public class AuthController {
 
     /**
      * Request password reset email.
-     * POST /api/auth/reset-password
+     * POST /api/v1/auth/reset-password
      */
     @PostMapping("/reset-password")
     public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
@@ -136,7 +137,7 @@ public class AuthController {
 
     /**
      * Update password with reset token.
-     * POST /api/auth/update-password
+     * POST /api/v1/auth/update-password
      */
     @PostMapping("/update-password")
     public ResponseEntity<MessageResponse> updatePassword(@Valid @RequestBody UpdatePasswordRequest request) {
@@ -146,7 +147,7 @@ public class AuthController {
 
     /**
      * Resend OTP for email verification.
-     * POST /api/auth/resend-otp
+     * POST /api/v1/auth/resend-otp
      */
     @PostMapping("/resend-otp")
     public ResponseEntity<MessageResponse> resendOtp(@RequestParam String email) {

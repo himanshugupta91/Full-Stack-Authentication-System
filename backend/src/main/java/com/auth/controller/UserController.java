@@ -1,5 +1,6 @@
 package com.auth.controller;
 
+import com.auth.config.ApiPaths;
 import com.auth.dto.request.ChangePasswordRequest;
 import com.auth.dto.response.MessageResponse;
 import com.auth.dto.UserDashboardDto;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
  * Protected endpoints accessible only to authenticated users.
  */
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping(ApiPaths.USER_V1)
 @RequiredArgsConstructor
 public class UserController {
 
@@ -28,7 +29,7 @@ public class UserController {
 
     /**
      * Get user dashboard data.
-     * GET /api/user/dashboard
+     * GET /api/v1/user/dashboard
      */
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
@@ -40,7 +41,7 @@ public class UserController {
 
     /**
      * Get user profile.
-     * GET /api/user/profile
+     * GET /api/v1/user/profile
      */
     @GetMapping("/profile")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
@@ -52,7 +53,7 @@ public class UserController {
 
     /**
      * Change password.
-     * POST /api/user/change-password
+     * POST /api/v1/user/change-password
      */
     @PostMapping("/change-password")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")

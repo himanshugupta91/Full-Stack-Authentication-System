@@ -28,7 +28,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<MessageResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         String errorMessage = buildValidationErrorMessage(ex.getBindingResult().getFieldErrors());
-        return ResponseEntity.badRequest().body(new MessageResponse(errorMessage, false));
+        return ResponseEntity.badRequest()
+                .body(new MessageResponse(errorMessage, false, HttpStatus.BAD_REQUEST.value()));
     }
 
     /**
@@ -37,7 +38,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<MessageResponse> handleBadCredentialsException(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new MessageResponse("Invalid email or password!", false));
+                .body(new MessageResponse("Invalid email or password!", false, HttpStatus.UNAUTHORIZED.value()));
     }
 
     /**
@@ -46,7 +47,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<MessageResponse> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new MessageResponse(ex.getMessage(), false));
+                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.CONFLICT.value()));
     }
 
     /**
@@ -55,7 +56,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<MessageResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new MessageResponse(ex.getMessage(), false));
+                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.NOT_FOUND.value()));
     }
 
     /**
@@ -64,7 +65,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TokenValidationException.class)
     public ResponseEntity<MessageResponse> handleTokenValidationException(TokenValidationException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new MessageResponse(ex.getMessage(), false));
+                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.UNAUTHORIZED.value()));
     }
 
     /**
@@ -76,7 +77,7 @@ public class GlobalExceptionHandler {
         headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, ex.getRetryAfterSeconds())));
         return ResponseEntity.status(HttpStatus.LOCKED)
                 .headers(headers)
-                .body(new MessageResponse(ex.getMessage(), false));
+                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.LOCKED.value()));
     }
 
     /**
@@ -88,7 +89,7 @@ public class GlobalExceptionHandler {
         headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, ex.getRetryAfterSeconds())));
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .headers(headers)
-                .body(new MessageResponse(ex.getMessage(), false));
+                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.TOO_MANY_REQUESTS.value()));
     }
 
     /**
@@ -96,7 +97,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<MessageResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(new MessageResponse(ex.getMessage(), false));
+        return ResponseEntity.badRequest()
+                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.BAD_REQUEST.value()));
     }
 
     /**
@@ -106,7 +108,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<MessageResponse> handleException(Exception ex) {
         log.error("Unhandled exception in API layer", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new MessageResponse("An unexpected error occurred. Please try again later.", false));
+                .body(new MessageResponse(
+                        "An unexpected error occurred. Please try again later.",
+                        false,
+                        HttpStatus.INTERNAL_SERVER_ERROR.value()));
     }
 
     private String buildValidationErrorMessage(List<FieldError> fieldErrors) {

@@ -15,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class AuthResponse {
 
+    private int code;
     private String accessToken;
     private String tokenType;
     private long accessTokenExpiresInMs;

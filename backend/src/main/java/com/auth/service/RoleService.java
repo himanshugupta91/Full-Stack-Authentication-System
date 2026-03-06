@@ -1,6 +1,7 @@
 package com.auth.service;
 
 import com.auth.entity.Role;
+import com.auth.entity.RoleName;
 
 import java.util.Optional;
 
@@ -14,7 +15,7 @@ public interface RoleService {
      * @param roleName Role name enum
      * @return Found or created Role
      */
-    Role findOrCreateRole(Role.RoleName roleName);
+    Role findOrCreateRole(RoleName roleName);
 
     /**
      * Find a role by name.
@@ -22,5 +23,5 @@ public interface RoleService {
      * @param roleName Role name enum
      * @return Optional Role
      */
-    Optional<Role> findByName(Role.RoleName roleName);
+    Optional<Role> findByName(RoleName roleName);
 }

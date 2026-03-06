@@ -1,6 +1,7 @@
 package com.auth.service.auth;
 
 import com.auth.entity.Role;
+import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.service.RoleService;
 import com.auth.service.UserService;
@@ -65,7 +66,7 @@ public class OAuth2UserProvisioningService {
         user.setAuthProviderUserId(providerUserId);
 
         Set<Role> roles = new HashSet<>();
-        roles.add(roleService.findOrCreateRole(Role.RoleName.ROLE_USER));
+        roles.add(roleService.findOrCreateRole(RoleName.ROLE_USER));
         user.setRoles(roles);
         User savedUser = userService.save(user);
         return savedUser;

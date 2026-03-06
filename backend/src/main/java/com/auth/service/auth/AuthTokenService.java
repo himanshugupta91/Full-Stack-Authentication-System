@@ -8,6 +8,7 @@ import com.auth.exception.TokenValidationException;
 import com.auth.security.jwt.JwtUtil;
 import com.auth.service.UserService;
 import com.auth.service.support.TokenHashService;
+import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -101,6 +102,7 @@ public class AuthTokenService {
                 .toList();
 
         AuthResponse authResponse = new AuthResponse(
+                HttpStatus.OK.value(),
                 accessToken,
                 "Bearer",
                 jwtUtil.getAccessTokenExpiration(),

@@ -1,6 +1,7 @@
 package com.auth.security;
 
 import com.auth.entity.Role;
+import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -31,10 +32,10 @@ class CustomUserDetailsServiceTest {
     @Test
     void loadUserByUsername_normalizesEmailAndBuildsAuthorities() {
         Role userRole = new Role();
-        userRole.setName(Role.RoleName.ROLE_USER);
+        userRole.setName(RoleName.ROLE_USER);
 
         Role adminRole = new Role();
-        adminRole.setName(Role.RoleName.ROLE_ADMIN);
+        adminRole.setName(RoleName.ROLE_ADMIN);
 
         User user = new User();
         user.setEmail("alice@example.com");

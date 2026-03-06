@@ -2,6 +2,7 @@ package com.auth.service.auth;
 
 import com.auth.dto.response.AuthTokens;
 import com.auth.entity.Role;
+import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.exception.TokenValidationException;
 import com.auth.security.jwt.JwtUtil;
@@ -111,10 +112,10 @@ class AuthTokenServiceTest {
 
     private User buildUser() {
         Role userRole = new Role();
-        userRole.setName(Role.RoleName.ROLE_USER);
+        userRole.setName(RoleName.ROLE_USER);
 
         Role adminRole = new Role();
-        adminRole.setName(Role.RoleName.ROLE_ADMIN);
+        adminRole.setName(RoleName.ROLE_ADMIN);
 
         User user = new User();
         user.setId(7L);

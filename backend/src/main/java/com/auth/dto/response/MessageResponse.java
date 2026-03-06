@@ -14,10 +14,15 @@ public class MessageResponse {
 
     private String message;
     private boolean success;
+    private int code;
 
     /** Creates a successful response with only a message payload. */
     public MessageResponse(String message) {
-        this.message = message;
-        this.success = true;
+        this(message, true, 200);
+    }
+
+    /** Creates a response and infers a default HTTP-like code from success flag. */
+    public MessageResponse(String message, boolean success) {
+        this(message, success, success ? 200 : 400);
     }
 }

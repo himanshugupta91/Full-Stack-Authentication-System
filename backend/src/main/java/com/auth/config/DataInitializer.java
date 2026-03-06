@@ -1,6 +1,7 @@
 package com.auth.config;
 
 import com.auth.entity.Role;
+import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.repository.RoleRepository;
 import com.auth.repository.UserRepository;
@@ -43,8 +44,8 @@ public class DataInitializer implements CommandLineRunner {
     /** Seeds default roles and a local admin account if they are missing at startup. */
     @Override
     public void run(String... args) {
-        Role userRole = findOrCreateRole(Role.RoleName.ROLE_USER);
-        Role adminRole = findOrCreateRole(Role.RoleName.ROLE_ADMIN);
+        Role userRole = findOrCreateRole(RoleName.ROLE_USER);
+        Role adminRole = findOrCreateRole(RoleName.ROLE_ADMIN);
 
         if (!seedAdminEnabled) {
             return;
@@ -75,12 +76,12 @@ public class DataInitializer implements CommandLineRunner {
         return value == null || value.trim().isEmpty();
     }
 
-    private Role findOrCreateRole(Role.RoleName roleName) {
+    private Role findOrCreateRole(RoleName roleName) {
         return roleRepository.findByName(roleName)
                 .orElseGet(() -> createRole(roleName));
     }
 
-    private Role createRole(Role.RoleName roleName) {
+    private Role createRole(RoleName roleName) {
         Role role = new Role();
         role.setName(roleName);
         return roleRepository.save(role);

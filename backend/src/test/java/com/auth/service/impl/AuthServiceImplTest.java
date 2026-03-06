@@ -7,6 +7,7 @@ import com.auth.dto.request.RegisterRequest;
 import com.auth.dto.request.ResetPasswordRequest;
 import com.auth.dto.request.UpdatePasswordRequest;
 import com.auth.entity.Role;
+import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.exception.TokenValidationException;
 import com.auth.exception.UserAlreadyExistsException;
@@ -110,14 +111,14 @@ class AuthServiceImplTest {
         mappedUser.setEmail(request.getEmail());
 
         Role userRole = new Role();
-        userRole.setName(Role.RoleName.ROLE_USER);
+        userRole.setName(RoleName.ROLE_USER);
 
         when(userService.existsByEmail(request.getEmail())).thenReturn(false);
         when(userMapper.toEntity(request)).thenReturn(mappedUser);
         when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded-password");
         when(otpService.generateOtp()).thenReturn("123456");
         when(tokenHashService.hash("123456")).thenReturn("otp-hash");
-        when(roleService.findOrCreateRole(Role.RoleName.ROLE_USER)).thenReturn(userRole);
+        when(roleService.findOrCreateRole(RoleName.ROLE_USER)).thenReturn(userRole);
         when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         MessageResponse response = authService.register(request);

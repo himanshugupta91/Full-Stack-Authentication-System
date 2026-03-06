@@ -57,10 +57,10 @@ public class SecurityConfig {
                                 // OAuth2 login requires temporary session storage for state/nonce validation.
                                 session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/api/auth/**").permitAll()
+                                                .requestMatchers(ApiPaths.AUTH_V1 + "/**").permitAll()
                                                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-                                                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
-                                                .requestMatchers("/api/user/**")
+                                                .requestMatchers(ApiPaths.ADMIN_V1 + "/**").hasAuthority("ROLE_ADMIN")
+                                                .requestMatchers(ApiPaths.USER_V1 + "/**")
                                                 .hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                                                 .anyRequest().authenticated())
                                 .oauth2Login(oauth -> oauth

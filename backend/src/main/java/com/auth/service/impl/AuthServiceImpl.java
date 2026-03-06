@@ -1,6 +1,7 @@
 package com.auth.service.impl;
 
 import com.auth.entity.Role;
+import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.exception.ResourceNotFoundException;
 import com.auth.exception.TokenValidationException;
@@ -329,7 +330,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void assignDefaultUserRole(User user) {
-        Role userRole = roleService.findOrCreateRole(Role.RoleName.ROLE_USER);
+        Role userRole = roleService.findOrCreateRole(RoleName.ROLE_USER);
         user.setRoles(Set.of(userRole));
     }
 

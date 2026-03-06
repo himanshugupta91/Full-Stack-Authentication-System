@@ -15,7 +15,7 @@ public class RefreshTokenCookieService {
     @Value("${auth.refresh-token.cookie-name:refreshToken}")
     private String cookieName;
 
-    @Value("${auth.refresh-token.cookie-path:/api/auth}")
+    @Value("${auth.refresh-token.cookie-path:/api/v1/auth}")
     private String cookiePath;
 
     @Value("${auth.refresh-token.cookie-secure:false}")

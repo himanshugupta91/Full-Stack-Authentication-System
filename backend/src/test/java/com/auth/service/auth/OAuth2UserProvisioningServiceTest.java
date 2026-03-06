@@ -1,6 +1,7 @@
 package com.auth.service.auth;
 
 import com.auth.entity.Role;
+import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.service.RoleService;
 import com.auth.service.UserService;
@@ -97,7 +98,7 @@ class OAuth2UserProvisioningServiceTest {
     @Test
     void loadOrCreateUser_whenNewUser_persistsOAuthUserWithDefaultRole() {
         Role role = new Role();
-        role.setName(Role.RoleName.ROLE_USER);
+        role.setName(RoleName.ROLE_USER);
 
         OAuth2AuthenticationToken token = oauthToken(
                 "google",
@@ -106,7 +107,7 @@ class OAuth2UserProvisioningServiceTest {
         when(userService.findByAuthProviderAndAuthProviderUserId("google", "google-sub-3")).thenReturn(Optional.empty());
         when(userService.findByEmail("new.user@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded-password");
-        when(roleService.findOrCreateRole(Role.RoleName.ROLE_USER)).thenReturn(role);
+        when(roleService.findOrCreateRole(RoleName.ROLE_USER)).thenReturn(role);
         when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User resolved = service.loadOrCreateUser(token, token.getPrincipal());
@@ -128,7 +129,7 @@ class OAuth2UserProvisioningServiceTest {
     @Test
     void loadOrCreateUser_whenGithubEmailMissing_usesNoReplyFallbackEmail() {
         Role role = new Role();
-        role.setName(Role.RoleName.ROLE_USER);
+        role.setName(RoleName.ROLE_USER);
 
         OAuth2AuthenticationToken token = oauthToken(
                 "github",
@@ -137,7 +138,7 @@ class OAuth2UserProvisioningServiceTest {
         when(userService.findByAuthProviderAndAuthProviderUserId("github", "42")).thenReturn(Optional.empty());
         when(userService.findByEmail("octocat@users.noreply.github.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded-password");
-        when(roleService.findOrCreateRole(Role.RoleName.ROLE_USER)).thenReturn(role);
+        when(roleService.findOrCreateRole(RoleName.ROLE_USER)).thenReturn(role);
         when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User resolved = service.loadOrCreateUser(token, token.getPrincipal());
@@ -159,7 +160,7 @@ class OAuth2UserProvisioningServiceTest {
     @Test
     void loadOrCreateUser_whenAppleEmailMissing_usesProviderDerivedEmail() {
         Role role = new Role();
-        role.setName(Role.RoleName.ROLE_USER);
+        role.setName(RoleName.ROLE_USER);
 
         OAuth2AuthenticationToken token = oauthToken(
                 "apple",
@@ -168,7 +169,7 @@ class OAuth2UserProvisioningServiceTest {
         when(userService.findByAuthProviderAndAuthProviderUserId("apple", "apple-user-77")).thenReturn(Optional.empty());
         when(userService.findByEmail("apple-apple-user-77@oauth.local")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded-password");
-        when(roleService.findOrCreateRole(Role.RoleName.ROLE_USER)).thenReturn(role);
+        when(roleService.findOrCreateRole(RoleName.ROLE_USER)).thenReturn(role);
         when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User resolved = service.loadOrCreateUser(token, token.getPrincipal());

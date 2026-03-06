@@ -23,9 +23,4 @@ public class Role {
     @Enumerated(EnumType.STRING)
     @Column(length = 20, unique = true, nullable = false)
     private RoleName name;
-
-    public enum RoleName {
-        ROLE_USER,
-        ROLE_ADMIN
-    }
 }
