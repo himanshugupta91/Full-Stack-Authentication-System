@@ -44,7 +44,8 @@ public class AuthTokenService {
      */
     @Transactional
     public AuthTokens issueTokens(User user) {
-        String accessToken = jwtUtil.generateTokenFromEmail(user.getEmail());
+        List<String> roles = resolveRoleNames(user);
+        String accessToken = jwtUtil.generateTokenFromEmailAndRoles(user.getEmail(), roles);
         String refreshToken = generateRefreshToken();
 
         user.setRefreshToken(tokenHashService.hash(refreshToken));
@@ -96,10 +97,7 @@ public class AuthTokenService {
      * details.
      */
     private AuthResponse buildAuthResponse(User user, String accessToken) {
-        List<String> roles = user.getRoles().stream()
-                .map(Role::getName)
-                .map(Enum::name)
-                .toList();
+        List<String> roles = resolveRoleNames(user);
 
         AuthResponse authResponse = new AuthResponse(
                 HttpStatus.OK.value(),
@@ -113,6 +111,13 @@ public class AuthTokenService {
                 user.isEnabled(),
                 roles);
         return authResponse;
+    }
+
+    private List<String> resolveRoleNames(User user) {
+        return user.getRoles().stream()
+                .map(Role::getName)
+                .map(Enum::name)
+                .toList();
     }
 
     /** Generates a high-entropy URL-safe refresh token. */

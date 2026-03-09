@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -25,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -54,7 +56,7 @@ class AuthTokenServiceTest {
     void issueTokens_whenUserIsValid_persistsHashedRefreshTokenAndBuildsResponse() {
         User user = buildUser();
 
-        when(jwtUtil.generateTokenFromEmail(user.getEmail())).thenReturn("access-token");
+        when(jwtUtil.generateTokenFromEmailAndRoles(any(String.class), anyList())).thenReturn("access-token");
         when(jwtUtil.getAccessTokenExpiration()).thenReturn(900_000L);
         when(tokenHashService.hash(any(String.class))).thenReturn("hashed-refresh-token");
         when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -71,6 +73,15 @@ class AuthTokenServiceTest {
         ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
         verify(tokenHashService).hash(tokenCaptor.capture());
         assertEquals(tokens.refreshToken(), tokenCaptor.getValue());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<String>> rolesCaptor = ArgumentCaptor.forClass(List.class);
+        verify(jwtUtil).generateTokenFromEmailAndRoles(
+                org.mockito.ArgumentMatchers.eq(user.getEmail()),
+                rolesCaptor.capture());
+        assertEquals(2, rolesCaptor.getValue().size());
+        assertTrue(rolesCaptor.getValue().contains("ROLE_USER"));
+        assertTrue(rolesCaptor.getValue().contains("ROLE_ADMIN"));
     }
 
     @Test

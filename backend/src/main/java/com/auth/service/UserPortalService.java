@@ -1,7 +1,7 @@
 package com.auth.service;
 
-import com.auth.dto.UserDashboardDto;
-import com.auth.dto.UserDto;
+import com.auth.dto.response.UserDashboardDto;
+import com.auth.dto.response.UserDto;
 
 /**
  * Business logic contract for authenticated user portal views.

@@ -1,8 +1,9 @@
 package com.auth.controller;
 
 import com.auth.config.ApiPaths;
-import com.auth.dto.AdminDashboardDto;
-import com.auth.dto.UserDto;
+import com.auth.dto.response.AdminDashboardDto;
+import com.auth.dto.response.ApiResponse;
+import com.auth.dto.response.UserDto;
 import com.auth.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,10 +29,10 @@ public class AdminController {
      * GET /api/v1/admin/dashboard
      */
     @GetMapping("/dashboard")
-    public ResponseEntity<AdminDashboardDto> getDashboard(Authentication authentication) {
+    public ResponseEntity<ApiResponse<AdminDashboardDto>> getDashboard(Authentication authentication) {
         String authenticatedEmail = authentication.getName();
         AdminDashboardDto dashboard = adminService.getDashboard(authenticatedEmail);
-        return ResponseEntity.ok(dashboard);
+        return ResponseEntity.ok(ApiResponse.ok(dashboard));
     }
 
     /**
@@ -39,7 +40,7 @@ public class AdminController {
      * GET /api/v1/admin/users
      */
     @GetMapping("/users")
-    public ResponseEntity<Page<UserDto>> getAllUsers(
+    public ResponseEntity<ApiResponse<Page<UserDto>>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String search,
@@ -48,6 +49,6 @@ public class AdminController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         Page<UserDto> users = adminService.getUsers(page, size, search, enabled, role, sortBy, sortDir);
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok(ApiResponse.ok(users));
     }
 }

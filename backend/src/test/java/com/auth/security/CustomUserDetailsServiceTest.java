@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,5 +59,23 @@ class CustomUserDetailsServiceTest {
 
         assertThrows(UsernameNotFoundException.class,
                 () -> customUserDetailsService.loadUserByUsername("missing@example.com"));
+    }
+
+    @Test
+    void loadUserByUsername_whenUserDisabled_marksUserDetailsDisabled() {
+        Role userRole = new Role();
+        userRole.setName(RoleName.ROLE_USER);
+
+        User user = new User();
+        user.setEmail("disabled@example.com");
+        user.setPassword("encoded");
+        user.setEnabled(false);
+        user.setRoles(Set.of(userRole));
+
+        when(userService.findByEmail("disabled@example.com")).thenReturn(Optional.of(user));
+
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername("disabled@example.com");
+
+        assertFalse(userDetails.isEnabled());
     }
 }

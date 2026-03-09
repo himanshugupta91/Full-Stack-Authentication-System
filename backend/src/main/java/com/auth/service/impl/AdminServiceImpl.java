@@ -1,7 +1,7 @@
 package com.auth.service.impl;
 
-import com.auth.dto.AdminDashboardDto;
-import com.auth.dto.UserDto;
+import com.auth.dto.response.AdminDashboardDto;
+import com.auth.dto.response.UserDto;
 import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.mapper.UserMapper;

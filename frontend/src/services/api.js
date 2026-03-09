@@ -96,7 +96,15 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Transparently unwrap the backend ApiResponse<T> wrapper
+    if (response.data && typeof response.data === 'object' && 'success' in response.data) {
+      if (response.data.success) {
+        response.data = response.data.data;
+      }
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
@@ -153,7 +161,7 @@ export const authAPI = {
   refresh: () => api.post('/auth/refresh'),
   resetPassword: (data) => api.post('/auth/reset-password', data),
   updatePassword: (data) => api.post('/auth/update-password', data),
-  resendOtp: (email) => api.post(`/auth/resend-otp?email=${email}`),
+  resendOtp: (email) => api.post(`/auth/resend-otp?email=${encodeURIComponent(email)}`),
   logout: () => api.post('/auth/logout'),
 };
 

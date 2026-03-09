@@ -13,6 +13,9 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.security.core.GrantedAuthority;
 
 /**
  * Utility class for JWT token generation and validation.
@@ -35,27 +38,35 @@ public class JwtUtil {
         getSigningKey();
     }
 
-    /**
-     * Generate JWT token from authentication object.
-     */
     public String generateToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-        String token = generateTokenFromEmail(userPrincipal.getUsername());
+        List<String> roles = userPrincipal.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+        String token = generateTokenFromEmailAndRoles(userPrincipal.getUsername(), roles);
         return token;
     }
 
     /**
-     * Generate JWT token from email.
+     * Generate JWT token from email and roles.
      */
-    public String generateTokenFromEmail(String email) {
+    public String generateTokenFromEmailAndRoles(String email, List<String> roles) {
         String token = Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
                 .claim("tokenType", "access")
+                .claim("roles", roles)
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSigningKey())
                 .compact();
         return token;
+    }
+
+    /**
+     * Generate JWT token from email without roles (fallback/legacy).
+     */
+    public String generateTokenFromEmail(String email) {
+        return generateTokenFromEmailAndRoles(email, List.of());
     }
 
     /**
@@ -69,6 +80,20 @@ public class JwtUtil {
                 .getPayload()
                 .getSubject();
         return email;
+    }
+
+    /**
+     * Extract roles from JWT token.
+     */
+    public List<String> getRolesFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        @SuppressWarnings("unchecked")
+        List<String> roles = (List<String>) claims.get("roles", List.class);
+        return roles != null ? roles : List.of();
     }
 
     /**

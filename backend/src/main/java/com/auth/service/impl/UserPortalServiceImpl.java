@@ -1,7 +1,7 @@
 package com.auth.service.impl;
 
-import com.auth.dto.UserDashboardDto;
-import com.auth.dto.UserDto;
+import com.auth.dto.response.UserDashboardDto;
+import com.auth.dto.response.UserDto;
 import com.auth.entity.User;
 import com.auth.mapper.UserMapper;
 import com.auth.service.UserPortalService;

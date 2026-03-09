@@ -1,7 +1,7 @@
 package com.auth.service;
 
-import com.auth.dto.AdminDashboardDto;
-import com.auth.dto.UserDto;
+import com.auth.dto.response.AdminDashboardDto;
+import com.auth.dto.response.UserDto;
 import org.springframework.data.domain.Page;
 
 /**

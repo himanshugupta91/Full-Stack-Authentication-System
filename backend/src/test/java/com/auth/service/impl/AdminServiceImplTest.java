@@ -1,6 +1,6 @@
 package com.auth.service.impl;
 
-import com.auth.dto.UserDto;
+import com.auth.dto.response.UserDto;
 import com.auth.entity.User;
 import com.auth.mapper.UserMapper;
 import com.auth.repository.UserRepository;
@@ -54,7 +54,8 @@ class AdminServiceImplTest {
         assertEquals(1, result.getContent().size());
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(userRepository).findAll(org.mockito.ArgumentMatchers.<Specification<User>>isNull(), pageableCaptor.capture());
+        verify(userRepository).findAll(org.mockito.ArgumentMatchers.<Specification<User>>isNull(),
+                pageableCaptor.capture());
 
         Pageable pageable = pageableCaptor.getValue();
         assertEquals(0, pageable.getPageNumber());

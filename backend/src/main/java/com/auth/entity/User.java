@@ -4,11 +4,12 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.auth.util.DateTimeUtil;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import lombok.EqualsAndHashCode;
 
 /**
  * User entity representing application users.
@@ -17,13 +18,10 @@ import java.util.Set;
 @Entity
 @Table(name = "users")
 @Data
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class User extends BaseEntity {
 
     @Column(nullable = false)
     private String name;
@@ -73,26 +71,7 @@ public class User {
     @Column(name = "auth_provider_user_id")
     private String authProviderUserId;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
-
-    /** Initializes create/update timestamps before first persistence. */
-    @PrePersist
-    protected void onCreate() {
-        createdAt = DateTimeUtil.nowInIst();
-        updatedAt = DateTimeUtil.nowInIst();
-    }
-
-    /** Updates the modification timestamp before each entity update. */
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = DateTimeUtil.nowInIst();
-    }
 }

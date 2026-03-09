@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import lombok.EqualsAndHashCode;
+
 /**
  * Role entity representing user roles in the system.
  * Supports role-based access control (RBAC).
@@ -12,13 +14,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "roles")
 @Data
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Role {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Role extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, unique = true, nullable = false)

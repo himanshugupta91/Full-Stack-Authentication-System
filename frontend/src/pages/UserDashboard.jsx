@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 const UserDashboard = () => {
     const { user, isAdmin } = useAuth();
+    const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [resendingOtp, setResendingOtp] = useState(false);
@@ -14,8 +15,9 @@ const UserDashboard = () => {
 
     const fetchDashboardData = useCallback(async () => {
         try {
-            await userAPI.getDashboard();
-            // Data is not currently used in UI, but call is made to verify token/access
+            const response = await userAPI.getDashboard();
+            const payload = response.data?.data ?? response.data ?? null;
+            setDashboardData(payload);
         } catch {
             setError('Failed to load dashboard data');
         } finally {
@@ -35,7 +37,8 @@ const UserDashboard = () => {
         setResendingOtp(true);
         try {
             const response = await authAPI.resendOtp(user.email);
-            toast.success(response.data?.message || 'OTP sent successfully! Check your email.');
+            const payload = response.data?.data ?? response.data ?? {};
+            toast.success(payload.message || 'OTP sent successfully! Check your email.');
         } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to resend OTP.');
         } finally {
@@ -57,10 +60,12 @@ const UserDashboard = () => {
                                 <i className="bi bi-person-fill"></i>
                             </div>
                             <div>
-                                <h2 className="mb-1 dashboard-title">Welcome back, {user?.name}!</h2>
+                                <h2 className="mb-1 dashboard-title">
+                                    {dashboardData?.message || `Welcome back, ${dashboardData?.user || user?.name}!`}
+                                </h2>
                                 <p className="text-muted mb-0">
                                     <i className="bi bi-envelope me-2"></i>
-                                    {user?.email}
+                                    {dashboardData?.email || user?.email}
                                 </p>
                             </div>
                         </div>
@@ -125,7 +130,7 @@ const UserDashboard = () => {
                         </div>
                         <h5>Role</h5>
                         <div className="d-flex flex-wrap gap-2">
-                            {user?.roles?.map((role, index) => (
+                            {(dashboardData?.roles || user?.roles || []).map((role, index) => (
                                 <span key={index} className={`badge ${role.includes('ADMIN') ? 'bg-danger' : 'bg-primary'}`}>
                                     {role.replace('ROLE_', '')}
                                 </span>
@@ -140,7 +145,7 @@ const UserDashboard = () => {
                             <i className="bi bi-clock"></i>
                         </div>
                         <h5>Last Active</h5>
-                        <p className="mb-0">{new Date().toLocaleString()}</p>
+                        <p className="mb-0">{dashboardData?.timestamp || new Date().toLocaleString()}</p>
                     </div>
                 </div>
             </div>

@@ -169,6 +169,10 @@ public class AuthServiceImpl implements AuthService {
                     return new BadCredentialsException("Invalid email or password!");
                 });
 
+        if (!user.isEnabled()) {
+            throw new TokenValidationException("Email not verified! Please verify your email before logging in.");
+        }
+
         authenticateLoginCredentials(normalizedEmail, request.getPassword());
         authAbuseProtectionService.clearLoginFailures(user);
 

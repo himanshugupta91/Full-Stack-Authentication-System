@@ -154,6 +154,27 @@ class AuthServiceImplTest {
     }
 
     @Test
+    void login_whenUserEmailNotVerified_throwsTokenValidationException() {
+        LoginRequest request = new LoginRequest();
+        request.setEmail("pending@example.com");
+        request.setPassword("Password1");
+
+        User user = new User();
+        user.setEmail("pending@example.com");
+        user.setEnabled(false);
+
+        when(userService.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
+
+        TokenValidationException exception = assertThrows(
+                TokenValidationException.class,
+                () -> authService.login(request));
+
+        assertEquals("Email not verified! Please verify your email before logging in.", exception.getMessage());
+        verify(authAbuseProtectionService).guardLoginAttempt(request.getEmail());
+        verifyNoInteractions(authenticationManager, authTokenService);
+    }
+
+    @Test
     void resetPassword_whenUserMissing_returnsGenericSuccessMessage() {
         ResetPasswordRequest request = new ResetPasswordRequest();
         request.setEmail("missing@example.com");

@@ -2,9 +2,10 @@ package com.auth.controller;
 
 import com.auth.config.ApiPaths;
 import com.auth.dto.request.ChangePasswordRequest;
+import com.auth.dto.response.ApiResponse;
 import com.auth.dto.response.MessageResponse;
-import com.auth.dto.UserDashboardDto;
-import com.auth.dto.UserDto;
+import com.auth.dto.response.UserDashboardDto;
+import com.auth.dto.response.UserDto;
 import com.auth.service.AuthService;
 import com.auth.service.UserPortalService;
 import jakarta.validation.Valid;
@@ -33,10 +34,10 @@ public class UserController {
      */
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<UserDashboardDto> getDashboard(Authentication authentication) {
+    public ResponseEntity<ApiResponse<UserDashboardDto>> getDashboard(Authentication authentication) {
         String authenticatedEmail = authentication.getName();
         UserDashboardDto dashboard = userPortalService.getDashboard(authenticatedEmail);
-        return ResponseEntity.ok(dashboard);
+        return ResponseEntity.ok(ApiResponse.ok(dashboard));
     }
 
     /**
@@ -45,10 +46,10 @@ public class UserController {
      */
     @GetMapping("/profile")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<UserDto> getProfile(Authentication authentication) {
+    public ResponseEntity<ApiResponse<UserDto>> getProfile(Authentication authentication) {
         String authenticatedEmail = authentication.getName();
         UserDto profile = userPortalService.getProfile(authenticatedEmail);
-        return ResponseEntity.ok(profile);
+        return ResponseEntity.ok(ApiResponse.ok(profile));
     }
 
     /**
@@ -57,10 +58,10 @@ public class UserController {
      */
     @PostMapping("/change-password")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<MessageResponse> changePassword(
+    public ResponseEntity<ApiResponse<MessageResponse>> changePassword(
             Authentication authentication,
             @Valid @RequestBody ChangePasswordRequest request) {
         MessageResponse response = authService.changePassword(authentication.getName(), request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

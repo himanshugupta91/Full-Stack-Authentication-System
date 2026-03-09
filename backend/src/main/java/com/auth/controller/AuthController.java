@@ -2,6 +2,7 @@ package com.auth.controller;
 
 import com.auth.config.ApiPaths;
 import com.auth.security.RefreshTokenCookieService;
+import com.auth.dto.response.ApiResponse;
 import com.auth.dto.response.AuthResponse;
 import com.auth.dto.response.AuthTokens;
 import com.auth.exception.TokenValidationException;
@@ -49,9 +50,9 @@ public class AuthController {
      * POST /api/v1/auth/register
      */
     @PostMapping("/register")
-    public ResponseEntity<MessageResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<MessageResponse>> register(@Valid @RequestBody RegisterRequest request) {
         MessageResponse response = authService.register(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**
@@ -59,9 +60,9 @@ public class AuthController {
      * POST /api/v1/auth/verify-otp
      */
     @PostMapping("/verify-otp")
-    public ResponseEntity<MessageResponse> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
+    public ResponseEntity<ApiResponse<MessageResponse>> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
         MessageResponse response = authService.verifyOtp(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**
@@ -69,12 +70,12 @@ public class AuthController {
      * POST /api/v1/auth/login
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request,
             HttpServletResponse httpResponse) {
         AuthTokens authTokens = authService.login(request);
         setRefreshTokenCookie(httpResponse, authTokens.refreshToken());
         AuthResponse authResponse = authTokens.response();
-        return ResponseEntity.ok(authResponse);
+        return ResponseEntity.ok(ApiResponse.ok(authResponse));
     }
 
     /**
@@ -82,7 +83,7 @@ public class AuthController {
      * POST /api/v1/auth/refresh
      */
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refreshToken(
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse,
             @RequestBody(required = false) TokenRefreshRequest request) {
@@ -97,7 +98,7 @@ public class AuthController {
                 AuthTokens authTokens = authTokenService.refreshTokens(refreshToken);
                 setRefreshTokenCookie(httpResponse, authTokens.refreshToken());
                 AuthResponse authResponse = authTokens.response();
-                return ResponseEntity.ok(authResponse);
+                return ResponseEntity.ok(ApiResponse.ok(authResponse));
             } catch (TokenValidationException exception) {
                 lastValidationException = exception;
             }
@@ -111,7 +112,7 @@ public class AuthController {
      * POST /api/v1/auth/logout
      */
     @PostMapping("/logout")
-    public ResponseEntity<MessageResponse> logout(
+    public ResponseEntity<ApiResponse<MessageResponse>> logout(
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse,
             @RequestBody(required = false) TokenRefreshRequest request) {
@@ -122,7 +123,7 @@ public class AuthController {
 
         httpResponse.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookieService.clearRefreshTokenCookie());
         MessageResponse response = new MessageResponse("Logged out successfully.", true);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**
@@ -130,9 +131,10 @@ public class AuthController {
      * POST /api/v1/auth/reset-password
      */
     @PostMapping("/reset-password")
-    public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<ApiResponse<MessageResponse>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
         MessageResponse response = authService.resetPassword(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**
@@ -140,9 +142,10 @@ public class AuthController {
      * POST /api/v1/auth/update-password
      */
     @PostMapping("/update-password")
-    public ResponseEntity<MessageResponse> updatePassword(@Valid @RequestBody UpdatePasswordRequest request) {
+    public ResponseEntity<ApiResponse<MessageResponse>> updatePassword(
+            @Valid @RequestBody UpdatePasswordRequest request) {
         MessageResponse response = authService.updatePassword(request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**
@@ -150,13 +153,14 @@ public class AuthController {
      * POST /api/v1/auth/resend-otp
      */
     @PostMapping("/resend-otp")
-    public ResponseEntity<MessageResponse> resendOtp(@RequestParam String email) {
+    public ResponseEntity<ApiResponse<MessageResponse>> resendOtp(@RequestParam String email) {
         MessageResponse response = authService.resendOtp(email);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**
-     * Resolves possible refresh-token values from request body and matching cookies.
+     * Resolves possible refresh-token values from request body and matching
+     * cookies.
      */
     private List<String> resolveRefreshTokenCandidates(HttpServletRequest request, TokenRefreshRequest body) {
         Set<String> tokenCandidates = new LinkedHashSet<>();

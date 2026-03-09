@@ -1,8 +1,8 @@
 package com.auth.mapper;
 
 import com.auth.dto.request.RegisterRequest;
-import com.auth.dto.UserDashboardDto;
-import com.auth.dto.UserDto;
+import com.auth.dto.response.UserDashboardDto;
+import com.auth.dto.response.UserDto;
 import com.auth.entity.Role;
 import com.auth.entity.User;
 import com.auth.util.DateTimeUtil;
