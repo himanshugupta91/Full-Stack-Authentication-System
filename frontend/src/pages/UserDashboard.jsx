@@ -12,6 +12,7 @@ const UserDashboard = () => {
     const [error, setError] = useState('');
     const [resendingOtp, setResendingOtp] = useState(false);
     const isEmailVerified = user?.enabled === true;
+    const displayName = dashboardData?.user || user?.name || 'User';
 
     const fetchDashboardData = useCallback(async () => {
         try {
@@ -61,7 +62,7 @@ const UserDashboard = () => {
                             </div>
                             <div>
                                 <h2 className="mb-1 dashboard-title">
-                                    {dashboardData?.message || `Welcome back, ${dashboardData?.user || user?.name}!`}
+                                    {`Welcome back, ${displayName}!`}
                                 </h2>
                                 <p className="text-muted mb-0">
                                     <i className="bi bi-envelope me-2"></i>

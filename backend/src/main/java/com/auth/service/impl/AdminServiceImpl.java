@@ -1,5 +1,6 @@
 package com.auth.service.impl;
 
+import com.auth.config.CacheNames;
 import com.auth.dto.response.AdminDashboardDto;
 import com.auth.dto.response.UserDto;
 import com.auth.entity.RoleName;
@@ -9,6 +10,7 @@ import com.auth.repository.UserRepository;
 import com.auth.service.AdminService;
 import com.auth.util.DateTimeUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +33,7 @@ public class AdminServiceImpl implements AdminService {
     private final UserMapper userMapper;
 
     @Override
+    @Cacheable(cacheNames = CacheNames.ADMIN_DASHBOARD, key = "#adminEmail == null ? 'unknown' : #adminEmail.toLowerCase()")
     public AdminDashboardDto getDashboard(String adminEmail) {
         long totalUsers = userRepository.count();
         long activeUsers = userRepository.countByEnabledTrue();
