@@ -19,60 +19,41 @@ const Home = () => {
 
   return (
     <div className="home-container">
-      <div className="hero-section">
-        <div className="hero-motion-layer" aria-hidden="true">
-          <span className="motion-blob blob-one"></span>
-          <span className="motion-blob blob-two"></span>
-          <span className="motion-blob blob-three"></span>
-          <span className="motion-sheen"></span>
-        </div>
+      <div className="hero-section simple-hero-section">
         <div className="container">
-          <div className="hero-content jitter-hero-stage">
-            {/* Decorative ornament */}
-            <div className="hero-ornament motion-item motion-ornament">
-              <svg viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path className="ornament-wave ornament-wave-primary" d="M20 20 Q50 5 80 20 Q110 35 140 20 Q170 5 180 20" strokeWidth="1.5" fill="none" opacity="0.6" />
-                <path className="ornament-wave ornament-wave-secondary" d="M30 20 Q60 35 90 20 Q120 5 150 20 Q170 30 180 20" strokeWidth="1.5" fill="none" opacity="0.5" />
-                <circle className="ornament-dot ornament-dot-primary" cx="100" cy="20" r="3" opacity="0.4" />
-                <circle className="ornament-dot ornament-dot-tertiary" cx="60" cy="15" r="2" opacity="0.4" />
-                <circle className="ornament-dot ornament-dot-secondary" cx="140" cy="15" r="2" opacity="0.4" />
-              </svg>
-            </div>
-
-            <span className="badge bg-primary mb-3 px-4 py-2 rounded-pill motion-item hero-kickoff hero-badge">
+          <div className="simple-hero-content">
+            <span className="badge bg-primary mb-3 px-4 py-2 rounded-pill simple-hero-badge">
               <i className="bi bi-stars me-2"></i>
-              v2.0.0 Token + OAuth Upgrade
+              Version 2.0 Security Stack
             </span>
 
-            <h1 className="display-3 mb-3 hero-title motion-item hero-heading">
-              Next-Generation <br />
-              <span className="text-gradient">Authentication System</span>
+            <h1 className="simple-hero-title">
+              Next-Generation
+              <br />
+              <span className="simple-hero-highlight">Authentication System</span>
             </h1>
-            {isLoggedIn && (
-              <p className="mb-2 fw-semibold hero-subtitle motion-item hero-greeting">
-                Welcome back, {displayName}
-              </p>
-            )}
+
+            {isLoggedIn && <p className="simple-hero-greeting">Welcome back, {displayName}</p>}
+
             {!isLoggedIn && (
-              <p className="lead mb-4 mx-auto hero-subtitle motion-item hero-copy">
-                Secure access-token and refresh-token flow with OAuth2 login providers: Google, GitHub, Apple, and
-                LinkedIn.
+              <p className="simple-hero-copy">
+                Access-token + refresh-token architecture with OAuth2 login providers and role-aware authorization.
               </p>
             )}
 
-            <div className="d-flex justify-content-center gap-3 flex-wrap hero-actions motion-item">
+            <div className="simple-hero-actions d-flex gap-3 flex-wrap">
               {isLoggedIn ? (
-                <Link to="/dashboard" className="btn btn-primary btn-lg px-5 py-3 jitter-cta">
+                <Link to="/dashboard" className="btn btn-primary btn-lg px-5 py-3">
                   <i className="bi bi-speedometer2 me-2"></i>
                   Go to Dashboard
                 </Link>
               ) : (
                 <>
-                  <Link to="/register" className="btn btn-primary btn-lg px-5 py-3 jitter-cta">
+                  <Link to="/register" className="btn btn-primary btn-lg px-5 py-3">
                     <i className="bi bi-rocket-takeoff me-2"></i>
                     Get Started
                   </Link>
-                  <Link to="/login" className="btn btn-outline-primary btn-lg px-5 py-3 jitter-ghost">
+                  <Link to="/login" className="btn btn-outline-primary btn-lg px-5 py-3">
                     <i className="bi bi-box-arrow-in-right me-2"></i>
                     Sign In
                   </Link>

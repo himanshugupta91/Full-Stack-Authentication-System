@@ -5,6 +5,7 @@ import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.service.RoleService;
 import com.auth.service.UserService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("OAuth2UserProvisioningService")
 class OAuth2UserProvisioningServiceTest {
 
     @Mock
@@ -47,6 +49,7 @@ class OAuth2UserProvisioningServiceTest {
     private OAuth2UserProvisioningService service;
 
     @Test
+    @DisplayName("loadOrCreateUser: existing user needs no update → returns without saving")
     void loadOrCreateUser_whenExistingUserNeedsNoUpdate_returnsWithoutSaving() {
         User existing = new User();
         existing.setEmail("alice@example.com");
@@ -70,6 +73,7 @@ class OAuth2UserProvisioningServiceTest {
     }
 
     @Test
+    @DisplayName("loadOrCreateUser: existing user has missing data → updates only changed fields")
     void loadOrCreateUser_whenExistingUserHasMissingData_updatesOnlyChangedFields() {
         User existing = new User();
         existing.setEmail("alice@example.com");
@@ -96,6 +100,7 @@ class OAuth2UserProvisioningServiceTest {
     }
 
     @Test
+    @DisplayName("loadOrCreateUser: new user → persists OAuth user with default USER role")
     void loadOrCreateUser_whenNewUser_persistsOAuthUserWithDefaultRole() {
         Role role = new Role();
         role.setName(RoleName.ROLE_USER);
@@ -127,6 +132,7 @@ class OAuth2UserProvisioningServiceTest {
     }
 
     @Test
+    @DisplayName("loadOrCreateUser: GitHub email missing → uses no-reply fallback email")
     void loadOrCreateUser_whenGithubEmailMissing_usesNoReplyFallbackEmail() {
         Role role = new Role();
         role.setName(RoleName.ROLE_USER);
@@ -148,6 +154,7 @@ class OAuth2UserProvisioningServiceTest {
     }
 
     @Test
+    @DisplayName("loadOrCreateUser: email unavailable for provider → throws IllegalArgumentException")
     void loadOrCreateUser_whenEmailUnavailableForProvider_throwsIllegalArgumentException() {
         OAuth2AuthenticationToken token = oauthToken("google", Map.of("name", "Missing Email"));
 
@@ -158,6 +165,7 @@ class OAuth2UserProvisioningServiceTest {
     }
 
     @Test
+    @DisplayName("loadOrCreateUser: Apple email missing → uses provider-derived email")
     void loadOrCreateUser_whenAppleEmailMissing_usesProviderDerivedEmail() {
         Role role = new Role();
         role.setName(RoleName.ROLE_USER);
@@ -180,6 +188,7 @@ class OAuth2UserProvisioningServiceTest {
     }
 
     @Test
+    @DisplayName("loadOrCreateUser: found by provider ID → skips email lookup")
     void loadOrCreateUser_whenExistingUserFoundByProviderId_skipsEmailLookup() {
         User existing = new User();
         existing.setEmail("linked@example.com");

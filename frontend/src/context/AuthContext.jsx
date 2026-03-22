@@ -8,6 +8,14 @@ import {
 } from '../services/api';
 
 const AuthContext = createContext(null);
+let bootstrapRefreshPromise = null;
+
+const bootstrapRefreshSession = () => {
+  if (!bootstrapRefreshPromise) {
+    bootstrapRefreshPromise = authAPI.refresh();
+  }
+  return bootstrapRefreshPromise;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => getStoredUser());
@@ -30,7 +38,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const response = await authAPI.refresh();
+        const response = await bootstrapRefreshSession();
         saveAuthPayload(response.data);
         setUser(getStoredUser());
       } catch {

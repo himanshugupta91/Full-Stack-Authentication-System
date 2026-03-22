@@ -1,12 +1,13 @@
 package com.auth.security.jwt;
 
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -16,20 +17,23 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * JWT Authentication Filter that intercepts requests and validates JWT tokens.
+ * Stateless JWT authentication filter. Extracts and validates the Bearer token
+ * on every request, then populates {@link SecurityContextHolder} with the
+ * authenticated principal so that downstream security checks work without a
+ * server-side session.
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
     /**
-     * Validates incoming bearer token and sets authenticated user context when
-     * token is valid.
+     * Validates the incoming Bearer token and sets the authenticated user context
+     * when the token is present and valid.
      */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -37,46 +41,46 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             String jwt = extractBearerToken(request);
             if (jwt != null && jwtUtil.validateToken(jwt)) {
-                authenticateBearerToken(request, jwt);
+                authenticateRequest(request, jwt);
             }
-        } catch (Exception exception) {
-            logger.error("Cannot set user authentication", exception);
+        } catch (Exception ex) {
+            log.error("Cannot set user authentication: {}", ex.getMessage(), ex);
         }
 
         filterChain.doFilter(request, response);
     }
 
     /**
-     * Extract JWT token from Authorization header.
+     * Extracts the raw JWT from the {@code Authorization: Bearer <token>} header.
+     * Returns {@code null} if the header is absent or malformed.
      */
     private String extractBearerToken(HttpServletRequest request) {
-        String authorizationHeader = request.getHeader("Authorization");
-        if (!StringUtils.hasText(authorizationHeader) || !authorizationHeader.startsWith("Bearer ")) {
+        String authHeader = request.getHeader("Authorization");
+        if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
             return null;
         }
-        String bearerToken = authorizationHeader.substring("Bearer ".length());
-        return bearerToken;
+        return authHeader.substring("Bearer ".length());
     }
 
-    private void authenticateBearerToken(HttpServletRequest request, String jwt) {
+    /**
+     * Builds a Spring Security authentication token from the validated JWT and
+     * registers it in the current {@link SecurityContextHolder}.
+     */
+    private void authenticateRequest(HttpServletRequest request, String jwt) {
         String email = jwtUtil.getEmailFromToken(jwt);
         List<String> roles = jwtUtil.getRolesFromToken(jwt);
 
         List<SimpleGrantedAuthority> authorities = roles.stream()
                 .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
+                .toList();
 
         User principal = new User(email, "", authorities);
 
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                principal,
-                jwt,
-                authorities);
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(principal, jwt, authorities);
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Stateless authenticated user: " + email + " with authorities: " + authorities);
-        }
+        log.debug("Authenticated stateless request for user '{}' with authorities {}", email, authorities);
     }
 }

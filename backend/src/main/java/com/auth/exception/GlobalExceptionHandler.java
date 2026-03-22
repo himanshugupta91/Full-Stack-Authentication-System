@@ -1,128 +1,102 @@
 package com.auth.exception;
 
-import com.auth.dto.response.MessageResponse;
+import com.auth.dto.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Global exception handler for REST controllers.
+ * Centralised exception handler that translates domain exceptions into
+ * consistent {@link ApiResponse} error payloads for all REST controllers.
  */
 @ControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    /**
-     * Handle validation errors (e.g. @Valid annotations).
-     */
+    /** Handles bean-validation errors from {@code @Valid} annotations. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<MessageResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        String errorMessage = buildValidationErrorMessage(ex.getBindingResult().getFieldErrors());
-        return ResponseEntity.badRequest()
-                .body(new MessageResponse(errorMessage, false, HttpStatus.BAD_REQUEST.value()));
+    public ResponseEntity<ApiResponse<Void>> handleValidationException(MethodArgumentNotValidException ex) {
+        String message = buildValidationMessage(ex.getBindingResult().getFieldErrors());
+        return ResponseEntity.badRequest().body(ApiResponse.error(message));
     }
 
-    /**
-     * Handle bad credentials (login failure).
-     */
+    /** Handles login failures — returns a generic 401 to avoid information disclosure. */
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<MessageResponse> handleBadCredentialsException(BadCredentialsException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentialsException(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new MessageResponse("Invalid email or password!", false, HttpStatus.UNAUTHORIZED.value()));
+                .body(ApiResponse.error("Invalid email or password!"));
     }
 
-    /**
-     * Handle UserAlreadyExistsException.
-     */
+    /** Handles duplicate-email registration attempts. */
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<MessageResponse> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleUserAlreadyExistsException(UserAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.CONFLICT.value()));
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Handle ResourceNotFoundException.
-     */
+    /** Handles look-up failures for users, roles, and other entities. */
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<MessageResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.NOT_FOUND.value()));
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Handle TokenValidationException.
-     */
+    /** Handles invalid or expired JWT / reset tokens. */
     @ExceptionHandler(TokenValidationException.class)
-    public ResponseEntity<MessageResponse> handleTokenValidationException(TokenValidationException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleTokenValidationException(TokenValidationException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.UNAUTHORIZED.value()));
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Handle temporary account lockout errors.
-     */
+    /** Handles temporary account lockouts and sets a {@code Retry-After} header. */
     @ExceptionHandler(AccountLockedException.class)
-    public ResponseEntity<MessageResponse> handleAccountLockedException(AccountLockedException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleAccountLockedException(AccountLockedException ex) {
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, ex.getRetryAfterSeconds())));
         return ResponseEntity.status(HttpStatus.LOCKED)
                 .headers(headers)
-                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.LOCKED.value()));
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Handle request-rate limit violations.
-     */
+    /** Handles request-rate limit violations and sets a {@code Retry-After} header. */
     @ExceptionHandler(RateLimitExceededException.class)
-    public ResponseEntity<MessageResponse> handleRateLimitExceededException(RateLimitExceededException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleRateLimitExceededException(RateLimitExceededException ex) {
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, ex.getRetryAfterSeconds())));
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .headers(headers)
-                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.TOO_MANY_REQUESTS.value()));
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Handle client-side validation/argument errors raised from service layer.
-     */
+    /** Handles client-side validation errors raised from the service layer. */
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<MessageResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest()
-                .body(new MessageResponse(ex.getMessage(), false, HttpStatus.BAD_REQUEST.value()));
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
     }
 
-    /**
-     * Handle generic exceptions.
-     */
+    /** Catch-all handler — logs unexpected exceptions and returns a safe 500 response. */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<MessageResponse> handleException(Exception ex) {
+    public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
         log.error("Unhandled exception in API layer", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new MessageResponse(
-                        "An unexpected error occurred. Please try again later.",
-                        false,
-                        HttpStatus.INTERNAL_SERVER_ERROR.value()));
+                .body(ApiResponse.error("An unexpected error occurred. Please try again later."));
     }
 
-    private String buildValidationErrorMessage(List<FieldError> fieldErrors) {
+    private String buildValidationMessage(List<FieldError> fieldErrors) {
         String message = fieldErrors.stream()
                 .map(FieldError::getDefaultMessage)
                 .filter(StringUtils::hasText)
                 .collect(Collectors.joining(", "));
-
-        if (!StringUtils.hasText(message)) {
-            return "Validation failed.";
-        }
-        return message;
+        return StringUtils.hasText(message) ? message : "Validation failed.";
     }
 }

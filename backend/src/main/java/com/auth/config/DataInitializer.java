@@ -11,12 +11,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Data initializer to create default roles and admin user on startup.
+ * Seeds default roles and an initial admin account at application startup.
+ * Admin seeding is opt-in via {@code app.seed.admin.enabled=true}.
  */
 @Component
 @RequiredArgsConstructor
@@ -24,9 +25,7 @@ import java.util.Set;
 public class DataInitializer implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
-
     private final UserRepository userRepository;
-
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.seed.admin.name:}")
@@ -41,7 +40,7 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${app.seed.admin.enabled:false}")
     private boolean seedAdminEnabled;
 
-    /** Seeds default roles and a local admin account if they are missing at startup. */
+    /** Seeds default roles and, if enabled, an initial admin user at startup. */
     @Override
     public void run(String... args) {
         Role userRole = findOrCreateRole(RoleName.ROLE_USER);
@@ -51,7 +50,7 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
-        validateSeedAdminConfiguration();
+        validateSeedAdminConfig();
 
         if (!userRepository.existsByEmailIgnoreCase(seedAdminEmail)) {
             User admin = new User();
@@ -59,21 +58,20 @@ public class DataInitializer implements CommandLineRunner {
             admin.setEmail(seedAdminEmail);
             admin.setPassword(passwordEncoder.encode(seedAdminPassword));
             admin.setEnabled(true);
-            admin.setRoles(new HashSet<>(Set.of(adminRole, userRole)));
+            admin.setRoles(Set.of(adminRole, userRole));
 
             userRepository.save(admin);
             log.info("Default admin user created: {}", seedAdminEmail);
         }
     }
 
-    private void validateSeedAdminConfiguration() {
-        if (isBlank(seedAdminName) || isBlank(seedAdminEmail) || isBlank(seedAdminPassword)) {
-            throw new IllegalStateException("app.seed.admin.enabled=true requires name, email, and password.");
+    private void validateSeedAdminConfig() {
+        if (!StringUtils.hasText(seedAdminName)
+                || !StringUtils.hasText(seedAdminEmail)
+                || !StringUtils.hasText(seedAdminPassword)) {
+            throw new IllegalStateException(
+                    "app.seed.admin.enabled=true requires name, email, and password.");
         }
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
     }
 
     private Role findOrCreateRole(RoleName roleName) {

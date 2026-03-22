@@ -4,6 +4,7 @@ import com.auth.dto.response.UserDto;
 import com.auth.entity.User;
 import com.auth.mapper.UserMapper;
 import com.auth.repository.UserRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("AdminServiceImpl")
 class AdminServiceImplTest {
 
     @Mock
@@ -38,6 +40,7 @@ class AdminServiceImplTest {
     private AdminServiceImpl adminService;
 
     @Test
+    @DisplayName("getUsers: out-of-range inputs → normalizes paging params and defaults sort field")
     void getUsers_whenInputsOutOfRange_normalizesPagingAndSort() {
         User user = new User();
         user.setEmail("alice@example.com");
@@ -66,6 +69,7 @@ class AdminServiceImplTest {
     }
 
     @Test
+    @DisplayName("getUsers: invalid role filter → throws IllegalArgumentException")
     void getUsers_whenRoleFilterInvalid_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class,
                 () -> adminService.getUsers(0, 20, null, null, "manager", "createdAt", "desc"));

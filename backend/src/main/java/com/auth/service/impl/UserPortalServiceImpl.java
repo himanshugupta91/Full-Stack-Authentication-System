@@ -13,7 +13,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 /**
- * User-facing dashboard/profile composition logic.
+ * Composes user-facing dashboard and profile payloads.
  */
 @Service
 @RequiredArgsConstructor
@@ -25,18 +25,18 @@ public class UserPortalServiceImpl implements UserPortalService {
     @Override
     public UserDashboardDto getDashboard(String email) {
         User user = userService.getUserByEmail(email);
-        UserDashboardDto response = userMapper.toUserDashboardDto(user);
+        UserDashboardDto dashboard = userMapper.toUserDashboardDto(user);
         String displayName = user.getName() != null && !user.getName().isBlank() ? user.getName() : "User";
-        response.setMessage("Welcome back, " + displayName + "!");
-        response.setTimestamp(DateTimeUtil.nowInIst12HourFormat());
-        return response;
+        dashboard.setMessage("Welcome back, " + displayName + "!");
+        dashboard.setTimestamp(DateTimeUtil.nowInIst12HourFormat());
+        return dashboard;
     }
 
     @Override
-    @Cacheable(cacheNames = CacheNames.USER_PROFILE, key = "#email == null ? 'unknown' : #email.toLowerCase()")
+    @Cacheable(cacheNames = CacheNames.USER_PROFILE,
+            key = "#email == null ? 'unknown' : #email.toLowerCase()")
     public UserDto getProfile(String email) {
         User user = userService.getUserByEmail(email);
-        UserDto profile = userMapper.toDto(user);
-        return profile;
+        return userMapper.toDto(user);
     }
 }

@@ -1,29 +1,28 @@
 package com.auth.service.impl;
 
-import com.auth.entity.Role;
-import com.auth.entity.RoleName;
-import com.auth.entity.User;
-import com.auth.exception.ResourceNotFoundException;
-import com.auth.exception.TokenValidationException;
-import com.auth.exception.UserAlreadyExistsException;
-import com.auth.dto.response.AuthTokens;
+import com.auth.dto.request.ChangePasswordRequest;
 import com.auth.dto.request.LoginRequest;
 import com.auth.dto.request.OtpVerifyRequest;
 import com.auth.dto.request.RegisterRequest;
 import com.auth.dto.request.ResetPasswordRequest;
 import com.auth.dto.request.UpdatePasswordRequest;
-import com.auth.service.auth.AuthAbuseProtectionService;
+import com.auth.dto.response.AuthTokens;
+import com.auth.dto.response.MessageResponse;
+import com.auth.entity.RoleName;
+import com.auth.entity.User;
+import com.auth.exception.ResourceNotFoundException;
+import com.auth.exception.TokenValidationException;
+import com.auth.exception.UserAlreadyExistsException;
+import com.auth.mapper.UserMapper;
 import com.auth.service.AuthService;
+import com.auth.service.RoleService;
+import com.auth.service.UserService;
+import com.auth.service.auth.AuthAbuseProtectionService;
 import com.auth.service.auth.AuthTokenService;
 import com.auth.service.support.EmailService;
 import com.auth.service.support.OtpService;
 import com.auth.service.support.PasswordPolicyService;
 import com.auth.service.support.TokenHashService;
-import com.auth.dto.response.MessageResponse;
-import com.auth.mapper.UserMapper;
-import com.auth.dto.request.ChangePasswordRequest;
-import com.auth.service.RoleService;
-import com.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,11 +36,11 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 
 /**
- * Implementation of AuthService.
+ * Core authentication service — handles registration, OTP verification, login,
+ * password reset, and password change flows.
  */
 @Service
 @Slf4j
@@ -49,25 +48,15 @@ import java.util.Set;
 public class AuthServiceImpl implements AuthService {
 
     private final UserService userService;
-
     private final RoleService roleService;
-
     private final PasswordEncoder passwordEncoder;
-
     private final AuthenticationManager authenticationManager;
-
     private final AuthTokenService authTokenService;
-
     private final EmailService emailService;
-
     private final OtpService otpService;
-
     private final UserMapper userMapper;
-
     private final TokenHashService tokenHashService;
-
     private final PasswordPolicyService passwordPolicyService;
-
     private final AuthAbuseProtectionService authAbuseProtectionService;
 
     @Value("${otp.expiration.minutes:5}")
@@ -77,334 +66,270 @@ public class AuthServiceImpl implements AuthService {
     private int resetTokenExpirationMinutes;
 
     /**
-     * Registers a new user with the provided details.
-     * Checks for existing email, encodes password, generates OTP, and sends
-     * verification email.
+     * Registers a new user account.
      *
-     * @param request The registration request containing user details.
-     * @return MessageResponse indicating success status and message.
-     * @throws UserAlreadyExistsException if the email is already registered.
+     * <p>Validates the email uniqueness, enforces the password policy, persists the
+     * user with a hashed OTP, and sends a verification email.
+     *
+     * @throws UserAlreadyExistsException if the email is already registered
      */
     @Override
     @Transactional
     public MessageResponse register(RegisterRequest request) {
-        String normalizedEmail = normalizeEmail(request.getEmail());
-        if (userService.existsByEmail(normalizedEmail)) {
+        String email = normalizeEmail(request.getEmail());
+        if (userService.existsByEmail(email)) {
             throw new UserAlreadyExistsException("Email already registered!");
         }
 
-        passwordPolicyService.validate(request.getPassword(), normalizedEmail);
+        passwordPolicyService.validate(request.getPassword(), email);
 
         User user = userMapper.toEntity(request);
-        user.setEmail(normalizedEmail);
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAuthProvider("local");
         user.setAuthProviderUserId(null);
 
-        String otp = generateAndStoreVerificationOtp(user);
-        assignDefaultUserRole(user);
+        String otp = storeVerificationOtp(user);
+        user.setRoles(Set.of(roleService.findOrCreateRole(RoleName.ROLE_USER)));
 
         userService.save(user);
         sendOtpEmailSafely(user, otp, "registration");
 
-        MessageResponse response = new MessageResponse(
-                "Registration successful! Please check your email for OTP verification.", true);
-        return response;
+        return new MessageResponse("Registration successful! Please check your email for OTP verification.", true);
     }
 
     /**
-     * Verifies the email address using the provided OTP.
+     * Verifies a user's email address using the OTP they received.
      *
-     * @param request The request containing email and OTP.
-     * @return MessageResponse indicating success.
-     * @throws ResourceNotFoundException  if user not found.
-     * @throws UserAlreadyExistsException if email is already verified.
-     * @throws TokenValidationException   if OTP is invalid or expired.
+     * @throws ResourceNotFoundException  if no user exists for the given email
+     * @throws UserAlreadyExistsException if the email is already verified
+     * @throws TokenValidationException   if the OTP is incorrect or expired
      */
     @Override
     @Transactional
     public MessageResponse verifyOtp(OtpVerifyRequest request) {
-        String normalizedEmail = normalizeEmail(request.getEmail());
-        authAbuseProtectionService.guardOtpVerification(normalizedEmail);
+        String email = normalizeEmail(request.getEmail());
+        authAbuseProtectionService.guardOtpVerification(email);
 
-        User user = getExistingUserByEmail(normalizedEmail);
-        ensureEmailNotYetVerified(user);
-        ensureOtpMatches(user, request.getOtp());
-        ensureTokenNotExpired(user.getOtpExpiry(), "OTP has expired! Please request a new one.");
+        User user = requireUserByEmail(email);
+        requireEmailNotVerified(user);
+        verifyOtpMatch(user, request.getOtp());
+        requireTokenNotExpired(user.getOtpExpiry(), "OTP has expired! Please request a new one.");
 
         user.setEnabled(true);
         user.setVerificationOtp(null);
         user.setOtpExpiry(null);
         authAbuseProtectionService.clearOtpFailures(user);
         userService.save(user);
-        sendWelcomeEmailSafely(user);
 
-        MessageResponse response = new MessageResponse("Email verified successfully! You can now login.", true);
-        return response;
+        sendWelcomeEmailSafely(user);
+        return new MessageResponse("Email verified successfully! You can now login.", true);
     }
 
     /**
-     * Authenticates a user and generates a JWT token.
+     * Authenticates a user with email and password, returning a fresh token pair.
      *
-     * @param request The login request containing email and password.
-     * @return AuthResponse containing user details and JWT token.
-     * @throws org.springframework.security.authentication.BadCredentialsException if
-     *                                                                             credentials
-     *                                                                             are
-     *                                                                             invalid.
-     * @throws TokenValidationException                                            if
-     *                                                                             email
-     *                                                                             is
-     *                                                                             not
-     *                                                                             verified.
+     * @throws BadCredentialsException  if the credentials are invalid
+     * @throws TokenValidationException if the email is not yet verified
      */
     @Override
     public AuthTokens login(LoginRequest request) {
-        String normalizedEmail = normalizeEmail(request.getEmail());
-        authAbuseProtectionService.guardLoginAttempt(normalizedEmail);
+        String email = normalizeEmail(request.getEmail());
+        authAbuseProtectionService.guardLoginAttempt(email);
 
-        User user = userService.findByEmail(normalizedEmail)
-                .orElseThrow(() -> {
-                    authAbuseProtectionService.recordFailedLogin(normalizedEmail);
-                    return new BadCredentialsException("Invalid email or password!");
-                });
+        User user = userService.findByEmail(email).orElseGet(() -> {
+            authAbuseProtectionService.recordFailedLogin(email);
+            throw new BadCredentialsException("Invalid email or password!");
+        });
 
         if (!user.isEnabled()) {
             throw new TokenValidationException("Email not verified! Please verify your email before logging in.");
         }
 
-        authenticateLoginCredentials(normalizedEmail, request.getPassword());
+        authenticateCredentials(email, request.getPassword());
         authAbuseProtectionService.clearLoginFailures(user);
 
-        AuthTokens tokens = authTokenService.issueTokens(user);
-        return tokens;
+        return authTokenService.issueTokens(user);
     }
 
     /**
-     * Initiates the password reset process by generating a token and sending an
-     * email.
-     *
-     * @param request The request containing the user's email.
-     * @return MessageResponse indicating the email was sent (generic message for
-     *         security).
+     * Initiates password reset by generating a token and sending a reset link.
+     * Always returns the same generic message to prevent email enumeration.
      */
     @Override
     @Transactional
     public MessageResponse resetPassword(ResetPasswordRequest request) {
-        String normalizedEmail = normalizeEmail(request.getEmail());
-        authAbuseProtectionService.guardResetPassword(normalizedEmail);
-        MessageResponse response = new MessageResponse(
-                "If an account exists with this email, a reset link will be sent.",
-                true);
+        String email = normalizeEmail(request.getEmail());
+        authAbuseProtectionService.guardResetPassword(email);
 
-        User user = userService.findByEmail(normalizedEmail).orElse(null);
-        if (user == null) {
-            return response;
-        }
+        MessageResponse genericResponse = new MessageResponse(
+                "If an account exists with this email, a reset link will be sent.", true);
 
-        String resetToken = generateAndStoreResetToken(user);
-        userService.save(user);
-        sendResetEmailSafely(user, resetToken);
+        userService.findByEmail(email).ifPresent(user -> {
+            String resetToken = storeResetToken(user);
+            userService.save(user);
+            sendResetEmailSafely(user, resetToken);
+        });
 
-        return response;
+        return genericResponse;
     }
 
     /**
-     * Updates the user's password using a valid reset token.
+     * Completes a password reset using the token sent to the user's email.
      *
-     * @param request The request containing the reset token and new password.
-     * @return MessageResponse indicating success.
-     * @throws TokenValidationException if token is invalid or expired.
+     * @throws TokenValidationException if the token is invalid or expired
      */
     @Override
     @Transactional
     public MessageResponse updatePassword(UpdatePasswordRequest request) {
-        String resetTokenHash = tokenHashService.hash(request.getToken());
-        User user = userService.findByResetToken(resetTokenHash)
+        String tokenHash = tokenHashService.hash(request.getToken());
+        User user = userService.findByResetToken(tokenHash)
                 .orElseThrow(() -> new TokenValidationException("Invalid or expired reset token!"));
 
-        ensureTokenNotExpired(user.getResetTokenExpiry(), "Reset token has expired! Please request a new one.");
+        requireTokenNotExpired(user.getResetTokenExpiry(), "Reset token has expired! Please request a new one.");
 
         passwordPolicyService.validate(request.getNewPassword(), user.getEmail());
-
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        clearStoredResetToken(user);
+        clearResetToken(user);
         userService.save(user);
-        sendPasswordChangedEmailSafely(user, "reset-token update");
 
-        MessageResponse response = new MessageResponse("Password updated successfully! You can now login.", true);
-        return response;
+        sendPasswordChangedEmailSafely(user, "reset-token update");
+        return new MessageResponse("Password updated successfully! You can now login.", true);
     }
 
     /**
-     * Resends the OTP for email verification.
+     * Resends an OTP to the given email address for users who missed the original.
      *
-     * @param email The email address to resend OTP to.
-     * @return MessageResponse indicating success.
-     * @throws ResourceNotFoundException  if user not found.
-     * @throws UserAlreadyExistsException if email is already verified.
+     * @throws ResourceNotFoundException  if no user exists for the given email
+     * @throws UserAlreadyExistsException if the email is already verified
      */
     @Override
     @Transactional
     public MessageResponse resendOtp(String email) {
-        String normalizedEmail = normalizeEmail(email);
-        authAbuseProtectionService.guardResendOtp(normalizedEmail);
+        String normalized = normalizeEmail(email);
+        authAbuseProtectionService.guardResendOtp(normalized);
 
-        User user = getExistingUserByEmail(normalizedEmail);
-        ensureEmailNotYetVerified(user);
+        User user = requireUserByEmail(normalized);
+        requireEmailNotVerified(user);
 
-        String otp = generateAndStoreVerificationOtp(user);
+        String otp = storeVerificationOtp(user);
         userService.save(user);
         sendOtpEmailSafely(user, otp, "resend");
 
-        MessageResponse response = new MessageResponse("OTP sent successfully! Please check your email.", true);
-        return response;
+        return new MessageResponse("OTP sent successfully! Please check your email.", true);
     }
 
     /**
-     * Changes the authenticated user's password.
+     * Changes the password for an already-authenticated user.
      *
-     * @param email   The email of the authenticated user.
-     * @param request The request containing current and new password.
-     * @return MessageResponse indicating success.
-     * @throws ResourceNotFoundException                                           if
-     *                                                                             user
-     *                                                                             not
-     *                                                                             found.
-     * @throws org.springframework.security.authentication.BadCredentialsException if
-     *                                                                             current
-     *                                                                             password
-     *                                                                             is
-     *                                                                             incorrect.
+     * @throws ResourceNotFoundException if the authenticated user cannot be found
+     * @throws BadCredentialsException   if the current password is incorrect
      */
     @Override
     @Transactional
     public MessageResponse changePassword(String email, ChangePasswordRequest request) {
-        User user = getExistingUserByEmail(email);
+        User user = requireUserByEmail(email);
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new BadCredentialsException("Incorrect current password!");
         }
 
         passwordPolicyService.validate(request.getNewPassword(), user.getEmail());
-
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userService.save(user);
+
         sendPasswordChangedEmailSafely(user, "authenticated password change");
-
-        MessageResponse response = new MessageResponse("Password changed successfully!", true);
-        return response;
+        return new MessageResponse("Password changed successfully!", true);
     }
 
-    private User getExistingUserByEmail(String email) {
-        String normalizedEmail = normalizeEmail(email);
-        Optional<User> userOpt = userService.findByEmail(normalizedEmail);
-        User user = userOpt.orElseThrow(() -> new ResourceNotFoundException("User not found!"));
-        return user;
+    // ── Private helpers ──────────────────────────────────────────────────────
+
+    private User requireUserByEmail(String email) {
+        return userService.findByEmail(normalizeEmail(email))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
     }
 
-    private void ensureEmailNotYetVerified(User user) {
+    private void requireEmailNotVerified(User user) {
         if (user.isEnabled()) {
             throw new UserAlreadyExistsException("Email already verified!");
         }
     }
 
-    private void ensureOtpMatches(User user, String rawOtp) {
-        if (tokenHashService.matches(rawOtp, user.getVerificationOtp())) {
-            return;
+    private void verifyOtpMatch(User user, String rawOtp) {
+        if (!tokenHashService.matches(rawOtp, user.getVerificationOtp())) {
+            authAbuseProtectionService.recordFailedOtp(user);
+            throw new TokenValidationException("Invalid OTP!");
         }
-        authAbuseProtectionService.recordFailedOtp(user);
-        throw new TokenValidationException("Invalid OTP!");
     }
 
-    private void ensureTokenNotExpired(LocalDateTime expiry, String errorMessage) {
-        if (isTokenExpired(expiry)) {
+    private void requireTokenNotExpired(LocalDateTime expiry, String errorMessage) {
+        if (expiry == null || expiry.isBefore(LocalDateTime.now())) {
             throw new TokenValidationException(errorMessage);
         }
     }
 
-    private String generateAndStoreVerificationOtp(User user) {
+    private String storeVerificationOtp(User user) {
         String otp = otpService.generateOtp();
-        String otpHash = tokenHashService.hash(otp);
-        LocalDateTime expiry = LocalDateTime.now().plusMinutes(otpExpirationMinutes);
-
-        user.setVerificationOtp(otpHash);
-        user.setOtpExpiry(expiry);
+        user.setVerificationOtp(tokenHashService.hash(otp));
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(otpExpirationMinutes));
         return otp;
     }
 
-    private void assignDefaultUserRole(User user) {
-        Role userRole = roleService.findOrCreateRole(RoleName.ROLE_USER);
-        user.setRoles(Set.of(userRole));
-    }
-
-    private String generateAndStoreResetToken(User user) {
+    private String storeResetToken(User user) {
         String resetToken = otpService.generateResetToken();
-        String resetTokenHash = tokenHashService.hash(resetToken);
-        LocalDateTime expiry = LocalDateTime.now().plusMinutes(resetTokenExpirationMinutes);
-
-        user.setResetToken(resetTokenHash);
-        user.setResetTokenExpiry(expiry);
+        user.setResetToken(tokenHashService.hash(resetToken));
+        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(resetTokenExpirationMinutes));
         return resetToken;
     }
 
-    private boolean isTokenExpired(LocalDateTime expiry) {
-        boolean tokenExpired = expiry == null || expiry.isBefore(LocalDateTime.now());
-        return tokenExpired;
+    private void clearResetToken(User user) {
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+    }
+
+    private void authenticateCredentials(String email, String password) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, password));
+        } catch (BadCredentialsException ex) {
+            authAbuseProtectionService.recordFailedLogin(email);
+            throw ex;
+        }
+    }
+
+    private String normalizeEmail(String email) {
+        return StringUtils.hasText(email) ? email.trim().toLowerCase(Locale.ROOT) : email;
     }
 
     private void sendOtpEmailSafely(User user, String otp, String context) {
         try {
             emailService.sendOtpEmail(user.getEmail(), user.getName(), otp);
-        } catch (RuntimeException exception) {
-            log.warn("Failed to send OTP email during {} for {}", context, user.getEmail(), exception);
+        } catch (RuntimeException ex) {
+            log.warn("Failed to send OTP email during {} for {}", context, user.getEmail(), ex);
         }
     }
 
     private void sendResetEmailSafely(User user, String resetToken) {
         try {
             emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), resetToken);
-        } catch (RuntimeException exception) {
-            log.warn("Failed to send password reset email for {}", user.getEmail(), exception);
+        } catch (RuntimeException ex) {
+            log.warn("Failed to send password reset email for {}", user.getEmail(), ex);
         }
     }
 
     private void sendWelcomeEmailSafely(User user) {
         try {
             emailService.sendWelcomeEmail(user.getEmail(), user.getName());
-        } catch (RuntimeException exception) {
-            log.warn("Failed to send welcome email for {}", user.getEmail(), exception);
+        } catch (RuntimeException ex) {
+            log.warn("Failed to send welcome email for {}", user.getEmail(), ex);
         }
     }
 
     private void sendPasswordChangedEmailSafely(User user, String context) {
         try {
             emailService.sendPasswordChangedConfirmationEmail(user.getEmail(), user.getName());
-        } catch (RuntimeException exception) {
-            log.warn("Failed to send password changed confirmation email during {} for {}", context, user.getEmail(),
-                    exception);
+        } catch (RuntimeException ex) {
+            log.warn("Failed to send password-changed confirmation email during {} for {}", context, user.getEmail(), ex);
         }
-    }
-
-    private void authenticateLoginCredentials(String normalizedEmail, String password) {
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(normalizedEmail, password));
-        } catch (BadCredentialsException exception) {
-            authAbuseProtectionService.recordFailedLogin(normalizedEmail);
-            throw exception;
-        }
-    }
-
-    private void clearStoredResetToken(User user) {
-        user.setResetToken(null);
-        user.setResetTokenExpiry(null);
-    }
-
-    private String normalizeEmail(String email) {
-        if (!StringUtils.hasText(email)) {
-            return email;
-        }
-        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

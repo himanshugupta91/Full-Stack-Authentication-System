@@ -128,7 +128,7 @@
   /* Transitions */
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  --theme-transition-duration: 280ms;
+  --theme-transition-duration: 240ms;
   --theme-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Typography */
@@ -162,12 +162,9 @@
     background-color,
     border-color,
     outline-color,
-    text-decoration-color,
     fill,
     stroke,
-    box-shadow,
-    backdrop-filter,
-    -webkit-backdrop-filter;
+    box-shadow;
   transition-duration: var(--theme-transition-duration);
   transition-timing-function: var(--theme-transition-easing);
 }
@@ -1185,6 +1182,72 @@ h6 {
   margin: 0 auto;
   position: relative;
   z-index: 1;
+}
+
+.simple-hero-section {
+  padding: 4rem 0 2.4rem;
+  text-align: center;
+}
+
+.simple-hero-content {
+  max-width: 780px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.simple-hero-badge {
+  font-weight: 600;
+  letter-spacing: 0.35px;
+}
+
+.simple-hero-title {
+  font-family: var(--font-heading);
+  font-size: clamp(2.3rem, 5vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -1.2px;
+  margin-bottom: 0.95rem;
+  color: var(--charcoal);
+}
+
+.simple-hero-highlight {
+  background: linear-gradient(120deg, var(--text-gradient-mid), var(--text-gradient-end));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.simple-hero-greeting {
+  margin: 0 0 0.9rem;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--hero-greeting-color);
+}
+
+.simple-hero-copy {
+  font-size: 1.06rem;
+  max-width: 40rem;
+  margin: 0 auto 1.7rem;
+  color: var(--section-muted-color);
+}
+
+.simple-hero-actions {
+  justify-content: center;
+}
+
+.simple-hero-actions .btn {
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .simple-hero-title {
+    font-size: clamp(2rem, 10vw, 2.8rem);
+  }
+
+  .simple-hero-actions .btn {
+    width: 100%;
+  }
 }
 
 .hero-ornament {
@@ -2795,5 +2858,590 @@ a:hover {
 
   .bento-navbar .bento-nav-cell.ms-2 {
     margin-left: 0 !important;
+  }
+}
+
+/* ========================================
+   Hero 3D Refresh
+======================================== */
+:root {
+  --hero3d-ink: #0f172a;
+  --hero3d-muted: #4d5d72;
+  --hero3d-kicker-bg: linear-gradient(140deg, #0f172a, #334155);
+  --hero3d-kicker-border: rgba(148, 163, 184, 0.45);
+  --hero3d-kicker-text: #f8fafc;
+  --hero3d-highlight-gradient: linear-gradient(124deg, #6d28d9 0%, #ec4899 36%, #f59e0b 68%, #06b6d4 100%);
+  --hero3d-highlight-shadow: rgba(124, 58, 237, 0.28);
+  --hero3d-greeting: #1d4ed8;
+  --hero3d-btn-primary-bg: linear-gradient(130deg, #1d4ed8 0%, #0369a1 100%);
+  --hero3d-btn-primary-hover-bg: linear-gradient(130deg, #1e40af 0%, #0f766e 100%);
+  --hero3d-btn-primary-border: rgba(37, 99, 235, 0.2);
+  --hero3d-btn-primary-text: #f8fafc;
+  --hero3d-btn-secondary-bg: rgba(255, 255, 255, 0.8);
+  --hero3d-btn-secondary-hover-bg: rgba(241, 245, 249, 0.94);
+  --hero3d-btn-secondary-border: rgba(100, 116, 139, 0.34);
+  --hero3d-btn-secondary-text: #0f172a;
+  --hero3d-vault-shadow: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.2) 42%, rgba(236, 72, 153, 0.16) 65%, rgba(148, 163, 184, 0.05) 82%);
+  --hero3d-grid-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(223, 242, 255, 0.8));
+  --hero3d-grid-border: rgba(99, 102, 241, 0.26);
+  --hero3d-grid-line: rgba(99, 102, 241, 0.14);
+  --hero3d-vault-panel-border: rgba(115, 128, 190, 0.38);
+  --hero3d-vault-panel-stroke: rgba(255, 255, 255, 0.34);
+  --hero3d-vault-panel-main: linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(224, 242, 254, 0.86) 42%, rgba(216, 180, 254, 0.72) 100%);
+  --hero3d-vault-panel-left: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(187, 247, 208, 0.78) 44%, rgba(125, 211, 252, 0.68) 100%);
+  --hero3d-vault-panel-right: linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(254, 215, 170, 0.82) 42%, rgba(251, 113, 133, 0.7) 100%);
+  --hero3d-vault-panel-text: #0f1f46;
+  --hero3d-vault-panel-copy: #2d4267;
+  --hero3d-vault-pill-bg: rgba(255, 255, 255, 0.52);
+  --hero3d-vault-pill-border: rgba(99, 102, 241, 0.3);
+  --hero3d-vault-pill-text: #312e81;
+  --hero3d-vault-stat-bg: rgba(255, 255, 255, 0.66);
+  --hero3d-vault-stat-border: rgba(99, 102, 241, 0.3);
+  --hero3d-vault-stat-text: #1e1b4b;
+  --hero3d-vault-beam-a: linear-gradient(180deg, rgba(59, 130, 246, 0), rgba(59, 130, 246, 0.8), rgba(59, 130, 246, 0));
+  --hero3d-vault-beam-b: linear-gradient(180deg, rgba(236, 72, 153, 0), rgba(236, 72, 153, 0.75), rgba(236, 72, 153, 0));
+  --hero3d-vault-glow-a: rgba(59, 130, 246, 0.24);
+  --hero3d-vault-glow-b: rgba(236, 72, 153, 0.22);
+  --hero3d-signal-bg: rgba(255, 255, 255, 0.76);
+  --hero3d-signal-border: rgba(99, 102, 241, 0.28);
+  --hero3d-signal-text: #312e81;
+  --hero3d-signal-a-accent: rgba(59, 130, 246, 0.3);
+  --hero3d-signal-b-accent: rgba(16, 185, 129, 0.3);
+  --hero3d-signal-c-accent: rgba(236, 72, 153, 0.3);
+}
+
+:root[data-theme='dark'] {
+  --hero3d-ink: #eff6ff;
+  --hero3d-muted: #9fb2cd;
+  --hero3d-kicker-bg: linear-gradient(140deg, #1e3a8a, #0369a1);
+  --hero3d-kicker-border: rgba(125, 211, 252, 0.3);
+  --hero3d-kicker-text: #f8fafc;
+  --hero3d-highlight-gradient: linear-gradient(124deg, #a78bfa 0%, #f472b6 35%, #fbbf24 65%, #22d3ee 100%);
+  --hero3d-highlight-shadow: rgba(167, 139, 250, 0.28);
+  --hero3d-greeting: #7dd3fc;
+  --hero3d-btn-primary-bg: linear-gradient(130deg, #2563eb 0%, #0284c7 100%);
+  --hero3d-btn-primary-hover-bg: linear-gradient(130deg, #1d4ed8 0%, #0369a1 100%);
+  --hero3d-btn-primary-border: rgba(56, 189, 248, 0.28);
+  --hero3d-btn-primary-text: #f8fafc;
+  --hero3d-btn-secondary-bg: rgba(15, 23, 42, 0.74);
+  --hero3d-btn-secondary-hover-bg: rgba(30, 41, 59, 0.9);
+  --hero3d-btn-secondary-border: rgba(125, 211, 252, 0.24);
+  --hero3d-btn-secondary-text: #e2e8f0;
+  --hero3d-vault-shadow: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.22), rgba(56, 189, 248, 0.22) 42%, rgba(236, 72, 153, 0.2) 68%, rgba(30, 41, 59, 0.08) 86%);
+  --hero3d-grid-surface: linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(30, 41, 59, 0.68));
+  --hero3d-grid-border: rgba(125, 211, 252, 0.34);
+  --hero3d-grid-line: rgba(125, 211, 252, 0.18);
+  --hero3d-vault-panel-border: rgba(125, 211, 252, 0.36);
+  --hero3d-vault-panel-stroke: rgba(186, 230, 253, 0.2);
+  --hero3d-vault-panel-main: linear-gradient(160deg, rgba(30, 58, 138, 0.58), rgba(79, 70, 229, 0.46) 42%, rgba(217, 70, 239, 0.34) 100%);
+  --hero3d-vault-panel-left: linear-gradient(160deg, rgba(8, 145, 178, 0.56), rgba(5, 150, 105, 0.46) 44%, rgba(37, 99, 235, 0.34) 100%);
+  --hero3d-vault-panel-right: linear-gradient(160deg, rgba(217, 119, 6, 0.58), rgba(239, 68, 68, 0.44) 42%, rgba(219, 39, 119, 0.34) 100%);
+  --hero3d-vault-panel-text: #eff6ff;
+  --hero3d-vault-panel-copy: #d6e8ff;
+  --hero3d-vault-pill-bg: rgba(15, 23, 42, 0.52);
+  --hero3d-vault-pill-border: rgba(167, 139, 250, 0.36);
+  --hero3d-vault-pill-text: #ddd6fe;
+  --hero3d-vault-stat-bg: rgba(15, 23, 42, 0.56);
+  --hero3d-vault-stat-border: rgba(125, 211, 252, 0.3);
+  --hero3d-vault-stat-text: #dbeafe;
+  --hero3d-vault-beam-a: linear-gradient(180deg, rgba(56, 189, 248, 0), rgba(56, 189, 248, 0.86), rgba(56, 189, 248, 0));
+  --hero3d-vault-beam-b: linear-gradient(180deg, rgba(244, 114, 182, 0), rgba(244, 114, 182, 0.82), rgba(244, 114, 182, 0));
+  --hero3d-vault-glow-a: rgba(56, 189, 248, 0.26);
+  --hero3d-vault-glow-b: rgba(244, 114, 182, 0.24);
+  --hero3d-signal-bg: rgba(15, 23, 42, 0.76);
+  --hero3d-signal-border: rgba(167, 139, 250, 0.32);
+  --hero3d-signal-text: #dbeafe;
+  --hero3d-signal-a-accent: rgba(56, 189, 248, 0.3);
+  --hero3d-signal-b-accent: rgba(16, 185, 129, 0.3);
+  --hero3d-signal-c-accent: rgba(244, 114, 182, 0.3);
+}
+
+.hero3d-section {
+  padding: 4rem 0 2.2rem;
+  text-align: left;
+  overflow: hidden;
+}
+
+.hero3d-layout {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 2.6rem;
+  align-items: center;
+}
+
+.hero3d-copy {
+  max-width: 640px;
+}
+
+.hero3d-kicker {
+  background: var(--hero3d-kicker-bg) !important;
+  color: var(--hero3d-kicker-text) !important;
+  border: 1px solid var(--hero3d-kicker-border);
+  font-weight: 600;
+  letter-spacing: 0.45px;
+  box-shadow: 0 12px 24px -20px rgba(15, 23, 42, 0.65);
+}
+
+.hero3d-title {
+  font-family: var(--font-heading);
+  font-size: clamp(2.4rem, 5vw, 4.1rem);
+  letter-spacing: -1.4px;
+  line-height: 1.05;
+  margin-bottom: 0.85rem;
+  color: var(--hero3d-ink);
+}
+
+.hero3d-highlight {
+  background: var(--hero3d-highlight-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 18px 34px var(--hero3d-highlight-shadow);
+}
+
+.hero3d-greeting {
+  margin: 0 0 0.9rem;
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--hero3d-greeting);
+}
+
+.hero3d-copyline {
+  font-size: 1.05rem;
+  color: var(--hero3d-muted);
+  max-width: 36rem;
+  margin: 0 0 1.55rem;
+}
+
+.hero3d-kicker,
+.hero3d-title,
+.hero3d-copyline,
+.hero3d-greeting,
+.hero3d-btn,
+.hero3d-vault-panel,
+.hero3d-vault-panel strong,
+.hero3d-vault-panel small,
+.hero3d-vault-pill,
+.hero3d-vault-stats span,
+.hero3d-signal {
+  transition:
+    color var(--theme-transition-duration) var(--theme-transition-easing),
+    background-color var(--theme-transition-duration) var(--theme-transition-easing),
+    border-color var(--theme-transition-duration) var(--theme-transition-easing),
+    box-shadow var(--theme-transition-duration) var(--theme-transition-easing);
+}
+
+.hero3d-actions {
+  align-items: center;
+}
+
+.hero3d-btn {
+  border-radius: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease, color 220ms ease;
+}
+
+.hero3d-btn i {
+  color: currentColor !important;
+}
+
+.hero3d-btn-primary {
+  background: var(--hero3d-btn-primary-bg);
+  color: var(--hero3d-btn-primary-text);
+  border: 1px solid var(--hero3d-btn-primary-border);
+  box-shadow: 0 24px 36px -24px rgba(29, 78, 216, 0.9);
+}
+
+.hero3d-btn-primary:hover,
+.hero3d-btn-primary:focus-visible {
+  color: var(--hero3d-btn-primary-text);
+  background: var(--hero3d-btn-primary-hover-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 24px 34px -20px rgba(30, 64, 175, 0.85);
+}
+
+.hero3d-btn-secondary {
+  background: var(--hero3d-btn-secondary-bg);
+  color: var(--hero3d-btn-secondary-text);
+  border: 1px solid var(--hero3d-btn-secondary-border);
+  box-shadow: 0 16px 28px -24px rgba(15, 23, 42, 0.7);
+}
+
+.hero3d-btn-secondary:hover,
+.hero3d-btn-secondary:focus-visible {
+  color: var(--hero3d-btn-secondary-text);
+  background: var(--hero3d-btn-secondary-hover-bg);
+  transform: translateY(-2px);
+}
+
+.hero3d-stage {
+  position: relative;
+  min-height: 25rem;
+}
+
+.hero3d-stage-vault {
+  perspective: 1700px;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+.hero3d-vault-shadow {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 1.7rem;
+  height: 6rem;
+  z-index: 1;
+  border-radius: 999px;
+  background: var(--hero3d-vault-shadow);
+  filter: blur(0.5px);
+  transform: rotateX(74deg);
+}
+
+.hero3d-vault-grid {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 3.15rem;
+  height: 8.8rem;
+  z-index: 1;
+  border-radius: 24px;
+  border: 1px solid var(--hero3d-grid-border);
+  background:
+    repeating-linear-gradient(90deg, var(--hero3d-grid-line) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(0deg, var(--hero3d-grid-line) 0 1px, transparent 1px 28px),
+    var(--hero3d-grid-surface);
+  transform: rotateX(72deg);
+  box-shadow:
+    0 24px 34px -30px rgba(15, 23, 42, 0.7),
+    inset 0 0 24px -12px var(--hero3d-vault-glow-a);
+}
+
+.hero3d-vault-stack {
+  --vault-scale: 1;
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  z-index: 2;
+  transform-style: preserve-3d;
+  transform: translate3d(-50%, -50%, 0) scale(var(--vault-scale));
+  animation: hero3dVaultFloat 7.8s ease-in-out infinite;
+}
+
+.hero3d-vault-panel {
+  position: absolute;
+  border-radius: 18px;
+  border: 1px solid var(--hero3d-vault-panel-border);
+  box-shadow:
+    0 24px 36px -30px rgba(15, 23, 42, 0.8),
+    0 0 0 1px var(--hero3d-vault-panel-stroke) inset;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow: hidden;
+  padding: 0.95rem 0.9rem;
+}
+
+.hero3d-vault-panel::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+}
+
+.hero3d-vault-panel strong {
+  display: block;
+  font-size: 1.18rem;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--hero3d-vault-panel-text);
+  margin-bottom: 0.35rem;
+}
+
+.hero3d-vault-panel small {
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--hero3d-vault-panel-copy);
+}
+
+.hero3d-vault-panel-main {
+  width: 14.1rem;
+  height: 10.4rem;
+  transform: rotateY(-18deg) rotateX(10deg) translate3d(0, -0.8rem, 58px);
+  background: var(--hero3d-vault-panel-main);
+}
+
+.hero3d-vault-panel-main::before {
+  background: linear-gradient(90deg, #2563eb 0%, #8b5cf6 52%, #ec4899 100%);
+}
+
+.hero3d-vault-panel-left {
+  width: 10.5rem;
+  height: 7.4rem;
+  transform: rotateY(30deg) rotateX(10deg) translate3d(-8.05rem, 1.1rem, 10px);
+  background: var(--hero3d-vault-panel-left);
+}
+
+.hero3d-vault-panel-left::before {
+  background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
+}
+
+.hero3d-vault-panel-right {
+  width: 10.5rem;
+  height: 7.4rem;
+  transform: rotateY(-30deg) rotateX(10deg) translate3d(8.15rem, 1.25rem, -4px);
+  background: var(--hero3d-vault-panel-right);
+}
+
+.hero3d-vault-panel-right::before {
+  background: linear-gradient(90deg, #f59e0b 0%, #fb7185 100%);
+}
+
+.hero3d-vault-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--hero3d-vault-pill-border);
+  background: var(--hero3d-vault-pill-bg);
+  color: var(--hero3d-vault-pill-text);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.42px;
+  text-transform: uppercase;
+  padding: 0.24rem 0.48rem;
+  margin-bottom: 0.5rem;
+}
+
+.hero3d-vault-stats {
+  margin-top: 0.62rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.36rem;
+}
+
+.hero3d-vault-stats span {
+  border-radius: 8px;
+  border: 1px solid var(--hero3d-vault-stat-border);
+  background: var(--hero3d-vault-stat-bg);
+  color: var(--hero3d-vault-stat-text);
+  font-size: 0.61rem;
+  font-weight: 700;
+  letter-spacing: 0.26px;
+  text-align: center;
+  padding: 0.24rem 0.16rem;
+}
+
+.hero3d-vault-beam {
+  position: absolute;
+  width: 2px;
+  border-radius: 999px;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.hero3d-vault-beam-a {
+  height: 8.3rem;
+  left: -1.9rem;
+  top: -0.6rem;
+  color: var(--hero3d-vault-glow-a);
+  background: var(--hero3d-vault-beam-a);
+  transform: rotate(22deg);
+  animation: hero3dBeamPulse 2.6s ease-in-out infinite;
+}
+
+.hero3d-vault-beam-b {
+  height: 8.6rem;
+  right: -2.2rem;
+  top: 0.1rem;
+  color: var(--hero3d-vault-glow-b);
+  background: var(--hero3d-vault-beam-b);
+  transform: rotate(-20deg);
+  animation: hero3dBeamPulse 2.9s ease-in-out infinite;
+  animation-delay: -1.2s;
+}
+
+.hero3d-signal {
+  position: absolute;
+  z-index: 2;
+  border-radius: 999px;
+  border: 1px solid var(--hero3d-signal-border);
+  background: var(--hero3d-signal-bg);
+  color: var(--hero3d-signal-text);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 0 14px 24px -20px rgba(15, 23, 42, 0.9);
+  padding: 0.34rem 0.74rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.hero3d-signal-a {
+  top: 2.1rem;
+  right: 0.15rem;
+  border-color: var(--hero3d-signal-a-accent);
+  animation: hero3dSignalFloat 5.8s ease-in-out infinite;
+}
+
+.hero3d-signal-b {
+  left: -0.3rem;
+  bottom: 4.5rem;
+  border-color: var(--hero3d-signal-b-accent);
+  animation: hero3dSignalFloat 6.2s ease-in-out infinite;
+  animation-delay: -1.6s;
+}
+
+.hero3d-signal-c {
+  right: 2.05rem;
+  bottom: 1.05rem;
+  border-color: var(--hero3d-signal-c-accent);
+  animation: hero3dSignalFloat 5.1s ease-in-out infinite;
+  animation-delay: -0.9s;
+}
+
+@keyframes hero3dVaultFloat {
+  0% {
+    transform: translate3d(-50%, -50%, 0) scale(var(--vault-scale));
+  }
+
+  50% {
+    transform: translate3d(-50%, -53%, 0) scale(var(--vault-scale));
+  }
+
+  100% {
+    transform: translate3d(-50%, -50%, 0) scale(var(--vault-scale));
+  }
+}
+
+@keyframes hero3dBeamPulse {
+  0% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 0.95;
+  }
+
+  100% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes hero3dSignalFloat {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-7px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 991.98px) {
+  .hero3d-layout {
+    grid-template-columns: 1fr;
+    gap: 1.8rem;
+  }
+
+  .hero3d-copy {
+    text-align: center;
+    margin: 0 auto;
+  }
+
+  .hero3d-copyline {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero3d-actions {
+    justify-content: center;
+  }
+
+  .hero3d-stage {
+    width: min(30rem, 100%);
+    margin: 0 auto;
+    min-height: 22.5rem;
+  }
+
+  .hero3d-vault-stack {
+    --vault-scale: 0.92;
+    top: 53%;
+  }
+
+  .hero3d-signal-a {
+    right: 0.55rem;
+  }
+
+  .hero3d-signal-b {
+    left: 0.15rem;
+  }
+
+  .hero3d-signal-c {
+    right: 1.45rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero3d-section {
+    padding: 2.8rem 0 1.4rem;
+  }
+
+  .hero3d-title {
+    font-size: clamp(2rem, 10vw, 2.8rem);
+  }
+
+  .hero3d-actions .hero3d-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hero3d-stage {
+    min-height: 20.75rem;
+  }
+
+  .hero3d-vault-stack {
+    --vault-scale: 0.8;
+  }
+
+  .hero3d-vault-grid {
+    left: 10%;
+    right: 10%;
+  }
+
+  .hero3d-signal {
+    font-size: 0.66rem;
+    padding: 0.28rem 0.6rem;
+  }
+
+  .hero3d-signal-a {
+    top: 1.75rem;
+    right: 0.2rem;
+  }
+
+  .hero3d-signal-b {
+    left: 0.2rem;
+    bottom: 3.95rem;
+  }
+
+  .hero3d-signal-c {
+    right: 1.05rem;
+    bottom: 0.86rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero3d-vault-stack,
+  .hero3d-vault-beam,
+  .hero3d-signal {
+    animation: none !important;
   }
 }

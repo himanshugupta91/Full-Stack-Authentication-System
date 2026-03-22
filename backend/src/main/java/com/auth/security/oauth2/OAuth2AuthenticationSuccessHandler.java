@@ -64,7 +64,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         User user = oAuth2UserProvisioningService.loadOrCreateUser(oauthToken, oauth2User);
         AuthTokens tokenResult = authTokenService.issueTokens(user);
 
-        String refreshTokenCookieHeader = refreshTokenCookieService.buildRefreshTokenCookie(tokenResult.refreshToken());
+        String refreshTokenCookieHeader = refreshTokenCookieService.buildRefreshTokenCookie(
+                tokenResult.refreshToken(),
+                request);
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookieHeader);
 
         clearAuthenticationAttributes(request);

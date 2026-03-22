@@ -7,6 +7,7 @@ import com.auth.dto.response.UserDashboardDto;
 import com.auth.dto.response.UserDto;
 import com.auth.service.AuthService;
 import com.auth.service.UserPortalService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("UserController")
 class UserControllerTest {
 
     @Mock
@@ -39,6 +41,7 @@ class UserControllerTest {
     private UserController userController;
 
     @Test
+    @DisplayName("getDashboard: authenticated user → returns dashboard payload")
     void getDashboard_whenAuthenticated_returnsDashboardPayload() {
         UserDashboardDto dashboard = new UserDashboardDto(
                 "Welcome to User Dashboard!",
@@ -57,6 +60,7 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("getProfile: authenticated user → returns profile DTO")
     void getProfile_whenAuthenticated_returnsProfilePayload() {
         UserDto profile = new UserDto();
         profile.setId(7L);
@@ -78,6 +82,7 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("changePassword: valid request → returns success message")
     void changePassword_whenValidRequest_returnsSuccessMessage() {
         ChangePasswordRequest request = new ChangePasswordRequest();
         request.setCurrentPassword("OldPass123!");

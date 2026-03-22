@@ -19,32 +19,32 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.Set;
 import java.util.Locale;
+import java.util.Set;
 
 /**
- * Admin-specific business logic for dashboard metrics and user listing.
+ * Admin-specific business logic for dashboard metrics and filtered user listings.
  */
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
 
+    /** Columns that callers are permitted to sort by. */
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("id", "name", "email", "enabled", "createdAt");
+
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
     @Override
-    @Cacheable(cacheNames = CacheNames.ADMIN_DASHBOARD, key = "#adminEmail == null ? 'unknown' : #adminEmail.toLowerCase()")
+    @Cacheable(cacheNames = CacheNames.ADMIN_DASHBOARD,
+            key = "#adminEmail == null ? 'unknown' : #adminEmail.toLowerCase()")
     public AdminDashboardDto getDashboard(String adminEmail) {
-        long totalUsers = userRepository.count();
-        long activeUsers = userRepository.countByEnabledTrue();
-
-        AdminDashboardDto dashboard = new AdminDashboardDto(
+        return new AdminDashboardDto(
                 "Welcome to Admin Dashboard!",
                 adminEmail,
-                totalUsers,
-                activeUsers,
+                userRepository.count(),
+                userRepository.countByEnabledTrue(),
                 DateTimeUtil.nowInIst12HourFormat());
-        return dashboard;
     }
 
     @Override
@@ -56,118 +56,65 @@ public class AdminServiceImpl implements AdminService {
             String role,
             String sortBy,
             String sortDir) {
-        int normalizedPage = normalizePage(page);
-        int normalizedSize = normalizePageSize(size);
 
-        Sort.Direction direction = resolveSortDirection(sortDir);
-        String safeSortField = resolveSortField(sortBy);
-        Sort sort = Sort.by(direction, safeSortField);
-        Pageable pageable = PageRequest.of(normalizedPage, normalizedSize, sort);
+        int normalizedPage = Math.max(page, 0);
+        int normalizedSize = Math.min(Math.max(size, 1), 100);
 
-        Specification<User> specification = buildUserSpecification(search, enabled, role);
-        Page<User> usersPage = userRepository.findAll(specification, pageable);
-        Page<UserDto> userDtoPage = usersPage.map(userMapper::toDto);
-        return userDtoPage;
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        String safeField = ALLOWED_SORT_FIELDS.contains(sortBy) ? sortBy : "createdAt";
+        Pageable pageable = PageRequest.of(normalizedPage, normalizedSize, Sort.by(direction, safeField));
+
+        return userRepository.findAll(buildSpecification(search, enabled, role), pageable)
+                .map(userMapper::toDto);
     }
 
-    /** Builds optional user filters for search/status/role queries. */
-    private Specification<User> buildUserSpecification(String search, Boolean enabled, String role) {
-        Specification<User> specification = null;
+    // ── Specification builders ────────────────────────────────────────────────
 
-        if (hasText(search)) {
-            specification = andSpecification(specification, buildSearchSpecification(search));
+    /** Composes optional filter predicates for search text, account status, and role. */
+    private Specification<User> buildSpecification(String search, Boolean enabled, String role) {
+        Specification<User> spec = null;
+
+        if (StringUtils.hasText(search)) {
+            spec = and(spec, searchSpecification(search));
         }
-
         if (enabled != null) {
-            specification = andSpecification(
-                    specification,
-                    (root, query, cb) -> cb.equal(root.get("enabled"), enabled));
+            spec = and(spec, (root, query, cb) -> cb.equal(root.get("enabled"), enabled));
         }
-
-        if (hasText(role)) {
-            RoleName roleName = normalizeRoleName(role);
-            specification = andSpecification(specification, (root, query, cb) -> {
+        if (StringUtils.hasText(role)) {
+            RoleName roleName = parseRoleName(role);
+            spec = and(spec, (root, query, cb) -> {
                 query.distinct(true);
                 return cb.equal(root.join("roles").get("name"), roleName);
             });
         }
 
-        return specification;
+        return spec;
     }
 
-    /** Accepts USER/ADMIN or ROLE_USER/ROLE_ADMIN query values. */
-    private RoleName normalizeRoleName(String rawRole) {
-        String trimmedRole = rawRole.trim().toUpperCase(Locale.ROOT);
-        if (!trimmedRole.startsWith("ROLE_")) {
-            trimmedRole = "ROLE_" + trimmedRole;
-        }
+    private Specification<User> searchSpecification(String search) {
+        String pattern = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
+        return (root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("name")), pattern),
+                cb.like(cb.lower(root.get("email")), pattern));
+    }
 
+    private Specification<User> and(Specification<User> base, Specification<User> clause) {
+        return base == null ? clause : base.and(clause);
+    }
+
+    /**
+     * Normalises a caller-supplied role string. Accepts both {@code USER} and
+     * {@code ROLE_USER} forms.
+     */
+    private RoleName parseRoleName(String raw) {
+        String normalized = raw.trim().toUpperCase(Locale.ROOT);
+        if (!normalized.startsWith("ROLE_")) {
+            normalized = "ROLE_" + normalized;
+        }
         try {
-            RoleName roleName = RoleName.valueOf(trimmedRole);
-            return roleName;
-        } catch (IllegalArgumentException exception) {
+            return RoleName.valueOf(normalized);
+        } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException("Invalid role filter. Use USER, ADMIN, ROLE_USER, or ROLE_ADMIN.");
         }
-    }
-
-    /** Restricts client sort field to safe, indexed-ish columns. */
-    private String resolveSortField(String rawSortBy) {
-        if (!StringUtils.hasText(rawSortBy)) {
-            return "createdAt";
-        }
-        String safeSortField = isAllowedSortField(rawSortBy) ? rawSortBy : "createdAt";
-        return safeSortField;
-    }
-
-    private int normalizePage(int page) {
-        if (page < 0) {
-            return 0;
-        }
-        return page;
-    }
-
-    private int normalizePageSize(int size) {
-        int boundedSize = size;
-        if (boundedSize < 1) {
-            boundedSize = 1;
-        }
-        if (boundedSize > 100) {
-            boundedSize = 100;
-        }
-        return boundedSize;
-    }
-
-    private Sort.Direction resolveSortDirection(String sortDir) {
-        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        return direction;
-    }
-
-    private Specification<User> buildSearchSpecification(String search) {
-        String loweredSearch = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
-        Specification<User> searchSpecification = (root, query, cb) -> cb.or(
-                cb.like(cb.lower(root.get("name")), loweredSearch),
-                cb.like(cb.lower(root.get("email")), loweredSearch));
-        return searchSpecification;
-    }
-
-    private boolean hasText(String value) {
-        boolean hasText = StringUtils.hasText(value);
-        return hasText;
-    }
-
-    private Specification<User> andSpecification(
-            Specification<User> baseSpecification,
-            Specification<User> clause) {
-        if (baseSpecification == null) {
-            return clause;
-        }
-        Specification<User> combinedSpecification = baseSpecification.and(clause);
-        return combinedSpecification;
-    }
-
-    private boolean isAllowedSortField(String sortField) {
-        Set<String> allowedSortFields = Set.of("id", "name", "email", "enabled", "createdAt");
-        boolean isAllowed = allowedSortFields.contains(sortField);
-        return isAllowed;
     }
 }

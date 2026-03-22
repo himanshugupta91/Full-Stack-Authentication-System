@@ -4,6 +4,7 @@ import com.auth.dto.response.AdminDashboardDto;
 import com.auth.dto.response.ApiResponse;
 import com.auth.dto.response.UserDto;
 import com.auth.service.AdminService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("AdminController")
 class AdminControllerTest {
 
     @Mock
@@ -35,6 +37,7 @@ class AdminControllerTest {
     private AdminController adminController;
 
     @Test
+    @DisplayName("getDashboard: authenticated admin → returns dashboard payload")
     void getDashboard_whenAuthenticated_returnsDashboardPayload() {
         AdminDashboardDto dashboard = new AdminDashboardDto(
                 "Welcome to Admin Dashboard!",
@@ -53,6 +56,7 @@ class AdminControllerTest {
     }
 
     @Test
+    @DisplayName("getAllUsers: query params provided → returns paged user list")
     void getAllUsers_whenQueryParamsProvided_returnsPagedUsers() {
         UserDto user = new UserDto();
         user.setId(3L);

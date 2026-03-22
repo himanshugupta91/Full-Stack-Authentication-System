@@ -21,6 +21,7 @@ import com.auth.service.support.OtpService;
 import com.auth.service.support.PasswordPolicyService;
 import com.auth.service.support.TokenHashService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -45,6 +46,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("AuthServiceImpl")
 class AuthServiceImplTest {
 
     @Mock
@@ -90,6 +92,7 @@ class AuthServiceImplTest {
     }
 
     @Test
+    @DisplayName("register: email already exists → throws UserAlreadyExistsException")
     void register_whenEmailAlreadyExists_throwsUserAlreadyExistsException() {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("alice@example.com");
@@ -100,6 +103,7 @@ class AuthServiceImplTest {
     }
 
     @Test
+    @DisplayName("register: valid request → saves inactive user, sends OTP")
     void register_whenValidRequest_savesUserAndSendsOtp() {
         RegisterRequest request = new RegisterRequest();
         request.setName("Alice");
@@ -139,6 +143,7 @@ class AuthServiceImplTest {
     }
 
     @Test
+    @DisplayName("login: user missing → records failed attempt, throws BadCredentialsException")
     void login_whenUserMissing_recordsFailedAttemptAndThrows() {
         LoginRequest request = new LoginRequest();
         request.setEmail("missing@example.com");
@@ -154,6 +159,7 @@ class AuthServiceImplTest {
     }
 
     @Test
+    @DisplayName("login: user email not verified → throws TokenValidationException")
     void login_whenUserEmailNotVerified_throwsTokenValidationException() {
         LoginRequest request = new LoginRequest();
         request.setEmail("pending@example.com");
@@ -175,6 +181,7 @@ class AuthServiceImplTest {
     }
 
     @Test
+    @DisplayName("resetPassword: user missing → returns generic success message")
     void resetPassword_whenUserMissing_returnsGenericSuccessMessage() {
         ResetPasswordRequest request = new ResetPasswordRequest();
         request.setEmail("missing@example.com");
@@ -188,6 +195,7 @@ class AuthServiceImplTest {
     }
 
     @Test
+    @DisplayName("updatePassword: token not found → throws TokenValidationException")
     void updatePassword_whenTokenNotFound_throwsTokenValidationException() {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setToken("reset-token");
@@ -200,6 +208,7 @@ class AuthServiceImplTest {
     }
 
     @Test
+    @DisplayName("changePassword: wrong current password → throws BadCredentialsException")
     void changePassword_whenCurrentPasswordDoesNotMatch_throwsBadCredentials() {
         ChangePasswordRequest request = new ChangePasswordRequest();
         request.setCurrentPassword("wrong-current");

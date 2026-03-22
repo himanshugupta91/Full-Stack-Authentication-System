@@ -6,29 +6,26 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 /**
- * Service for generating OTP codes and reset tokens.
+ * Generates cryptographically secure OTP codes and password-reset tokens.
  */
 @Service
 public class OtpService {
 
-    private SecureRandom secureRandom = new SecureRandom();
+    private final SecureRandom secureRandom = new SecureRandom();
 
     /**
-     * Generate a 6-digit OTP code.
+     * Generates a 6-digit numeric OTP code.
      */
     public String generateOtp() {
-        int otp = 100000 + secureRandom.nextInt(900000);
-        String otpValue = String.valueOf(otp);
-        return otpValue;
+        return String.valueOf(100_000 + secureRandom.nextInt(900_000));
     }
 
     /**
-     * Generate a unique password reset token.
+     * Generates a high-entropy, URL-safe password-reset token.
      */
     public String generateResetToken() {
         byte[] randomBytes = new byte[32];
         secureRandom.nextBytes(randomBytes);
-        String resetToken = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
-        return resetToken;
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
 }

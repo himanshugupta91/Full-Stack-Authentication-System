@@ -20,7 +20,12 @@ import java.time.LocalDateTime;
 import java.util.Locale;
 
 /**
- * Coordinates Redis rate limiting and user-level brute-force lockouts.
+ * Coordinates Redis-based rate limiting and per-user brute-force lockouts for
+ * all authentication endpoints (login, OTP verification, resend-OTP, and
+ * password reset).
+ *
+ * <p>Protection can be disabled globally via {@code auth.protection.enabled=false}
+ * for local development environments.
  */
 @Service
 @RequiredArgsConstructor
@@ -34,6 +39,8 @@ public class AuthAbuseProtectionService {
     @Value("${auth.protection.enabled:true}")
     private boolean protectionEnabled;
 
+    // ── Login rate-limit config ───────────────────────────────────────────────
+
     @Value("${auth.rate-limit.login.ip.limit:5}")
     private long loginIpLimit;
     @Value("${auth.rate-limit.login.ip.window-seconds:60}")
@@ -43,6 +50,8 @@ public class AuthAbuseProtectionService {
     @Value("${auth.rate-limit.login.email.window-seconds:900}")
     private long loginEmailWindowSeconds;
 
+    // ── OTP verification rate-limit config ───────────────────────────────────
+
     @Value("${auth.rate-limit.otp-verify.ip.limit:20}")
     private long otpVerifyIpLimit;
     @Value("${auth.rate-limit.otp-verify.ip.window-seconds:600}")
@@ -51,6 +60,8 @@ public class AuthAbuseProtectionService {
     private long otpVerifyEmailLimit;
     @Value("${auth.rate-limit.otp-verify.email.window-seconds:600}")
     private long otpVerifyEmailWindowSeconds;
+
+    // ── Resend-OTP rate-limit config ─────────────────────────────────────────
 
     @Value("${auth.rate-limit.resend-otp.email.cooldown-seconds:60}")
     private long resendOtpCooldownSeconds;
@@ -63,6 +74,8 @@ public class AuthAbuseProtectionService {
     @Value("${auth.rate-limit.resend-otp.ip.window-seconds:900}")
     private long resendOtpIpWindowSeconds;
 
+    // ── Password-reset rate-limit config ─────────────────────────────────────
+
     @Value("${auth.rate-limit.reset-password.email.limit:3}")
     private long resetPasswordEmailLimit;
     @Value("${auth.rate-limit.reset-password.email.window-seconds:1800}")
@@ -71,6 +84,8 @@ public class AuthAbuseProtectionService {
     private long resetPasswordIpLimit;
     @Value("${auth.rate-limit.reset-password.ip.window-seconds:1800}")
     private long resetPasswordIpWindowSeconds;
+
+    // ── Brute-force lockout config ────────────────────────────────────────────
 
     @Value("${auth.bruteforce.login.max-attempts:10}")
     private int loginMaxAttempts;
@@ -82,283 +97,186 @@ public class AuthAbuseProtectionService {
     @Value("${auth.bruteforce.otp.lock-minutes:10}")
     private long otpLockMinutes;
 
-    /** Checks login endpoint rate limits and active account lock state. */
-    public void guardLoginAttempt(String email) {
-        if (isProtectionDisabled()) {
-            return;
-        }
+    // ── Public guard methods ──────────────────────────────────────────────────
 
-        String normalizedEmail = normalizeEmail(email);
+    /** Checks login endpoint rate limits and the account's active lockout state. */
+    public void guardLoginAttempt(String email) {
+        if (!protectionEnabled) return;
+
+        String normalized = normalizeEmail(email);
         String clientIp = resolveClientIp();
 
-        enforce(buildRateLimitKey("auth:login:ip:", clientIp), loginIpLimit, loginIpWindowSeconds,
+        enforce("auth:login:ip:" + clientIp, loginIpLimit, loginIpWindowSeconds,
                 "Too many login attempts from this IP. Please retry later.");
-        enforce(buildRateLimitKey("auth:login:email:", normalizedEmail), loginEmailLimit,
-                loginEmailWindowSeconds,
+        enforce("auth:login:email:" + normalized, loginEmailLimit, loginEmailWindowSeconds,
                 "Too many login attempts for this account. Please retry later.");
 
-        userService.findByEmail(normalizedEmail).ifPresent(this::assertLoginNotLocked);
+        userService.findByEmail(normalized).ifPresent(this::assertLoginNotLocked);
     }
 
-    /** Increments failed login attempts and applies temporary lockout when threshold is crossed. */
+    /** Records a failed login attempt and applies a lockout when the threshold is reached. */
     public void recordFailedLogin(String email) {
-        if (isProtectionDisabled()) {
-            return;
-        }
-
-        String normalizedEmail = normalizeEmail(email);
-        userService.findByEmail(normalizedEmail).ifPresent(this::applyFailedLoginAttempt);
+        if (!protectionEnabled) return;
+        userService.findByEmail(normalizeEmail(email)).ifPresent(this::applyFailedLoginAttempt);
     }
 
-    /** Clears login brute-force counters on successful authentication. */
+    /** Clears login brute-force counters after a successful authentication. */
     public void clearLoginFailures(User user) {
-        if (isProtectionDisabled() || isMissingUser(user)) {
-            return;
-        }
-
-        if (!hasLoginFailureState(user)) {
-            return;
-        }
+        if (!protectionEnabled || user == null) return;
+        if (user.getFailedLoginAttempts() == 0 && user.getAccountLockedUntil() == null) return;
 
         user.setFailedLoginAttempts(0);
         user.setAccountLockedUntil(null);
         userService.save(user);
     }
 
-    /** Checks OTP verification rate limits and OTP-specific lock state. */
+    /** Checks OTP verification rate limits and the account's OTP-specific lockout state. */
     public void guardOtpVerification(String email) {
-        if (isProtectionDisabled()) {
-            return;
-        }
+        if (!protectionEnabled) return;
 
-        String normalizedEmail = normalizeEmail(email);
+        String normalized = normalizeEmail(email);
         String clientIp = resolveClientIp();
 
-        enforce(buildRateLimitKey("auth:otp-verify:ip:", clientIp), otpVerifyIpLimit,
-                otpVerifyIpWindowSeconds,
+        enforce("auth:otp-verify:ip:" + clientIp, otpVerifyIpLimit, otpVerifyIpWindowSeconds,
                 "Too many OTP verification attempts from this IP. Please retry later.");
-        enforce(buildRateLimitKey("auth:otp-verify:email:", normalizedEmail), otpVerifyEmailLimit,
-                otpVerifyEmailWindowSeconds,
+        enforce("auth:otp-verify:email:" + normalized, otpVerifyEmailLimit, otpVerifyEmailWindowSeconds,
                 "Too many OTP verification attempts for this email. Please retry later.");
 
-        userService.findByEmail(normalizedEmail).ifPresent(this::assertOtpNotLocked);
+        userService.findByEmail(normalized).ifPresent(this::assertOtpNotLocked);
     }
 
-    /** Increments OTP failure counter and applies temporary OTP lockout. */
+    /** Increments the OTP failure counter and applies a temporary OTP lockout when reached. */
     public void recordFailedOtp(User user) {
-        if (isProtectionDisabled() || isMissingUser(user)) {
-            return;
-        }
+        if (!protectionEnabled || user == null) return;
 
-        int nextFailedAttempts = user.getFailedOtpAttempts() + 1;
-        if (nextFailedAttempts >= otpMaxAttempts) {
+        int nextAttempts = user.getFailedOtpAttempts() + 1;
+        if (nextAttempts >= otpMaxAttempts) {
             user.setFailedOtpAttempts(0);
             user.setOtpLockedUntil(LocalDateTime.now().plusMinutes(otpLockMinutes));
         } else {
-            user.setFailedOtpAttempts(nextFailedAttempts);
+            user.setFailedOtpAttempts(nextAttempts);
         }
         userService.save(user);
     }
 
-    /** Clears OTP brute-force counters after successful OTP verification. */
+    /** Clears OTP brute-force counters after a successful OTP verification. */
     public void clearOtpFailures(User user) {
-        if (isProtectionDisabled() || isMissingUser(user)) {
-            return;
-        }
-
-        if (!hasOtpFailureState(user)) {
-            return;
-        }
+        if (!protectionEnabled || user == null) return;
+        if (user.getFailedOtpAttempts() == 0 && user.getOtpLockedUntil() == null) return;
 
         user.setFailedOtpAttempts(0);
         user.setOtpLockedUntil(null);
         userService.save(user);
     }
 
-    /** Applies resend-OTP endpoint limits (cooldown + window limits per email and IP). */
+    /** Applies resend-OTP endpoint limits: per-email cooldown, windowed limit, and IP limit. */
     public void guardResendOtp(String email) {
-        if (isProtectionDisabled()) {
-            return;
-        }
+        if (!protectionEnabled) return;
 
-        String normalizedEmail = normalizeEmail(email);
+        String normalized = normalizeEmail(email);
         String clientIp = resolveClientIp();
 
-        enforce(buildRateLimitKey("auth:resend-otp:email-cooldown:", normalizedEmail), 1,
-                resendOtpCooldownSeconds,
+        enforce("auth:resend-otp:email-cooldown:" + normalized, 1, resendOtpCooldownSeconds,
                 "Please wait before requesting another OTP.");
-        enforce(buildRateLimitKey("auth:resend-otp:email:", normalizedEmail), resendOtpEmailLimit,
-                resendOtpEmailWindowSeconds,
+        enforce("auth:resend-otp:email:" + normalized, resendOtpEmailLimit, resendOtpEmailWindowSeconds,
                 "Too many OTP resend requests for this email. Please retry later.");
-        enforce(buildRateLimitKey("auth:resend-otp:ip:", clientIp), resendOtpIpLimit,
-                resendOtpIpWindowSeconds,
+        enforce("auth:resend-otp:ip:" + clientIp, resendOtpIpLimit, resendOtpIpWindowSeconds,
                 "Too many OTP resend requests from this IP. Please retry later.");
     }
 
-    /** Applies forgot-password endpoint limits per email and IP. */
+    /** Applies password-reset endpoint limits per email and IP address. */
     public void guardResetPassword(String email) {
-        if (isProtectionDisabled()) {
-            return;
-        }
+        if (!protectionEnabled) return;
 
-        String normalizedEmail = normalizeEmail(email);
+        String normalized = normalizeEmail(email);
         String clientIp = resolveClientIp();
 
-        enforce(buildRateLimitKey("auth:reset-password:email:", normalizedEmail), resetPasswordEmailLimit,
+        enforce("auth:reset-password:email:" + normalized, resetPasswordEmailLimit,
                 resetPasswordEmailWindowSeconds,
                 "Too many password reset requests for this email. Please retry later.");
-        enforce(buildRateLimitKey("auth:reset-password:ip:", clientIp), resetPasswordIpLimit,
+        enforce("auth:reset-password:ip:" + clientIp, resetPasswordIpLimit,
                 resetPasswordIpWindowSeconds,
                 "Too many password reset requests from this IP. Please retry later.");
     }
 
-    private void enforce(String key, long limit, long windowSeconds, String message) {
-        RateLimitService.RateLimitDecision decision = rateLimitService.consume(
-                key,
-                limit,
-                Duration.ofSeconds(windowSeconds));
-        if (decision.allowed()) {
-            return;
-        }
+    // ── Private helpers ───────────────────────────────────────────────────────
 
-        long retryAfterSeconds = Math.max(1, decision.retryAfterSeconds());
-        throw new RateLimitExceededException(message, retryAfterSeconds);
+    private void enforce(String key, long limit, long windowSeconds, String message) {
+        RateLimitService.RateLimitDecision decision =
+                rateLimitService.consume(key, limit, Duration.ofSeconds(windowSeconds));
+        if (!decision.allowed()) {
+            throw new RateLimitExceededException(message, Math.max(1, decision.retryAfterSeconds()));
+        }
     }
 
     private void assertLoginNotLocked(User user) {
         LocalDateTime lockedUntil = user.getAccountLockedUntil();
-        if (!isActiveLock(lockedUntil)) {
-            return;
+        if (lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now())) {
+            long retryAfter = Math.max(1, Duration.between(LocalDateTime.now(), lockedUntil).getSeconds());
+            throw new AccountLockedException(
+                    "Account is temporarily locked due to repeated failed logins.", retryAfter);
         }
-
-        long retryAfterSeconds = computeRetryAfterSeconds(lockedUntil);
-        throw new AccountLockedException("Account is temporarily locked due to repeated failed logins.",
-                Math.max(1, retryAfterSeconds));
     }
 
     private void assertOtpNotLocked(User user) {
         LocalDateTime lockedUntil = user.getOtpLockedUntil();
-        if (!isActiveLock(lockedUntil)) {
-            return;
+        if (lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now())) {
+            long retryAfter = Math.max(1, Duration.between(LocalDateTime.now(), lockedUntil).getSeconds());
+            throw new AccountLockedException(
+                    "OTP verification is temporarily locked due to repeated failed attempts.", retryAfter);
         }
-
-        long retryAfterSeconds = computeRetryAfterSeconds(lockedUntil);
-        throw new AccountLockedException("OTP verification is temporarily locked due to repeated failed attempts.",
-                Math.max(1, retryAfterSeconds));
-    }
-
-    private String resolveClientIp() {
-        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attributes == null) {
-            return "unknown";
-        }
-
-        HttpServletRequest request = attributes.getRequest();
-        String forwardedIp = extractForwardedClientIp(request);
-        if (forwardedIp != null) {
-            return forwardedIp;
-        }
-
-        String realIp = trimToNull(request.getHeader("X-Real-IP"));
-        if (realIp != null) {
-            return realIp;
-        }
-
-        String remoteAddress = trimToNull(request.getRemoteAddr());
-        return remoteAddress != null ? remoteAddress : "unknown";
-    }
-
-    private String normalizeEmail(String email) {
-        if (!StringUtils.hasText(email)) {
-            return "unknown-email";
-        }
-        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
-        return normalizedEmail;
-    }
-
-    private String buildRateLimitKey(String prefix, String keyPart) {
-        String rateLimitKey = prefix + keyPart;
-        return rateLimitKey;
     }
 
     private void applyFailedLoginAttempt(User user) {
-        int nextFailedAttempts = user.getFailedLoginAttempts() + 1;
-        if (nextFailedAttempts >= loginMaxAttempts) {
+        int nextAttempts = user.getFailedLoginAttempts() + 1;
+        if (nextAttempts >= loginMaxAttempts) {
             user.setFailedLoginAttempts(0);
             user.setAccountLockedUntil(LocalDateTime.now().plusMinutes(loginLockMinutes));
             userService.save(user);
             sendAccountLockEmailSafely(user);
-            return;
         } else {
-            user.setFailedLoginAttempts(nextFailedAttempts);
+            user.setFailedLoginAttempts(nextAttempts);
+            userService.save(user);
         }
-
-        userService.save(user);
     }
 
     private void sendAccountLockEmailSafely(User user) {
         try {
             emailService.sendAccountLockedAlertEmail(user.getEmail(), user.getName(), user.getAccountLockedUntil());
-        } catch (RuntimeException exception) {
-            log.warn("Failed to send account lock alert email for {}", user.getEmail(), exception);
+        } catch (RuntimeException ex) {
+            log.warn("Failed to send account-lock alert email for {}", user.getEmail(), ex);
         }
     }
 
-    private boolean hasLoginFailureState(User user) {
-        boolean hasLoginFailureState = user.getFailedLoginAttempts() != 0 || user.getAccountLockedUntil() != null;
-        return hasLoginFailureState;
-    }
-
-    private boolean hasOtpFailureState(User user) {
-        boolean hasOtpFailureState = user.getFailedOtpAttempts() != 0 || user.getOtpLockedUntil() != null;
-        return hasOtpFailureState;
-    }
-
-    private boolean isActiveLock(LocalDateTime lockedUntil) {
-        if (lockedUntil == null) {
-            return false;
+    private String resolveClientIp() {
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return "unknown";
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        boolean isActiveLock = lockedUntil.isAfter(now);
-        return isActiveLock;
-    }
+        HttpServletRequest request = attributes.getRequest();
 
-    private long computeRetryAfterSeconds(LocalDateTime lockedUntil) {
-        LocalDateTime now = LocalDateTime.now();
-        long retryAfterSeconds = Duration.between(now, lockedUntil).getSeconds();
-        return retryAfterSeconds;
-    }
-
-    private String extractForwardedClientIp(HttpServletRequest request) {
-        String forwardedFor = trimToNull(request.getHeader("X-Forwarded-For"));
-        if (forwardedFor == null) {
-            return null;
+        String forwarded = trimToNull(request.getHeader("X-Forwarded-For"));
+        if (forwarded != null) {
+            String firstIp = trimToNull(forwarded.split(",")[0]);
+            if (firstIp != null) return firstIp;
         }
 
-        String[] chain = forwardedFor.split(",");
-        if (chain.length == 0) {
-            return null;
-        }
-        String firstForwardedIp = trimToNull(chain[0]);
-        return firstForwardedIp;
+        String realIp = trimToNull(request.getHeader("X-Real-IP"));
+        if (realIp != null) return realIp;
+
+        String remote = trimToNull(request.getRemoteAddr());
+        return remote != null ? remote : "unknown";
+    }
+
+    private String normalizeEmail(String email) {
+        return StringUtils.hasText(email) ? email.trim().toLowerCase(Locale.ROOT) : "unknown-email";
     }
 
     private String trimToNull(String value) {
-        if (!StringUtils.hasText(value)) {
-            return null;
-        }
-        String trimmedValue = value.trim();
-        return trimmedValue;
-    }
-
-    private boolean isProtectionDisabled() {
-        boolean protectionDisabled = !protectionEnabled;
-        return protectionDisabled;
-    }
-
-    private boolean isMissingUser(User user) {
-        boolean missingUser = user == null;
-        return missingUser;
+        if (!StringUtils.hasText(value)) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

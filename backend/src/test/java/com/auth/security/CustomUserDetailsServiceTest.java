@@ -4,6 +4,7 @@ import com.auth.entity.Role;
 import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.service.UserService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("CustomUserDetailsService")
 class CustomUserDetailsServiceTest {
 
     @Mock
@@ -31,6 +33,7 @@ class CustomUserDetailsServiceTest {
     private CustomUserDetailsService customUserDetailsService;
 
     @Test
+    @DisplayName("loadUserByUsername: normalizes email and builds Spring authorities")
     void loadUserByUsername_normalizesEmailAndBuildsAuthorities() {
         Role userRole = new Role();
         userRole.setName(RoleName.ROLE_USER);
@@ -54,6 +57,7 @@ class CustomUserDetailsServiceTest {
     }
 
     @Test
+    @DisplayName("loadUserByUsername: unknown email → throws UsernameNotFoundException")
     void loadUserByUsername_whenUserMissing_throwsUsernameNotFoundException() {
         when(userService.findByEmail("missing@example.com")).thenReturn(Optional.empty());
 
@@ -62,6 +66,7 @@ class CustomUserDetailsServiceTest {
     }
 
     @Test
+    @DisplayName("loadUserByUsername: disabled account → UserDetails.isEnabled() returns false")
     void loadUserByUsername_whenUserDisabled_marksUserDetailsDisabled() {
         Role userRole = new Role();
         userRole.setName(RoleName.ROLE_USER);

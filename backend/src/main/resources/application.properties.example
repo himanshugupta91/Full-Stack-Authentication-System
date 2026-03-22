@@ -55,8 +55,8 @@ app.backend-url=http://localhost:8080
 app.cors.allowed-origins=http://localhost:5173,http://localhost:3000,https://authsystem-plum.vercel.app
 auth.refresh-token.cookie-name=refreshToken
 auth.refresh-token.cookie-path=/api/v1/auth
-auth.refresh-token.cookie-secure=false
-auth.refresh-token.cookie-same-site=Lax
+auth.refresh-token.cookie-secure=auto
+auth.refresh-token.cookie-same-site=auto
 auth.refresh-token.cookie-domain=
 
 # Optional: if empty, defaults to jwt.secret in code.

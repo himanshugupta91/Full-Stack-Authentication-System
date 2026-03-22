@@ -9,6 +9,7 @@ import com.auth.security.jwt.JwtUtil;
 import com.auth.service.UserService;
 import com.auth.service.support.TokenHashService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("AuthTokenService")
 class AuthTokenServiceTest {
 
     @Mock
@@ -53,6 +55,7 @@ class AuthTokenServiceTest {
     }
 
     @Test
+    @DisplayName("issueTokens: valid user → persists hashed refresh token and builds auth response")
     void issueTokens_whenUserIsValid_persistsHashedRefreshTokenAndBuildsResponse() {
         User user = buildUser();
 
@@ -85,11 +88,13 @@ class AuthTokenServiceTest {
     }
 
     @Test
+    @DisplayName("refreshTokens: blank token → throws TokenValidationException")
     void refreshTokens_whenRefreshTokenBlank_throwsTokenValidationException() {
         assertThrows(TokenValidationException.class, () -> authTokenService.refreshTokens("  "));
     }
 
     @Test
+    @DisplayName("refreshTokens: stored token missing → throws TokenValidationException")
     void refreshTokens_whenStoredTokenMissing_throwsTokenValidationException() {
         when(tokenHashService.hash("raw-refresh-token")).thenReturn("hashed");
         when(userService.findByRefreshToken("hashed")).thenReturn(Optional.empty());
@@ -98,6 +103,7 @@ class AuthTokenServiceTest {
     }
 
     @Test
+    @DisplayName("refreshTokens: stored token expired → clears token and throws TokenValidationException")
     void refreshTokens_whenStoredTokenExpired_clearsTokenAndThrowsTokenValidationException() {
         User user = buildUser();
         user.setRefreshToken("hashed");
@@ -114,6 +120,7 @@ class AuthTokenServiceTest {
     }
 
     @Test
+    @DisplayName("revokeRefreshToken: blank token → does not call repository")
     void revokeRefreshToken_whenTokenBlank_doesNotCallRepository() {
         authTokenService.revokeRefreshToken(" ");
 

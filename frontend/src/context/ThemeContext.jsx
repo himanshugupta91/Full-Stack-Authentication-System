@@ -6,7 +6,7 @@ const THEME_STORAGE_KEY = 'theme-preference';
 const DARK_THEME = 'dark';
 const LIGHT_THEME = 'light';
 const THEME_SWITCH_CLASS = 'theme-switching';
-const THEME_SWITCH_DURATION_MS = 280;
+const THEME_SWITCH_FALLBACK_DURATION_MS = 280;
 
 const resolveInitialTheme = () => {
   const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
@@ -23,6 +23,29 @@ const applyTheme = (theme) => {
 };
 
 const shouldReduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const getThemeSwitchDurationMs = () => {
+  const durationValue = getComputedStyle(document.documentElement)
+    .getPropertyValue('--theme-transition-duration')
+    .trim();
+
+  if (!durationValue) {
+    return THEME_SWITCH_FALLBACK_DURATION_MS;
+  }
+
+  if (durationValue.endsWith('ms')) {
+    const parsedDuration = Number.parseFloat(durationValue);
+    return Number.isFinite(parsedDuration) ? parsedDuration : THEME_SWITCH_FALLBACK_DURATION_MS;
+  }
+
+  if (durationValue.endsWith('s')) {
+    const parsedDuration = Number.parseFloat(durationValue) * 1000;
+    return Number.isFinite(parsedDuration) ? parsedDuration : THEME_SWITCH_FALLBACK_DURATION_MS;
+  }
+
+  const parsedDuration = Number.parseFloat(durationValue);
+  return Number.isFinite(parsedDuration) ? parsedDuration : THEME_SWITCH_FALLBACK_DURATION_MS;
+};
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(resolveInitialTheme);
@@ -48,7 +71,7 @@ export const ThemeProvider = ({ children }) => {
 
     const timeoutId = window.setTimeout(() => {
       root.classList.remove(THEME_SWITCH_CLASS);
-    }, THEME_SWITCH_DURATION_MS);
+    }, getThemeSwitchDurationMs() + 40);
 
     return () => {
       window.clearTimeout(timeoutId);
