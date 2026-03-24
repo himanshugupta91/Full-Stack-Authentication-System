@@ -8,6 +8,8 @@ const Navbar = () => {
     const { isDarkMode, toggleTheme } = useTheme();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const navigate = useNavigate();
+    const isLoggedIn = isAuthenticated();
+    const hasAdminAccess = isAdmin();
 
     const handleLogout = async () => {
         await logout();
@@ -55,7 +57,7 @@ const Navbar = () => {
 
                     <div className={`collapse navbar-collapse bento-collapse ${isMenuOpen ? 'show' : ''}`} id="navbarNav">
                         <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center nav-motion-group bento-nav-grid">
-                            {isAuthenticated() ? (
+                            {isLoggedIn ? (
                                 <>
                                     <li className="nav-item bento-nav-cell">
                                         <Link className="nav-link nav-motion-link bento-nav-link" to="/dashboard" onClick={closeMenu}>
@@ -63,7 +65,7 @@ const Navbar = () => {
                                             Dashboard
                                         </Link>
                                     </li>
-                                    {isAdmin() && (
+                                    {hasAdminAccess && (
                                         <li className="nav-item bento-nav-cell">
                                             <Link className="nav-link nav-motion-link bento-nav-link" to="/admin" onClick={closeMenu}>
                                                 <i className="bi bi-gear me-1"></i>

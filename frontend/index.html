@@ -7,12 +7,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
     content="Next-generation authentication system with OAuth2, JWT tokens, and role-based access control." />
+  <meta name="color-scheme" content="light dark" />
+  <style>
+    html,
+    body {
+      background: #faf9f7;
+    }
+
+    html[data-theme='dark'],
+    html[data-theme='dark'] body {
+      background: #090f16;
+    }
+  </style>
+  <script>
+    (function () {
+      var STORAGE_KEY = 'theme-preference';
+      var DARK_THEME = 'dark';
+      var LIGHT_THEME = 'light';
+      var root = document.documentElement;
+      var theme = LIGHT_THEME;
+
+      try {
+        var storedTheme = window.localStorage.getItem(STORAGE_KEY);
+        if (storedTheme === DARK_THEME || storedTheme === LIGHT_THEME) {
+          theme = storedTheme;
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          theme = DARK_THEME;
+        }
+      } catch (error) {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          theme = DARK_THEME;
+        }
+      }
+
+      root.setAttribute('data-theme', theme);
+      root.style.colorScheme = theme;
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <title>AuthSystem</title>
 </head>
 

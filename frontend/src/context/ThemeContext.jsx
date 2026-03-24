@@ -6,11 +6,48 @@ const THEME_STORAGE_KEY = 'theme-preference';
 const DARK_THEME = 'dark';
 const LIGHT_THEME = 'light';
 const THEME_SWITCH_CLASS = 'theme-switching';
-const THEME_SWITCH_FALLBACK_DURATION_MS = 280;
+const THEME_VALUES = new Set([DARK_THEME, LIGHT_THEME]);
+const IS_BROWSER = typeof window !== 'undefined';
+
+const isSupportedTheme = (value) => THEME_VALUES.has(value);
+
+const readStoredTheme = () => {
+  if (!IS_BROWSER) {
+    return null;
+  }
+
+  try {
+    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return isSupportedTheme(storedTheme) ? storedTheme : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeStoredTheme = (theme) => {
+  if (!IS_BROWSER) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // Ignore storage write issues (private mode/quota restrictions).
+  }
+};
 
 const resolveInitialTheme = () => {
-  const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-  if (storedTheme === DARK_THEME || storedTheme === LIGHT_THEME) {
+  if (!IS_BROWSER) {
+    return LIGHT_THEME;
+  }
+
+  const preloadedTheme = document.documentElement.getAttribute('data-theme');
+  if (isSupportedTheme(preloadedTheme)) {
+    return preloadedTheme;
+  }
+
+  const storedTheme = readStoredTheme();
+  if (storedTheme) {
     return storedTheme;
   }
 
@@ -22,66 +59,78 @@ const applyTheme = (theme) => {
   document.documentElement.style.colorScheme = theme;
 };
 
-const shouldReduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-const getThemeSwitchDurationMs = () => {
-  const durationValue = getComputedStyle(document.documentElement)
-    .getPropertyValue('--theme-transition-duration')
-    .trim();
-
-  if (!durationValue) {
-    return THEME_SWITCH_FALLBACK_DURATION_MS;
-  }
-
-  if (durationValue.endsWith('ms')) {
-    const parsedDuration = Number.parseFloat(durationValue);
-    return Number.isFinite(parsedDuration) ? parsedDuration : THEME_SWITCH_FALLBACK_DURATION_MS;
-  }
-
-  if (durationValue.endsWith('s')) {
-    const parsedDuration = Number.parseFloat(durationValue) * 1000;
-    return Number.isFinite(parsedDuration) ? parsedDuration : THEME_SWITCH_FALLBACK_DURATION_MS;
-  }
-
-  const parsedDuration = Number.parseFloat(durationValue);
-  return Number.isFinite(parsedDuration) ? parsedDuration : THEME_SWITCH_FALLBACK_DURATION_MS;
-};
-
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(resolveInitialTheme);
-  const hasSyncedThemeOnce = useRef(false);
+  const [theme, setThemeState] = useState(resolveInitialTheme);
+  const shouldAnimateThemeChange = useRef(false);
 
   useEffect(() => {
     const root = document.documentElement;
-    const shouldAnimateThemeChange = hasSyncedThemeOnce.current && !shouldReduceMotion();
+    const shouldAnimate = shouldAnimateThemeChange.current;
+    shouldAnimateThemeChange.current = false;
 
-    if (shouldAnimateThemeChange) {
+    if (shouldAnimate) {
       root.classList.add(THEME_SWITCH_CLASS);
-      // Ensure transition styles are applied before theme variables update.
-      void root.offsetWidth;
     }
 
     applyTheme(theme);
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
-    hasSyncedThemeOnce.current = true;
+    writeStoredTheme(theme);
 
-    if (!shouldAnimateThemeChange) {
+    if (!shouldAnimate) {
       return undefined;
     }
 
-    const timeoutId = window.setTimeout(() => {
-      root.classList.remove(THEME_SWITCH_CLASS);
-    }, getThemeSwitchDurationMs() + 40);
+    let secondRafId = 0;
+    const firstRafId = window.requestAnimationFrame(() => {
+      secondRafId = window.requestAnimationFrame(() => {
+        root.classList.remove(THEME_SWITCH_CLASS);
+      });
+    });
 
     return () => {
-      window.clearTimeout(timeoutId);
+      window.cancelAnimationFrame(firstRafId);
+      if (secondRafId) {
+        window.cancelAnimationFrame(secondRafId);
+      }
       root.classList.remove(THEME_SWITCH_CLASS);
     };
   }, [theme]);
 
+  useEffect(() => {
+    if (!IS_BROWSER) {
+      return undefined;
+    }
+
+    const handleStorage = (event) => {
+      if (event.key !== THEME_STORAGE_KEY || !isSupportedTheme(event.newValue)) {
+        return;
+      }
+      setThemeState(event.newValue);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
+
+  const setTheme = useCallback((nextThemeOrUpdater) => {
+    setThemeState((currentTheme) => {
+      const resolvedTheme = typeof nextThemeOrUpdater === 'function'
+        ? nextThemeOrUpdater(currentTheme)
+        : nextThemeOrUpdater;
+
+      if (!isSupportedTheme(resolvedTheme) || resolvedTheme === currentTheme) {
+        return currentTheme;
+      }
+
+      shouldAnimateThemeChange.current = true;
+      return resolvedTheme;
+    });
+  }, []);
+
   const toggleTheme = useCallback(() => {
     setTheme((currentTheme) => (currentTheme === DARK_THEME ? LIGHT_THEME : DARK_THEME));
-  }, []);
+  }, [setTheme]);
 
   const value = useMemo(
     () => ({
@@ -90,7 +139,7 @@ export const ThemeProvider = ({ children }) => {
       setTheme,
       toggleTheme,
     }),
-    [theme, toggleTheme]
+    [theme, setTheme, toggleTheme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
