@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_HINT, validatePassword } from '../utils/passwordPolicy';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -39,15 +40,16 @@ const Register = () => {
         setLoading(true);
 
         try {
-            const response = await register(formData.name, formData.email, formData.password);
-            if (response.success) {
-                toast.success('Registration successful! Please verify your email.');
-                navigate('/verify-otp', { state: { email: formData.email } });
-            } else {
-                toast.error(response.message);
+            const result = await register(formData.name, formData.email, formData.password);
+            if (result?.success === false) {
+                toast.error(result.message || 'Registration failed. Please try again.');
+                return;
             }
+
+            toast.success(result?.message || 'Registration successful! Please verify your email.');
+            navigate('/verify-otp', { state: { email: formData.email } });
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Registration failed. Please try again.');
+            toast.error(getApiErrorMessage(err, 'Registration failed. Please try again.'));
         } finally {
             setLoading(false);
         }

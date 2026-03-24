@@ -5,6 +5,7 @@ import com.auth.entity.RoleName;
 import com.auth.entity.User;
 import com.auth.service.RoleService;
 import com.auth.service.UserService;
+import com.auth.util.EmailNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Resolves OAuth2 user data and creates/updates local users.
@@ -25,6 +27,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class OAuth2UserProvisioningService {
+
+    private static final Set<String> SUPPORTED_PROVIDERS = Set.of("google", "github", "apple", "linkedin");
+    private static final Pattern NON_EMAIL_SAFE_CHARS = Pattern.compile("[^a-zA-Z0-9._-]");
 
     private final UserService userService;
 
@@ -105,16 +110,15 @@ public class OAuth2UserProvisioningService {
 
     /** Extracts a reliable email from provider attributes with provider-specific fallback logic. */
     private String extractEmail(String provider, String providerUserId, Map<String, Object> attributes) {
-        String email = trimToNull(toStringValue(attributes.get("email")));
-        if (StringUtils.hasText(email)) {
-            String normalizedEmail = email.toLowerCase(Locale.ROOT);
+        String normalizedEmail = EmailNormalizer.normalizeOrNull(toStringValue(attributes.get("email")));
+        if (StringUtils.hasText(normalizedEmail)) {
             return normalizedEmail;
         }
 
         if ("github".equals(provider)) {
-            String login = trimToNull(toStringValue(attributes.get("login")));
+            String login = EmailNormalizer.normalizeOrNull(toStringValue(attributes.get("login")));
             if (StringUtils.hasText(login)) {
-                String fallbackGithubEmail = login.toLowerCase(Locale.ROOT) + "@users.noreply.github.com";
+                String fallbackGithubEmail = login + "@users.noreply.github.com";
                 return fallbackGithubEmail;
             }
         }
@@ -202,8 +206,7 @@ public class OAuth2UserProvisioningService {
         }
 
         String normalizedProvider = provider.toLowerCase(Locale.ROOT);
-        Set<String> supportedProviders = Set.of("google", "github", "apple", "linkedin");
-        if (!supportedProviders.contains(normalizedProvider)) {
+        if (!SUPPORTED_PROVIDERS.contains(normalizedProvider)) {
             throw new IllegalArgumentException("Unsupported OAuth provider: " + normalizedProvider);
         }
         return normalizedProvider;
@@ -238,7 +241,7 @@ public class OAuth2UserProvisioningService {
             return null;
         }
 
-        String sanitizedProviderUserId = providerUserId.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String sanitizedProviderUserId = NON_EMAIL_SAFE_CHARS.matcher(providerUserId).replaceAll("_");
         if (!StringUtils.hasText(sanitizedProviderUserId)) {
             return null;
         }

@@ -16,6 +16,7 @@ import com.auth.service.RoleService;
 import com.auth.service.UserService;
 import com.auth.service.auth.AuthAbuseProtectionService;
 import com.auth.service.auth.AuthTokenService;
+import com.auth.service.support.DateTimeProvider;
 import com.auth.service.support.EmailService;
 import com.auth.service.support.OtpService;
 import com.auth.service.support.PasswordPolicyService;
@@ -33,6 +34,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
@@ -41,6 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -48,6 +51,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuthServiceImpl")
 class AuthServiceImplTest {
+
+    private static final LocalDateTime FIXED_NOW = LocalDateTime.of(2026, 1, 10, 9, 30, 0);
 
     @Mock
     private UserService userService;
@@ -82,6 +87,9 @@ class AuthServiceImplTest {
     @Mock
     private AuthAbuseProtectionService authAbuseProtectionService;
 
+    @Mock
+    private DateTimeProvider dateTimeProvider;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -89,6 +97,7 @@ class AuthServiceImplTest {
     void setUp() {
         ReflectionTestUtils.setField(authService, "otpExpirationMinutes", 5);
         ReflectionTestUtils.setField(authService, "resetTokenExpirationMinutes", 30);
+        lenient().when(dateTimeProvider.now()).thenReturn(FIXED_NOW);
     }
 
     @Test
@@ -137,6 +146,7 @@ class AuthServiceImplTest {
 
         assertEquals("encoded-password", savedUser.getPassword());
         assertEquals("otp-hash", savedUser.getVerificationOtp());
+        assertEquals(FIXED_NOW.plusMinutes(5), savedUser.getOtpExpiry());
         assertEquals(Set.of(userRole), savedUser.getRoles());
         assertEquals("local", savedUser.getAuthProvider());
         assertFalse(savedUser.isEnabled());

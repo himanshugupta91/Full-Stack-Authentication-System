@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { OAUTH_PROVIDERS, getOAuthAuthorizationUrl } from '../services/api';
+import { getApiErrorMessage } from '../utils/apiError';
+import { hasAdminRole } from '../utils/roles';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -30,13 +32,13 @@ const Login = () => {
 
     try {
       const userData = await login(email, password);
-      if (userData.roles?.includes('ROLE_ADMIN')) {
+      if (hasAdminRole(userData.roles)) {
         navigate('/admin');
       } else {
         navigate('/dashboard');
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed. Please try again.');
+      toast.error(getApiErrorMessage(error, 'Login failed. Please try again.'));
     } finally {
       setLoading(false);
     }

@@ -4,8 +4,10 @@ import com.auth.entity.User;
 import com.auth.exception.AccountLockedException;
 import com.auth.exception.RateLimitExceededException;
 import com.auth.service.UserService;
+import com.auth.service.support.DateTimeProvider;
 import com.auth.service.support.EmailService;
 import com.auth.service.support.RateLimitService;
+import com.auth.util.EmailNormalizer;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +19,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Locale;
 
 /**
  * Coordinates Redis-based rate limiting and per-user brute-force lockouts for
@@ -35,6 +36,7 @@ public class AuthAbuseProtectionService {
     private final RateLimitService rateLimitService;
     private final UserService userService;
     private final EmailService emailService;
+    private final DateTimeProvider dateTimeProvider;
 
     @Value("${auth.protection.enabled:true}")
     private boolean protectionEnabled;
@@ -152,7 +154,7 @@ public class AuthAbuseProtectionService {
         int nextAttempts = user.getFailedOtpAttempts() + 1;
         if (nextAttempts >= otpMaxAttempts) {
             user.setFailedOtpAttempts(0);
-            user.setOtpLockedUntil(LocalDateTime.now().plusMinutes(otpLockMinutes));
+            user.setOtpLockedUntil(dateTimeProvider.now().plusMinutes(otpLockMinutes));
         } else {
             user.setFailedOtpAttempts(nextAttempts);
         }
@@ -211,8 +213,9 @@ public class AuthAbuseProtectionService {
 
     private void assertLoginNotLocked(User user) {
         LocalDateTime lockedUntil = user.getAccountLockedUntil();
-        if (lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now())) {
-            long retryAfter = Math.max(1, Duration.between(LocalDateTime.now(), lockedUntil).getSeconds());
+        LocalDateTime now = dateTimeProvider.now();
+        if (lockedUntil != null && lockedUntil.isAfter(now)) {
+            long retryAfter = Math.max(1, Duration.between(now, lockedUntil).getSeconds());
             throw new AccountLockedException(
                     "Account is temporarily locked due to repeated failed logins.", retryAfter);
         }
@@ -220,8 +223,9 @@ public class AuthAbuseProtectionService {
 
     private void assertOtpNotLocked(User user) {
         LocalDateTime lockedUntil = user.getOtpLockedUntil();
-        if (lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now())) {
-            long retryAfter = Math.max(1, Duration.between(LocalDateTime.now(), lockedUntil).getSeconds());
+        LocalDateTime now = dateTimeProvider.now();
+        if (lockedUntil != null && lockedUntil.isAfter(now)) {
+            long retryAfter = Math.max(1, Duration.between(now, lockedUntil).getSeconds());
             throw new AccountLockedException(
                     "OTP verification is temporarily locked due to repeated failed attempts.", retryAfter);
         }
@@ -231,7 +235,7 @@ public class AuthAbuseProtectionService {
         int nextAttempts = user.getFailedLoginAttempts() + 1;
         if (nextAttempts >= loginMaxAttempts) {
             user.setFailedLoginAttempts(0);
-            user.setAccountLockedUntil(LocalDateTime.now().plusMinutes(loginLockMinutes));
+            user.setAccountLockedUntil(dateTimeProvider.now().plusMinutes(loginLockMinutes));
             userService.save(user);
             sendAccountLockEmailSafely(user);
         } else {
@@ -271,7 +275,7 @@ public class AuthAbuseProtectionService {
     }
 
     private String normalizeEmail(String email) {
-        return StringUtils.hasText(email) ? email.trim().toLowerCase(Locale.ROOT) : "unknown-email";
+        return EmailNormalizer.normalizeOr(email, "unknown-email");
     }
 
     private String trimToNull(String value) {

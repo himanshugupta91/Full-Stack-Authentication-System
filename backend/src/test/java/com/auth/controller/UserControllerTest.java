@@ -20,8 +20,10 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,6 +59,19 @@ class UserControllerTest {
         verify(userPortalService).getDashboard("alice@example.com");
         assertTrue(response.getBody().isSuccess());
         assertEquals(dashboard, response.getBody().getData());
+    }
+
+    @Test
+    @DisplayName("getDashboard: blank principal → throws IllegalArgumentException")
+    void getDashboard_whenPrincipalBlank_throwsIllegalArgumentException() {
+        when(authentication.getName()).thenReturn("  ");
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> userController.getDashboard(authentication));
+
+        assertEquals("Authenticated principal is required.", exception.getMessage());
+        verifyNoInteractions(userPortalService);
     }
 
     @Test
@@ -98,5 +113,20 @@ class UserControllerTest {
         verify(authService).changePassword("alice@example.com", request);
         assertTrue(response.getBody().isSuccess());
         assertEquals(messageResponse, response.getBody().getData());
+    }
+
+    @Test
+    @DisplayName("changePassword: null authentication → throws IllegalArgumentException")
+    void changePassword_whenAuthenticationNull_throwsIllegalArgumentException() {
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword("OldPass123!");
+        request.setNewPassword("NewPass123!");
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> userController.changePassword(null, request));
+
+        assertEquals("Authenticated principal is required.", exception.getMessage());
+        verifyNoInteractions(authService);
     }
 }

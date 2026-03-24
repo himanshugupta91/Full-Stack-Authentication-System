@@ -35,7 +35,8 @@ public class PasswordPolicyService {
             "iloveyou",
             "abc123",
             "111111",
-            "123123");
+            "123123"
+    );
 
     /**
      * Validates password strength against the configured policy rules.

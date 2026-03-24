@@ -2,6 +2,7 @@ package com.auth.security;
 
 import com.auth.entity.User;
 import com.auth.service.UserService;
+import com.auth.util.EmailNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -38,10 +38,10 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     /** Normalizes email input used for user lookup. */
     protected String normalizeEmail(String email) {
-        if (email == null) {
-            throw new UsernameNotFoundException("Email must not be null.");
+        String normalizedEmail = EmailNormalizer.normalizeOrNull(email);
+        if (normalizedEmail == null) {
+            throw new UsernameNotFoundException("Email must not be blank.");
         }
-        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         return normalizedEmail;
     }
 

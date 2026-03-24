@@ -19,10 +19,12 @@ import com.auth.service.RoleService;
 import com.auth.service.UserService;
 import com.auth.service.auth.AuthAbuseProtectionService;
 import com.auth.service.auth.AuthTokenService;
+import com.auth.service.support.DateTimeProvider;
 import com.auth.service.support.EmailService;
 import com.auth.service.support.OtpService;
 import com.auth.service.support.PasswordPolicyService;
 import com.auth.service.support.TokenHashService;
+import com.auth.util.EmailNormalizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,10 +34,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -58,6 +58,7 @@ public class AuthServiceImpl implements AuthService {
     private final TokenHashService tokenHashService;
     private final PasswordPolicyService passwordPolicyService;
     private final AuthAbuseProtectionService authAbuseProtectionService;
+    private final DateTimeProvider dateTimeProvider;
 
     @Value("${otp.expiration.minutes:5}")
     private int otpExpirationMinutes;
@@ -263,7 +264,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void requireTokenNotExpired(LocalDateTime expiry, String errorMessage) {
-        if (expiry == null || expiry.isBefore(LocalDateTime.now())) {
+        LocalDateTime now = dateTimeProvider.now();
+        if (expiry == null || expiry.isBefore(now)) {
             throw new TokenValidationException(errorMessage);
         }
     }
@@ -271,14 +273,14 @@ public class AuthServiceImpl implements AuthService {
     private String storeVerificationOtp(User user) {
         String otp = otpService.generateOtp();
         user.setVerificationOtp(tokenHashService.hash(otp));
-        user.setOtpExpiry(LocalDateTime.now().plusMinutes(otpExpirationMinutes));
+        user.setOtpExpiry(dateTimeProvider.now().plusMinutes(otpExpirationMinutes));
         return otp;
     }
 
     private String storeResetToken(User user) {
         String resetToken = otpService.generateResetToken();
         user.setResetToken(tokenHashService.hash(resetToken));
-        user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(resetTokenExpirationMinutes));
+        user.setResetTokenExpiry(dateTimeProvider.now().plusMinutes(resetTokenExpirationMinutes));
         return resetToken;
     }
 
@@ -298,7 +300,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private String normalizeEmail(String email) {
-        return StringUtils.hasText(email) ? email.trim().toLowerCase(Locale.ROOT) : email;
+        return EmailNormalizer.normalizeOrNull(email);
     }
 
     private void sendOtpEmailSafely(User user, String otp, String context) {

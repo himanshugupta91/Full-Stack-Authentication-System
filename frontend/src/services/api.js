@@ -2,6 +2,16 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 const OAUTH_BASE_URL = import.meta.env.VITE_OAUTH_BASE_URL || 'http://localhost:8080';
+const IS_BROWSER = typeof window !== 'undefined';
+const REFRESH_SKIP_PATHS = [
+  '/auth/login',
+  '/auth/refresh',
+  '/auth/logout',
+  '/auth/register',
+  '/auth/verify-otp',
+  '/auth/reset-password',
+  '/auth/update-password',
+];
 
 export const USER_KEY = 'user';
 
@@ -26,6 +36,10 @@ const api = axios.create({
 });
 
 const readStoredUser = () => {
+  if (!IS_BROWSER) {
+    return null;
+  }
+
   const raw = localStorage.getItem(USER_KEY);
   if (!raw) {
     return null;
@@ -34,13 +48,16 @@ const readStoredUser = () => {
   try {
     return JSON.parse(raw);
   } catch {
+    localStorage.removeItem(USER_KEY);
     return null;
   }
 };
 
 export const clearAuthStorage = () => {
   accessToken = null;
-  localStorage.removeItem(USER_KEY);
+  if (IS_BROWSER) {
+    localStorage.removeItem(USER_KEY);
+  }
 };
 
 export const saveAuthPayload = (payload) => {
@@ -58,7 +75,9 @@ export const saveAuthPayload = (payload) => {
     enabled: payload.enabled,
     roles: payload.roles || [],
   };
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  if (IS_BROWSER) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  }
 };
 
 let isRefreshing = false;
@@ -69,25 +88,35 @@ const subscribeTokenRefresh = (callback) => {
 };
 
 const notifyTokenRefreshed = (newToken) => {
-  refreshSubscribers.forEach((callback) => callback(newToken));
+  const subscribers = [...refreshSubscribers];
   refreshSubscribers = [];
+  subscribers.forEach((callback) => callback(newToken));
 };
 
 const shouldSkipRefresh = (url = '') => {
-  return (
-    url.includes('/auth/login') ||
-    url.includes('/auth/refresh') ||
-    url.includes('/auth/logout') ||
-    url.includes('/auth/register') ||
-    url.includes('/auth/verify-otp') ||
-    url.includes('/auth/reset-password') ||
-    url.includes('/auth/update-password')
-  );
+  if (!url) {
+    return false;
+  }
+  return REFRESH_SKIP_PATHS.some((path) => url.includes(path));
+};
+
+const hasApiEnvelope = (payload) =>
+  payload &&
+  typeof payload === 'object' &&
+  Object.prototype.hasOwnProperty.call(payload, 'success') &&
+  Object.prototype.hasOwnProperty.call(payload, 'data');
+
+const unwrapApiPayload = (payload) => {
+  if (!hasApiEnvelope(payload)) {
+    return payload;
+  }
+  return payload.success ? payload.data : payload;
 };
 
 api.interceptors.request.use(
   (config) => {
     if (accessToken) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
@@ -97,12 +126,7 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    // Transparently unwrap the backend ApiResponse<T> wrapper
-    if (response.data && typeof response.data === 'object' && 'success' in response.data) {
-      if (response.data.success) {
-        response.data = response.data.data;
-      }
-    }
+    response.data = unwrapApiPayload(response.data);
     return response;
   },
   async (error) => {
@@ -135,16 +159,21 @@ api.interceptors.response.use(
 
     try {
       const refreshResponse = await api.post('/auth/refresh');
-      saveAuthPayload(refreshResponse.data);
-      notifyTokenRefreshed(refreshResponse.data.accessToken);
+      const refreshPayload = refreshResponse.data;
+      if (!refreshPayload?.accessToken) {
+        throw new Error('Refresh response missing access token.');
+      }
+
+      saveAuthPayload(refreshPayload);
+      notifyTokenRefreshed(refreshPayload.accessToken);
 
       originalRequest.headers = originalRequest.headers || {};
-      originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.accessToken}`;
+      originalRequest.headers.Authorization = `Bearer ${refreshPayload.accessToken}`;
       return api(originalRequest);
     } catch (refreshError) {
       clearAuthStorage();
       notifyTokenRefreshed(null);
-      if (window.location.pathname !== '/login') {
+      if (IS_BROWSER && window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
       return Promise.reject(refreshError);

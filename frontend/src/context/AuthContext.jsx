@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { hasAdminRole } from '../utils/roles';
 import {
   authAPI,
   clearAuthStorage,
@@ -12,7 +13,9 @@ let bootstrapRefreshPromise = null;
 
 const bootstrapRefreshSession = () => {
   if (!bootstrapRefreshPromise) {
-    bootstrapRefreshPromise = authAPI.refresh();
+    bootstrapRefreshPromise = authAPI.refresh().finally(() => {
+      bootstrapRefreshPromise = null;
+    });
   }
   return bootstrapRefreshPromise;
 };
@@ -20,6 +23,13 @@ const bootstrapRefreshSession = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => getStoredUser());
   const [loading, setLoading] = useState(true);
+
+  const syncUserFromAuthPayload = useCallback((payload) => {
+    saveAuthPayload(payload);
+    const currentUser = getStoredUser();
+    setUser(currentUser);
+    return currentUser;
+  }, []);
 
   useEffect(() => {
     const isOAuthCallbackRoute = window.location.pathname.startsWith('/oauth2/callback');
@@ -39,8 +49,7 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const response = await bootstrapRefreshSession();
-        saveAuthPayload(response.data);
-        setUser(getStoredUser());
+        syncUserFromAuthPayload(response.data);
       } catch {
         clearAuthStorage();
         setUser(null);
@@ -50,23 +59,19 @@ export const AuthProvider = ({ children }) => {
     };
 
     bootstrapSession();
-  }, []);
+  }, [syncUserFromAuthPayload]);
 
   const login = useCallback(async (email, password) => {
     const response = await authAPI.login({ email, password });
-    saveAuthPayload(response.data);
-    const currentUser = getStoredUser();
-    setUser(currentUser);
+    syncUserFromAuthPayload(response.data);
     return response.data;
-  }, []);
+  }, [syncUserFromAuthPayload]);
 
   const completeOAuthLogin = useCallback(async () => {
     const response = await authAPI.refresh();
-    saveAuthPayload(response.data);
-    const currentUser = getStoredUser();
-    setUser(currentUser);
+    const currentUser = syncUserFromAuthPayload(response.data);
     return currentUser;
-  }, []);
+  }, [syncUserFromAuthPayload]);
 
   const register = useCallback(async (name, email, password) => {
     const response = await authAPI.register({ name, email, password });
@@ -99,7 +104,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const isAdmin = useCallback(() => user?.roles?.includes('ROLE_ADMIN'), [user]);
+  const isAdmin = useCallback(() => hasAdminRole(user?.roles), [user]);
 
   const isAuthenticated = useCallback(() => !!user, [user]);
 

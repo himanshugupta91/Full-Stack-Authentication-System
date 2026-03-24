@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { adminAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { getApiErrorMessage } from '../utils/apiError';
+import { getRoleBadgeClass } from '../utils/roles';
 
 const resolveLoginSourceView = (source) => {
     const normalizedSource = (source || 'EMAIL_PASSWORD').toUpperCase();
@@ -60,8 +62,8 @@ const AdminDashboard = () => {
             setUsers(usersPage.content || []);
             setTotalPages(usersPage.totalPages ?? usersPageMeta.totalPages ?? 0);
             setTotalElements(usersPage.totalElements ?? usersPageMeta.totalElements ?? 0);
-        } catch {
-            setError('Failed to load admin data');
+        } catch (error) {
+            setError(getApiErrorMessage(error, 'Failed to load admin data'));
         } finally {
             setLoading(false);
         }
@@ -281,7 +283,7 @@ const AdminDashboard = () => {
                                                         {u.roles?.map((role, idx) => (
                                                             <span
                                                                 key={idx}
-                                                                className={`badge ${role.includes('ADMIN') ? 'bg-danger' : 'bg-primary'}`}
+                                                                className={`badge ${getRoleBadgeClass(role)}`}
                                                             >
                                                                 {role.replace('ROLE_', '')}
                                                             </span>

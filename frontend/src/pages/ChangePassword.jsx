@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { userAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_HINT, validatePassword } from '../utils/passwordPolicy';
+import { getApiErrorMessage } from '../utils/apiError';
 
 /**
  * ChangePassword Component
@@ -29,48 +30,41 @@ const ChangePassword = () => {
         });
     };
 
-    /**
-     * Handles password change form submission.
-     * Validates inputs and interacts with the API.
-     */
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
 
-        // Validation: Check if new passwords match
         if (formData.newPassword !== formData.confirmPassword) {
             toast.error("New passwords don't match!");
-            setLoading(false);
             return;
         }
 
         const passwordError = validatePassword(formData.newPassword, user?.email);
         if (passwordError) {
             toast.error(passwordError);
-            setLoading(false);
             return;
         }
 
+        setLoading(true);
+
         try {
-            // Call API to change password
             const response = await userAPI.changePassword({
                 currentPassword: formData.currentPassword,
                 newPassword: formData.newPassword
             });
+            const result = response.data;
 
-            if (response.data.success) {
-                toast.success('Password changed successfully! You will be logged out in 3 seconds.');
-
-                // Logout user after successful password change for security
-                setTimeout(() => {
-                    logout();
-                    navigate('/login');
-                }, 3000);
-            } else {
-                toast.error(response.data.message);
+            if (result?.success === false) {
+                toast.error(result.message || 'An error occurred. Please try again.');
+                return;
             }
+
+            toast.success(result?.message || 'Password changed successfully! You will be logged out in 3 seconds.');
+            setTimeout(() => {
+                logout();
+                navigate('/login');
+            }, 3000);
         } catch (err) {
-            toast.error(err.response?.data?.message || 'An error occurred. Please try again.');
+            toast.error(getApiErrorMessage(err, 'An error occurred. Please try again.'));
         } finally {
             setLoading(false);
         }

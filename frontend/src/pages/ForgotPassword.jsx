@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
@@ -16,7 +17,7 @@ const ForgotPassword = () => {
             const response = await resetPassword(email);
             toast.success(response.message);
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to send reset link. Please try again.');
+            toast.error(getApiErrorMessage(err, 'Failed to send reset link. Please try again.'));
         } finally {
             setLoading(false);
         }

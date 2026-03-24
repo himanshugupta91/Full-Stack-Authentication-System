@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { PASSWORD_MIN_LENGTH, PASSWORD_POLICY_HINT, validatePassword } from '../utils/passwordPolicy';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
@@ -45,15 +46,16 @@ const ResetPassword = () => {
         setLoading(true);
 
         try {
-            const response = await updatePassword(token, formData.newPassword);
-            if (response.success) {
-                toast.success('Password updated successfully! Redirecting to login...');
-                setTimeout(() => navigate('/login'), 2000);
-            } else {
-                toast.error(response.message);
+            const result = await updatePassword(token, formData.newPassword);
+            if (result?.success === false) {
+                toast.error(result.message || 'Failed to reset password. Please try again.');
+                return;
             }
+
+            toast.success(result?.message || 'Password updated successfully! Redirecting to login...');
+            setTimeout(() => navigate('/login'), 2000);
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to reset password. Please try again.');
+            toast.error(getApiErrorMessage(err, 'Failed to reset password. Please try again.'));
         } finally {
             setLoading(false);
         }

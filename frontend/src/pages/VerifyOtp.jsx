@@ -3,9 +3,12 @@ import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-do
 
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../utils/apiError';
+
+const OTP_LENGTH = 6;
 
 const VerifyOtp = () => {
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otp, setOtp] = useState(Array.from({ length: OTP_LENGTH }, () => ''));
     const [loading, setLoading] = useState(false);
     const [resending, setResending] = useState(false);
     const [countdown, setCountdown] = useState(0);
@@ -29,14 +32,14 @@ const VerifyOtp = () => {
     }, [countdown]);
 
     const handleChange = (index, value) => {
-        if (value.length > 1) return;
+        if (value.length > 1 || (value && !/^\d$/.test(value))) return;
 
         const newOtp = [...otp];
         newOtp[index] = value;
         setOtp(newOtp);
 
         // Auto-focus next input
-        if (value && index < 5) {
+        if (value && index < OTP_LENGTH - 1) {
             inputRefs.current[index + 1]?.focus();
         }
     };
@@ -49,10 +52,13 @@ const VerifyOtp = () => {
 
     const handlePaste = (e) => {
         e.preventDefault();
-        const pastedData = e.clipboardData.getData('text').slice(0, 6);
+        const pastedData = e.clipboardData
+            .getData('text')
+            .replace(/\D/g, '')
+            .slice(0, OTP_LENGTH);
         const newOtp = [...otp];
         pastedData.split('').forEach((char, index) => {
-            if (index < 6) {
+            if (index < OTP_LENGTH) {
                 newOtp[index] = char;
             }
         });
@@ -63,7 +69,7 @@ const VerifyOtp = () => {
         e.preventDefault();
 
         const otpString = otp.join('');
-        if (otpString.length !== 6) {
+        if (otpString.length !== OTP_LENGTH) {
             toast.error('Please enter complete OTP');
             return;
         }
@@ -72,14 +78,16 @@ const VerifyOtp = () => {
 
         try {
             const response = await authAPI.verifyOtp({ email, otp: otpString });
-            if (response.data.success) {
-                toast.success('Email verified successfully! Redirecting to login...');
-                setTimeout(() => navigate('/login'), 2000);
-            } else {
-                toast.error(response.data.message);
+            const result = response.data;
+            if (result?.success === false) {
+                toast.error(result.message || 'Verification failed. Please try again.');
+                return;
             }
+
+            toast.success(result?.message || 'Email verified successfully! Redirecting to login...');
+            setTimeout(() => navigate('/login'), 2000);
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Verification failed. Please try again.');
+            toast.error(getApiErrorMessage(err, 'Verification failed. Please try again.'));
         } finally {
             setLoading(false);
         }
@@ -92,15 +100,17 @@ const VerifyOtp = () => {
 
         try {
             const response = await authAPI.resendOtp(email);
-            if (response.data.success) {
-                toast.success('OTP sent successfully! Check your email.');
-                setCountdown(60);
-                setOtp(['', '', '', '', '', '']);
-            } else {
-                toast.error(response.data.message);
+            const result = response.data;
+            if (result?.success === false) {
+                toast.error(result.message || 'Failed to resend OTP.');
+                return;
             }
+
+            toast.success(result?.message || 'OTP sent successfully! Check your email.');
+            setCountdown(60);
+            setOtp(Array.from({ length: OTP_LENGTH }, () => ''));
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to resend OTP.');
+            toast.error(getApiErrorMessage(err, 'Failed to resend OTP.'));
         } finally {
             setResending(false);
         }

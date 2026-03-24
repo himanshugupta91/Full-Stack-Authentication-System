@@ -7,6 +7,7 @@ import com.auth.entity.User;
 import com.auth.exception.TokenValidationException;
 import com.auth.security.jwt.JwtUtil;
 import com.auth.service.UserService;
+import com.auth.service.support.DateTimeProvider;
 import com.auth.service.support.TokenHashService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,6 +38,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuthTokenService")
 class AuthTokenServiceTest {
+
+    private static final LocalDateTime FIXED_NOW = LocalDateTime.of(2026, 1, 10, 9, 30, 0);
 
     @Mock
     private JwtUtil jwtUtil;
@@ -46,12 +50,16 @@ class AuthTokenServiceTest {
     @Mock
     private TokenHashService tokenHashService;
 
+    @Mock
+    private DateTimeProvider dateTimeProvider;
+
     @InjectMocks
     private AuthTokenService authTokenService;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(authTokenService, "refreshTokenExpirationMs", 3_600_000L);
+        lenient().when(dateTimeProvider.now()).thenReturn(FIXED_NOW);
     }
 
     @Test
@@ -71,7 +79,7 @@ class AuthTokenServiceTest {
         assertEquals(2, tokens.response().getRoles().size());
         assertNotNull(tokens.refreshToken());
         assertEquals("hashed-refresh-token", user.getRefreshToken());
-        assertNotNull(user.getRefreshTokenExpiry());
+        assertEquals(FIXED_NOW.plusHours(1), user.getRefreshTokenExpiry());
 
         ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
         verify(tokenHashService).hash(tokenCaptor.capture());
@@ -107,7 +115,7 @@ class AuthTokenServiceTest {
     void refreshTokens_whenStoredTokenExpired_clearsTokenAndThrowsTokenValidationException() {
         User user = buildUser();
         user.setRefreshToken("hashed");
-        user.setRefreshTokenExpiry(LocalDateTime.now().minusMinutes(1));
+        user.setRefreshTokenExpiry(FIXED_NOW.minusMinutes(1));
 
         when(tokenHashService.hash("raw-refresh-token")).thenReturn("hashed");
         when(userService.findByRefreshToken("hashed")).thenReturn(Optional.of(user));

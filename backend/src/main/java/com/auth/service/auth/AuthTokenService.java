@@ -7,6 +7,7 @@ import com.auth.entity.User;
 import com.auth.exception.TokenValidationException;
 import com.auth.security.jwt.JwtUtil;
 import com.auth.service.UserService;
+import com.auth.service.support.DateTimeProvider;
 import com.auth.service.support.TokenHashService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,7 @@ public class AuthTokenService {
     private final JwtUtil jwtUtil;
     private final UserService userService;
     private final TokenHashService tokenHashService;
+    private final DateTimeProvider dateTimeProvider;
 
     @Value("${jwt.refresh.expiration}")
     private long refreshTokenExpirationMs;
@@ -45,12 +47,13 @@ public class AuthTokenService {
      */
     @Transactional
     public AuthTokens issueTokens(User user) {
+        LocalDateTime now = dateTimeProvider.now();
         List<String> roles = resolveRoleNames(user);
         String accessToken = jwtUtil.generateTokenFromEmailAndRoles(user.getEmail(), roles);
         String refreshToken = generateRefreshToken();
 
         user.setRefreshToken(tokenHashService.hash(refreshToken));
-        user.setRefreshTokenExpiry(LocalDateTime.now().plusSeconds(refreshTokenExpirationMs / 1000L));
+        user.setRefreshTokenExpiry(now.plusSeconds(refreshTokenExpirationMs / 1000L));
         userService.save(user);
 
         return new AuthTokens(buildAuthResponse(user, accessToken), refreshToken);
@@ -126,7 +129,8 @@ public class AuthTokenService {
     }
 
     private boolean isRefreshTokenExpired(LocalDateTime expiry) {
-        return expiry == null || expiry.isBefore(LocalDateTime.now());
+        LocalDateTime now = dateTimeProvider.now();
+        return expiry == null || expiry.isBefore(now);
     }
 
     private void clearStoredRefreshToken(User user) {

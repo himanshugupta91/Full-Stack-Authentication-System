@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { authAPI, userAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { getApiErrorMessage } from '../utils/apiError';
+import { getRoleBadgeClass } from '../utils/roles';
 
 const UserDashboard = () => {
     const { user, isAdmin } = useAuth();
@@ -17,8 +19,7 @@ const UserDashboard = () => {
     const fetchDashboardData = useCallback(async () => {
         try {
             const response = await userAPI.getDashboard();
-            const payload = response.data?.data ?? response.data ?? null;
-            setDashboardData(payload);
+            setDashboardData(response.data ?? null);
         } catch {
             setError('Failed to load dashboard data');
         } finally {
@@ -38,10 +39,9 @@ const UserDashboard = () => {
         setResendingOtp(true);
         try {
             const response = await authAPI.resendOtp(user.email);
-            const payload = response.data?.data ?? response.data ?? {};
-            toast.success(payload.message || 'OTP sent successfully! Check your email.');
+            toast.success(response.data?.message || 'OTP sent successfully! Check your email.');
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Failed to resend OTP.');
+            toast.error(getApiErrorMessage(err, 'Failed to resend OTP.'));
         } finally {
             setResendingOtp(false);
         }
@@ -132,7 +132,7 @@ const UserDashboard = () => {
                         <h5>Role</h5>
                         <div className="d-flex flex-wrap gap-2">
                             {(dashboardData?.roles || user?.roles || []).map((role, index) => (
-                                <span key={index} className={`badge ${role.includes('ADMIN') ? 'bg-danger' : 'bg-primary'}`}>
+                                <span key={index} className={`badge ${getRoleBadgeClass(role)}`}>
                                     {role.replace('ROLE_', '')}
                                 </span>
                             ))}

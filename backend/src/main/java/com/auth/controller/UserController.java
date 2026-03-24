@@ -8,6 +8,7 @@ import com.auth.dto.response.UserDashboardDto;
 import com.auth.dto.response.UserDto;
 import com.auth.service.AuthService;
 import com.auth.service.UserPortalService;
+import com.auth.util.AuthPrincipalUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +36,7 @@ public class UserController {
     @GetMapping("/dashboard")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<UserDashboardDto>> getDashboard(Authentication authentication) {
-        String authenticatedEmail = authentication.getName();
+        String authenticatedEmail = AuthPrincipalUtil.requireAuthenticatedEmail(authentication);
         UserDashboardDto dashboard = userPortalService.getDashboard(authenticatedEmail);
         return ResponseEntity.ok(ApiResponse.ok(dashboard));
     }
@@ -47,7 +48,7 @@ public class UserController {
     @GetMapping("/profile")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<UserDto>> getProfile(Authentication authentication) {
-        String authenticatedEmail = authentication.getName();
+        String authenticatedEmail = AuthPrincipalUtil.requireAuthenticatedEmail(authentication);
         UserDto profile = userPortalService.getProfile(authenticatedEmail);
         return ResponseEntity.ok(ApiResponse.ok(profile));
     }
@@ -61,7 +62,8 @@ public class UserController {
     public ResponseEntity<ApiResponse<MessageResponse>> changePassword(
             Authentication authentication,
             @Valid @RequestBody ChangePasswordRequest request) {
-        MessageResponse response = authService.changePassword(authentication.getName(), request);
+        String authenticatedEmail = AuthPrincipalUtil.requireAuthenticatedEmail(authentication);
+        MessageResponse response = authService.changePassword(authenticatedEmail, request);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

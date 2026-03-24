@@ -4,12 +4,12 @@ import com.auth.entity.User;
 import com.auth.exception.ResourceNotFoundException;
 import com.auth.repository.UserRepository;
 import com.auth.service.UserService;
+import com.auth.util.EmailNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -108,10 +108,6 @@ public class UserServiceImpl implements UserService {
     }
 
     private String normalizeEmail(String email) {
-        if (!StringUtils.hasText(email)) {
-            return null;
-        }
-        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
-        return normalizedEmail;
+        return EmailNormalizer.normalizeOrNull(email);
     }
 }

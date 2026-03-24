@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { getApiErrorMessage } from '../utils/apiError';
+import { hasAdminRole } from '../utils/roles';
 
 const OAuthCallback = () => {
   const navigate = useNavigate();
@@ -19,14 +21,14 @@ const OAuthCallback = () => {
         const user = await completeOAuthLogin();
         toast.success('Signed in successfully.');
 
-        if (user.roles?.includes('ROLE_ADMIN')) {
+        if (hasAdminRole(user?.roles)) {
           navigate('/admin', { replace: true });
           return;
         }
 
         navigate('/dashboard', { replace: true });
       } catch (error) {
-        toast.error(error.response?.data?.message || 'Could not complete OAuth login.');
+        toast.error(getApiErrorMessage(error, 'Could not complete OAuth login.'));
         navigate('/login', { replace: true });
       }
     };

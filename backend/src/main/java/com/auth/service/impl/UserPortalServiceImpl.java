@@ -11,12 +11,14 @@ import com.auth.util.DateTimeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Composes user-facing dashboard and profile payloads.
  */
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserPortalServiceImpl implements UserPortalService {
 
     private final UserService userService;
