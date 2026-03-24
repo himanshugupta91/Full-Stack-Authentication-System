@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,8 +66,8 @@ class CustomUserDetailsServiceTest {
     }
 
     @Test
-    @DisplayName("loadUserByUsername: disabled account → UserDetails.isEnabled() returns false")
-    void loadUserByUsername_whenUserDisabled_marksUserDetailsDisabled() {
+    @DisplayName("loadUserByUsername: disabled account → authentication principal remains enabled")
+    void loadUserByUsername_whenUserDisabled_marksUserDetailsEnabled() {
         Role userRole = new Role();
         userRole.setName(RoleName.ROLE_USER);
 
@@ -81,6 +81,6 @@ class CustomUserDetailsServiceTest {
 
         UserDetails userDetails = customUserDetailsService.loadUserByUsername("disabled@example.com");
 
-        assertFalse(userDetails.isEnabled());
+        assertTrue(userDetails.isEnabled());
     }
 }

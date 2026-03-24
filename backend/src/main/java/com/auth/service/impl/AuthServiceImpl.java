@@ -130,8 +130,10 @@ public class AuthServiceImpl implements AuthService {
     /**
      * Authenticates a user with email and password, returning a fresh token pair.
      *
-     * @throws BadCredentialsException  if the credentials are invalid
-     * @throws TokenValidationException if the email is not yet verified
+     * <p>Users with pending email verification are still allowed to authenticate
+     * so they can reach verification UX after sign-in.
+     *
+     * @throws BadCredentialsException if the credentials are invalid
      */
     @Override
     public AuthTokens login(LoginRequest request) {
@@ -142,10 +144,6 @@ public class AuthServiceImpl implements AuthService {
             authAbuseProtectionService.recordFailedLogin(email);
             throw new BadCredentialsException("Invalid email or password!");
         });
-
-        if (!user.isEnabled()) {
-            throw new TokenValidationException("Email not verified! Please verify your email before logging in.");
-        }
 
         authenticateCredentials(email, request.getPassword());
         authAbuseProtectionService.clearLoginFailures(user);

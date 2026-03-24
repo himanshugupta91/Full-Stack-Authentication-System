@@ -63,10 +63,12 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     /** Converts the application user model into Spring Security UserDetails. */
     protected UserDetails buildSecurityUser(User user) {
+        // `enabled` in this app represents email-verification status, not sign-in eligibility.
+        // We keep credential authentication available so pending users can complete verification later.
         UserDetails userDetails = new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
-                user.isEnabled(),
+                true,
                 true,
                 true,
                 true,

@@ -2,6 +2,8 @@ package com.auth.service.impl;
 
 import com.auth.dto.request.ChangePasswordRequest;
 import com.auth.dto.request.LoginRequest;
+import com.auth.dto.response.AuthResponse;
+import com.auth.dto.response.AuthTokens;
 import com.auth.dto.response.MessageResponse;
 import com.auth.dto.request.RegisterRequest;
 import com.auth.dto.request.ResetPasswordRequest;
@@ -31,6 +33,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -44,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -169,8 +173,8 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("login: user email not verified → throws TokenValidationException")
-    void login_whenUserEmailNotVerified_throwsTokenValidationException() {
+    @DisplayName("login: user email not verified → authenticates and issues tokens")
+    void login_whenUserEmailNotVerified_authenticatesAndIssuesTokens() {
         LoginRequest request = new LoginRequest();
         request.setEmail("pending@example.com");
         request.setPassword("Password1");
@@ -179,15 +183,21 @@ class AuthServiceImplTest {
         user.setEmail("pending@example.com");
         user.setEnabled(false);
 
+        AuthResponse authResponse = new AuthResponse();
+        authResponse.setEmail("pending@example.com");
+        AuthTokens expectedTokens = new AuthTokens(authResponse, "refresh-token");
+
         when(userService.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
+        when(authTokenService.issueTokens(user)).thenReturn(expectedTokens);
 
-        TokenValidationException exception = assertThrows(
-                TokenValidationException.class,
-                () -> authService.login(request));
+        AuthTokens actualTokens = authService.login(request);
 
-        assertEquals("Email not verified! Please verify your email before logging in.", exception.getMessage());
+        assertEquals(expectedTokens, actualTokens);
         verify(authAbuseProtectionService).guardLoginAttempt(request.getEmail());
-        verifyNoInteractions(authenticationManager, authTokenService);
+        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(authAbuseProtectionService).clearLoginFailures(user);
+        verify(authTokenService).issueTokens(user);
+        verifyNoMoreInteractions(authTokenService);
     }
 
     @Test
