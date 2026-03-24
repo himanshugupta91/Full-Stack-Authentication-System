@@ -168,4 +168,4 @@ Check:
 
 - Project overview: [../README.md](../README.md)
 - Architecture handoff: [../docs/architecture.md](../docs/architecture.md)
-- Backend implementation guide: [../backend/BACKEND_CODEBASE_CREATION_GUIDE.md](../backend/BACKEND_CODEBASE_CREATION_GUIDE.md)
+- Backend property reference: [../backend/src/main/resources/application.properties.example](../backend/src/main/resources/application.properties.example)

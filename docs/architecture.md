@@ -260,4 +260,4 @@ If you are onboarding to the codebase, this order gives the fastest understandin
 
 - Project overview: [../README.md](../README.md)
 - Frontend guide: [../frontend/README.md](../frontend/README.md)
-- Backend build-order guide: [../backend/BACKEND_CODEBASE_CREATION_GUIDE.md](../backend/BACKEND_CODEBASE_CREATION_GUIDE.md)
+- Backend property reference: [../backend/src/main/resources/application.properties.example](../backend/src/main/resources/application.properties.example)

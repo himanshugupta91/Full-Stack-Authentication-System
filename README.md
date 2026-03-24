@@ -36,7 +36,6 @@ Live demo: `https://authsystem-plum.vercel.app/`
 - Project overview: [README.md](./README.md)
 - Frontend guide: [frontend/README.md](./frontend/README.md)
 - Architecture handoff: [docs/architecture.md](./docs/architecture.md)
-- Backend build-order guide: [backend/BACKEND_CODEBASE_CREATION_GUIDE.md](./backend/BACKEND_CODEBASE_CREATION_GUIDE.md)
 - Backend property reference: [backend/src/main/resources/application.properties.example](./backend/src/main/resources/application.properties.example)
 
 ## Repository Layout
