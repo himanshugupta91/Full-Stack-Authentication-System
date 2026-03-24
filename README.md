@@ -1,78 +1,68 @@
-# Full-Stack Authentication System
+<div align="center">
+
+# 🔐 Authentication System
+
+<img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java" />
+<img src="https://img.shields.io/badge/Spring_Boot-3.5.10-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white" alt="Spring Boot" />
+<img src="https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+<img src="https://img.shields.io/badge/PostgreSQL-16-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+<img src="https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+<br />
 
 A production-oriented authentication and authorization platform built with Spring Boot, React, PostgreSQL, and Redis.
 
-The project covers the full account lifecycle: registration, OTP-based email verification, login, token refresh, logout, password reset, password change, social login, protected user APIs, and admin reporting. It is structured like a real application rather than a demo-only repo: backend responsibilities are layered cleanly, security concerns are centralized, and the frontend integrates with the backend using a consistent auth/session model.
+*The project covers the full account lifecycle: registration, OTP-based email verification, login, token refresh, logout, password reset, password change, social login, protected user APIs, and admin reporting. It is structured like a real application rather than a demo-only repo: backend responsibilities are layered cleanly, security concerns are centralized, and the frontend integrates with the backend using a consistent auth/session model.*
 
-Live demo: `https://authsystem-plum.vercel.app/`
+**Live demo:** [`https://authsystem-plum.vercel.app/`](https://authsystem-plum.vercel.app/)
 
-## What This Project Includes
+<br />
+</div>
 
-- Email/password registration with OTP verification and resend flow
-- JWT access tokens with refresh-token rotation
-- HttpOnly refresh cookie handling
-- Password reset and authenticated password change
-- OAuth2 login for Google, GitHub, Apple, and LinkedIn
-- Role-based access control for `ROLE_USER` and `ROLE_ADMIN`
-- Redis-backed rate limiting and temporary lockout protection
-- Admin dashboard with filtering, pagination, and sorting
-- Docker-based local environment for backend, frontend, PostgreSQL, and Redis
+<hr />
 
-## Technology Stack
+## 🚀 What This Project Includes
+
+- 📝 **Email/password registration** with OTP verification and resend flow
+- 🔑 **JWT access tokens** with refresh-token rotation
+- 🍪 **HttpOnly refresh cookie** handling
+- 🔄 **Password reset** and authenticated password change
+- 🌐 **OAuth2 login** for Google, GitHub, Apple, and LinkedIn
+- 🛡️ **Role-based access control** for `ROLE_USER` and `ROLE_ADMIN`
+- 🚥 **Redis-backed rate limiting** and temporary lockout protection
+- 📊 **Admin dashboard** with filtering, pagination, and sorting
+- 🐳 **Docker-based local environment** for backend, frontend, PostgreSQL, and Redis
+
+<hr />
+
+## 🛠️ Technology Stack
+
+<div align="center">
 
 | Layer | Technology |
-| --- | --- |
-| Backend | Java 21, Spring Boot 3.5.10, Spring Security, Spring Data JPA |
-| Frontend | React 19, React Router 7, Vite 7, Axios |
-| Database | PostgreSQL 16 |
-| Caching and protection | Redis 7 |
-| Auth and tokens | JWT, OAuth2 Client, BCrypt, hashed refresh tokens |
-| Email | Spring Mail, Thymeleaf templates |
-| Mapping and boilerplate | MapStruct, Lombok |
-| Containers | Docker, Docker Compose |
+| :--- | :--- |
+| **Backend** | Java 21, Spring Boot 3.5.10, Spring Security, Spring Data JPA |
+| **Frontend** | React 19, React Router 7, Vite 7, Axios |
+| **Database** | PostgreSQL 16 |
+| **Caching and protection** | Redis 7 |
+| **Auth and tokens** | JWT, OAuth2 Client, BCrypt, hashed refresh tokens |
+| **Email** | Spring Mail, Thymeleaf templates |
+| **Mapping and boilerplate** | MapStruct, Lombok |
+| **Containers** | Docker, Docker Compose |
 
-## Documentation Map
+</div>
 
-- Project overview: [README.md](./README.md)
-- Frontend guide: [frontend/README.md](./frontend/README.md)
-- Architecture handoff: [docs/architecture.md](./docs/architecture.md)
-- Backend property reference: [backend/src/main/resources/application.properties.example](./backend/src/main/resources/application.properties.example)
+<hr />
 
-## Repository Layout
+## 🗺️ Documentation Map
 
-```text
-.
-|-- backend/
-|   |-- src/main/java/com/auth/
-|   |   |-- config/
-|   |   |-- controller/
-|   |   |-- dto/
-|   |   |-- entity/
-|   |   |-- exception/
-|   |   |-- mapper/
-|   |   |-- repository/
-|   |   |-- security/
-|   |   |-- service/
-|   |   `-- util/
-|   |-- src/main/resources/
-|   |-- src/test/
-|   |-- docker-compose.yaml
-|   `-- .env.example
-|-- frontend/
-|   |-- src/
-|   |   |-- components/
-|   |   |-- context/
-|   |   |-- pages/
-|   |   |-- services/
-|   |   `-- utils/
-|   |-- public/
-|   |-- .env.example
-|   `-- package.json
-`-- docs/
-    `-- architecture.md
-```
+- 📄 Project overview: [README.md](./README.md)
+- 🖥️ Frontend guide: [frontend/README.md](./frontend/README.md)
+- 🏗️ Architecture handoff: [docs/architecture.md](./docs/architecture.md)
+- ⚙️ Backend property reference: [backend/src/main/resources/application.properties.example](./backend/src/main/resources/application.properties.example)
 
-## Architecture At A Glance
+<hr />
+
+## 🏛️ Architecture At A Glance
 
 The backend follows a layered structure:
 
@@ -89,35 +79,39 @@ The frontend is route-driven and session-aware:
 - Axios automatically retries protected requests after refresh
 - auth state is coordinated centrally in `AuthContext`
 
-If you want the deeper walkthrough, start with [docs/architecture.md](./docs/architecture.md).
+> 💡 **Tip:** If you want the deeper walkthrough, start with [docs/architecture.md](./docs/architecture.md).
 
-## Security Model
+<hr />
+
+## 🛡️ Security Model
 
 This project intentionally uses a split-token design:
 
-- access token: short-lived JWT used for API authorization
-- refresh token: opaque random secret stored as a hash in the database
+- **access token**: short-lived JWT used for API authorization
+- **refresh token**: opaque random secret stored as a hash in the database
 
-Important security choices:
+**Important security choices:**
 
-- passwords are stored with BCrypt
-- refresh tokens, OTPs, and reset tokens are stored hashed
-- refresh tokens are rotated on use
-- rate limiting and brute-force protection are enforced through Redis-backed counters and lockouts
-- refresh tokens are sent through HttpOnly cookies, not JavaScript-readable storage
-- controllers return a stable API wrapper and centralized error responses
+- passwords are stored with **BCrypt**
+- refresh tokens, OTPs, and reset tokens are stored **hashed**
+- refresh tokens are **rotated** on use
+- rate limiting and brute-force protection are enforced through **Redis-backed counters** and lockouts
+- refresh tokens are sent through **HttpOnly cookies**, not JavaScript-readable storage
+- controllers return a **stable API wrapper** and centralized error responses
 
-## Core API Surface
+<hr />
+
+## 🌐 Core API Surface
 
 Base URLs during local development:
 
-- Backend API: `http://localhost:8080`
-- Frontend UI: `http://localhost:5173`
+- **Backend API**: `http://localhost:8080`
+- **Frontend UI**: `http://localhost:5173`
 
-### Auth
+### 🔑 Auth
 
 | Method | Endpoint | Purpose |
-| --- | --- | --- |
+| :---: | :--- | :--- |
 | `POST` | `/api/v1/auth/register` | Register a new account |
 | `POST` | `/api/v1/auth/verify-otp` | Verify email address |
 | `POST` | `/api/v1/auth/login` | Authenticate and issue tokens |
@@ -127,22 +121,22 @@ Base URLs during local development:
 | `POST` | `/api/v1/auth/update-password` | Complete password reset |
 | `POST` | `/api/v1/auth/resend-otp?email={email}` | Resend OTP |
 
-### User
+### 👤 User
 
 | Method | Endpoint | Access |
-| --- | --- | --- |
+| :---: | :--- | :--- |
 | `GET` | `/api/v1/user/dashboard` | `ROLE_USER`, `ROLE_ADMIN` |
 | `GET` | `/api/v1/user/profile` | `ROLE_USER`, `ROLE_ADMIN` |
 | `POST` | `/api/v1/user/change-password` | `ROLE_USER`, `ROLE_ADMIN` |
 
-### Admin
+### 👑 Admin
 
 | Method | Endpoint | Access |
-| --- | --- | --- |
+| :---: | :--- | :--- |
 | `GET` | `/api/v1/admin/dashboard` | `ROLE_ADMIN` |
 | `GET` | `/api/v1/admin/users` | `ROLE_ADMIN` |
 
-Admin user query parameters:
+**Admin user query parameters:**
 
 - `page`: zero-based page index
 - `size`: page size, `1-100`
@@ -152,23 +146,25 @@ Admin user query parameters:
 - `sortBy`: `id`, `name`, `email`, `enabled`, or `createdAt`
 - `sortDir`: `asc` or `desc`
 
-### OAuth2
+### 🔄 OAuth2
 
 | Endpoint | Purpose |
-| --- | --- |
+| :--- | :--- |
 | `/oauth2/authorization/{provider}` | Start provider login |
 | `/login/oauth2/code/{provider}` | Provider callback handled by Spring Security |
 
-## Quick Start
+<hr />
 
-### Prerequisites
+## 🏃 Quick Start
+
+### 📋 Prerequisites
 
 - Java 21+
 - Maven 3.9+
 - Node.js 18+
 - Docker and Docker Compose
 
-### 1. Configure environment files
+### 1️⃣ Configure environment files
 
 ```bash
 cd backend
@@ -182,45 +178,47 @@ Backend configuration lives primarily in `backend/.env`, with additional propert
 
 Frontend configuration uses only public `VITE_*` values. Do not place secrets in frontend environment files.
 
-### 2. Run everything with Docker
+### 2️⃣ Run everything with Docker
 
 ```bash
 cd backend
 docker compose up --build -d postgres redis app frontend
 ```
 
-Available services:
+**Available services:**
 
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8080`
-- Adminer: `http://localhost:5050`
-- Redis Commander: `http://localhost:8081`
+- **Frontend**: `http://localhost:5173`
+- **Backend API**: `http://localhost:8080`
+- **Adminer**: `http://localhost:5050`
+- **Redis Commander**: `http://localhost:8081`
 
-### 3. Run locally without containers
+### 3️⃣ Run locally without containers
 
-Start infrastructure:
+**Start infrastructure:**
 
 ```bash
 cd backend
 docker compose up -d postgres redis
 ```
 
-Run the backend:
+**Run the backend:**
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-Run the frontend:
+**Run the frontend:**
 
 ```bash
-cd frontend
+cd backend
 npm install
 npm run dev
 ```
 
-## Configuration Notes
+<hr />
+
+## ⚙️ Configuration Notes
 
 ### Backend
 
@@ -232,7 +230,7 @@ The most important `backend/.env` settings are:
 - `SPRING_MAIL_PASSWORD`
 - OAuth provider credentials for any enabled providers
 
-Useful references:
+**Useful references:**
 
 - env-based setup: [backend/.env.example](./backend/.env.example)
 - property-based setup: [backend/src/main/resources/application.properties.example](./backend/src/main/resources/application.properties.example)
@@ -244,9 +242,11 @@ The frontend needs only:
 - `VITE_API_URL`
 - `VITE_OAUTH_BASE_URL`
 
-Reference: [frontend/.env.example](./frontend/.env.example)
+**Reference:** [frontend/.env.example](./frontend/.env.example)
 
-## Development Workflow
+<hr />
+
+## 💻 Development Workflow
 
 ### Backend
 
@@ -264,7 +264,9 @@ npm run lint
 npm run build
 ```
 
-## Local Auth Flow
+<hr />
+
+## 🔄 Local Auth Flow
 
 The standard browser flow is:
 
@@ -274,44 +276,50 @@ The standard browser flow is:
 4. When the access token expires, the frontend calls `/api/v1/auth/refresh`.
 5. Backend validates the refresh token, rotates it, and returns a fresh access token.
 
-This keeps the backend authorization path stateless while still supporting token revocation and safer long-lived sessions.
+> ℹ️ **Note:** This keeps the backend authorization path stateless while still supporting token revocation and safer long-lived sessions.
 
-## Deployment Notes
+<hr />
+
+## 🚀 Deployment Notes
 
 - For HTTPS deployments, verify `AUTH_REFRESH_TOKEN_COOKIE_SECURE` and `AUTH_REFRESH_TOKEN_COOKIE_SAME_SITE`.
 - Set explicit `APP_FRONTEND_URL`, `APP_BACKEND_URL`, and `APP_CORS_ALLOWED_ORIGINS` for your target environment.
 - Use real SMTP credentials if you want OTP, welcome, lockout, and reset emails to work end to end.
 - Enable seeded admin credentials only intentionally and only in controlled environments.
 
-## Troubleshooting
+<hr />
 
-### Backend starts but login/registration fails
+## 🔧 Troubleshooting
 
-Check:
+### ❌ Backend starts but login/registration fails
+
+**Check:**
 
 - database connection settings
 - Redis availability
 - `JWT_SECRET` presence
 - SMTP credentials if the flow depends on email delivery
 
-### OAuth2 redirects but login does not complete
+### ❌ OAuth2 redirects but login does not complete
 
-Check:
+**Check:**
 
 - provider client ID and secret
 - backend redirect URI configuration
 - frontend base URL and backend base URL alignment
 - cookie security and same-site settings for your environment
 
-### Protected frontend requests return `401`
+### ❌ Protected frontend requests return `401`
 
-Check:
+**Check:**
 
 - whether the refresh cookie is being set by the backend
 - whether frontend and backend origins are included in allowed CORS origins
 - whether the browser is rejecting cookies because of `Secure` or `SameSite` policy
 
-## Who This Repository Is For
+<hr />
+
+## 🎯 Who This Repository Is For
 
 This repository is useful if you want to study or extend:
 
