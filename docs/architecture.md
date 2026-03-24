@@ -1,21 +1,26 @@
-# Architecture Guide
+# 🏛️ Architecture Guide
 
-This document is the high-signal technical handoff for the project. It explains how the system is structured, how the main authentication flows work, and where to make changes safely.
+> [!NOTE]
+> This document is the high-signal technical handoff for the project. It explains how the system is structured, how the main authentication flows work, and where to make changes safely.
 
-## System Context
+---
+
+## 🌐 System Context
 
 The application is made of four main pieces:
 
-- Spring Boot backend: authentication, authorization, token lifecycle, abuse protection, email delivery, user APIs, and admin APIs
-- React frontend: route rendering, auth/session coordination, protected navigation, and API integration
-- PostgreSQL: source of truth for users, roles, and persisted token state
-- Redis: shared cache and rate-limiting/abuse-protection backend
+- 🟢 **Spring Boot backend**: authentication, authorization, token lifecycle, abuse protection, email delivery, user APIs, and admin APIs
+- 🔵 **React frontend**: route rendering, auth/session coordination, protected navigation, and API integration
+- 🐘 **PostgreSQL**: source of truth for users, roles, and persisted token state
+- 🔴 **Redis**: shared cache and rate-limiting/abuse-protection backend
 
-## Backend Architecture
+---
+
+## ⚙️ Backend Architecture
 
 The backend follows a conventional layered architecture with a few important security-specific support layers.
 
-### Core layers
+### 🏗️ Core layers
 
 - `controller`: transport boundary, request validation, response shaping
 - `service`: business workflows and orchestration
@@ -24,14 +29,16 @@ The backend follows a conventional layered architecture with a few important sec
 - `dto`: request and response contracts
 - `exception`: centralized error model
 
-### Security-specific layers
+### 🛡️ Security-specific layers
 
 - `security`: JWT utilities, filter, Spring Security integration, refresh-cookie behavior, OAuth handlers
 - `service/auth`: token issuance, abuse protection, OAuth user provisioning
 - `service/support`: OTP generation, email delivery, password policy, hashing, time abstraction, rate limiting
 - `util`: shared helpers such as email normalization and authenticated principal extraction
 
-## Backend Request Flow
+---
+
+## 🔄 Backend Request Flow
 
 A typical protected request follows this path:
 
@@ -42,11 +49,14 @@ A typical protected request follows this path:
 5. The service applies business rules and calls repositories or support services.
 6. `GlobalExceptionHandler` translates failures into a stable API response shape.
 
-The important design rule is that controllers stay thin. They do not own password checks, token hashing, or rate-limiting decisions.
+> [!IMPORTANT]
+> The important design rule is that controllers stay thin. They do not own password checks, token hashing, or rate-limiting decisions.
 
-## Auth Flows
+---
 
-### Registration and OTP verification
+## 🔐 Auth Flows
+
+### 📝 Registration and OTP verification
 
 `AuthServiceImpl` handles registration and email verification:
 
@@ -68,16 +78,16 @@ Verification then:
 - clears OTP state
 - sends a welcome email
 
-### Login and refresh
+### 🔑 Login and refresh
 
 Login uses Spring Security authentication for password validation and `AuthTokenService` for token issuance.
 
-Token model:
+**Token model:**
 
-- access token: JWT, short-lived, stateless, used on API requests
-- refresh token: random opaque secret, hashed in the database, rotated on use
+- 🎟️ **access token**: JWT, short-lived, stateless, used on API requests
+- 🎫 **refresh token**: random opaque secret, hashed in the database, rotated on use
 
-Refresh flow:
+**Refresh flow:**
 
 1. frontend sends refresh request
 2. backend loads user by refresh-token hash
@@ -85,18 +95,20 @@ Refresh flow:
 4. backend issues a new token pair
 5. backend rotates the stored refresh-token hash
 
-This gives the operational simplicity of JWT access tokens without the revocation limitations of long-lived JWT refresh tokens.
+> [!TIP]
+> This gives the operational simplicity of JWT access tokens without the revocation limitations of long-lived JWT refresh tokens.
 
-### Password reset
+### 🔄 Password reset
 
 Password reset is deliberately split into two stages:
 
-- request reset: generate random reset token, hash it, persist it, and email the raw token link
-- complete reset: hash presented token, load user, validate expiry, update password, clear token state
+- **request reset**: generate random reset token, hash it, persist it, and email the raw token link
+- **complete reset**: hash presented token, load user, validate expiry, update password, clear token state
 
-The public reset request returns a generic success message even if the email is unknown. That prevents account enumeration.
+> [!CAUTION]
+> The public reset request returns a generic success message even if the email is unknown. That prevents account enumeration.
 
-### OAuth2 login
+### 🔗 OAuth2 login
 
 OAuth2 is handled by Spring Security plus project-specific handlers:
 
@@ -107,9 +119,12 @@ OAuth2 is handled by Spring Security plus project-specific handlers:
 5. success handler issues the refresh cookie
 6. frontend callback page completes login via `/api/v1/auth/refresh`
 
-This keeps token issuance consistent across local and social login.
+> [!TIP]
+> This keeps token issuance consistent across local and social login.
 
-## Abuse Protection
+---
+
+## 🛡️ Abuse Protection
 
 `AuthAbuseProtectionService` coordinates:
 
@@ -119,11 +134,14 @@ This keeps token issuance consistent across local and social login.
 - password reset request throttling
 - temporary account and OTP lockouts after repeated failures
 
-Redis-backed counters are used for distributed enforcement, while user lock state is persisted in PostgreSQL.
+> [!NOTE]
+> Redis-backed counters are used for distributed enforcement, while user lock state is persisted in PostgreSQL.
 
-## Important Backend Components
+---
 
-### `AuthServiceImpl`
+## 🧩 Important Backend Components
+
+### ⚙️ `AuthServiceImpl`
 
 Owns the core auth workflows:
 
@@ -135,9 +153,9 @@ Owns the core auth workflows:
 - resend OTP
 - change password
 
-This is the primary workflow orchestration service in the backend.
+*This is the primary workflow orchestration service in the backend.*
 
-### `AuthTokenService`
+### 🎟️ `AuthTokenService`
 
 Owns token lifecycle:
 
@@ -145,9 +163,9 @@ Owns token lifecycle:
 - refresh token pair
 - revoke refresh token
 
-It is intentionally separate from `AuthServiceImpl` so token logic does not leak into unrelated business flows.
+*It is intentionally separate from `AuthServiceImpl` so token logic does not leak into unrelated business flows.*
 
-### `RefreshTokenCookieService`
+### 🍪 `RefreshTokenCookieService`
 
 Owns all cookie header behavior for refresh tokens:
 
@@ -158,17 +176,19 @@ Owns all cookie header behavior for refresh tokens:
 - domain
 - clear-cookie behavior
 
-This prevents cookie policy drift across controllers and handlers.
+*This prevents cookie policy drift across controllers and handlers.*
 
-### `CustomUserDetailsService`
+### 👤 `CustomUserDetailsService`
 
 Adapts the domain `User` model to Spring Security's `UserDetails` contract.
 
-### `GlobalExceptionHandler`
+### 🚨 `GlobalExceptionHandler`
 
 Centralizes error-to-response translation so the frontend can rely on a stable contract.
 
-## Data Model Notes
+---
+
+## 🗄️ Data Model Notes
 
 The `User` entity stores more than profile data. It also carries authentication state such as:
 
@@ -180,13 +200,16 @@ The `User` entity stores more than profile data. It also carries authentication 
 - account lock timestamps
 - OAuth provider metadata
 
-That is intentional. Authentication state is part of the domain model, not just transient session state.
+> [!IMPORTANT]
+> That is intentional. Authentication state is part of the domain model, not just transient session state.
 
-## Frontend Architecture
+---
+
+## 💻 Frontend Architecture
 
 The frontend is intentionally simple in structure but opinionated in auth behavior.
 
-### Key pieces
+### 🗝️ Key pieces
 
 - `App.jsx`: route definitions
 - `AuthContext.jsx`: auth bootstrap and session state
@@ -194,19 +217,22 @@ The frontend is intentionally simple in structure but opinionated in auth behavi
 - `ProtectedRoute.jsx`: route guard
 - `pages/*`: route-level screens
 
-### Session behavior
+### 🧠 Session behavior
 
 The frontend stores:
 
-- access token in memory
-- user profile snapshot in `localStorage`
-- refresh token in backend-managed HttpOnly cookie
+- **access token** in memory
+- **user profile snapshot** in `localStorage`
+- **refresh token** in backend-managed HttpOnly cookie
 
-The API layer retries protected requests after refresh and clears local auth state if refresh can no longer succeed.
+> [!NOTE]
+> The API layer retries protected requests after refresh and clears local auth state if refresh can no longer succeed.
 
-## Development Modes
+---
 
-### Docker mode
+## 🛠️ Development Modes
+
+### 🐳 Docker mode
 
 Use Docker Compose when you want the full local stack:
 
@@ -217,7 +243,7 @@ Use Docker Compose when you want the full local stack:
 - Adminer
 - Redis Commander
 
-### Local split-process mode
+### 💻 Local split-process mode
 
 Use this when iterating quickly on code:
 
@@ -225,25 +251,31 @@ Use this when iterating quickly on code:
 - run backend through Maven
 - run frontend through Vite
 
-## Extension Points
+---
+
+## 🔌 Extension Points
 
 If you need to extend the system, these are good seams:
 
-- new auth workflow: `AuthServiceImpl`
-- new token behavior: `AuthTokenService`
-- new abuse-protection rules: `AuthAbuseProtectionService`
-- new user/admin read models: `UserPortalServiceImpl`, `AdminServiceImpl`
-- new frontend route: `src/pages`, `src/App.jsx`
-- new provider-specific auth logic: `OAuth2UserProvisioningService`
+- **new auth workflow**: `AuthServiceImpl`
+- **new token behavior**: `AuthTokenService`
+- **new abuse-protection rules**: `AuthAbuseProtectionService`
+- **new user/admin read models**: `UserPortalServiceImpl`, `AdminServiceImpl`
+- **new frontend route**: `src/pages`, `src/App.jsx`
+- **new provider-specific auth logic**: `OAuth2UserProvisioningService`
 
-## Operational Notes
+---
 
-- Cookie settings matter in production. Review `AUTH_REFRESH_TOKEN_COOKIE_SECURE`, `AUTH_REFRESH_TOKEN_COOKIE_SAME_SITE`, and allowed origins carefully.
-- SMTP is part of the product, not an optional decoration. Registration and reset flows depend on it.
-- Redis outages affect rate limiting and caching behavior, so do not treat Redis as frontend-only infrastructure.
-- Seeded admin credentials should remain disabled except in controlled environments.
+## ⚠️ Operational Notes
 
-## Recommended Reading Order
+- **Cookie settings matter in production.** Review `AUTH_REFRESH_TOKEN_COOKIE_SECURE`, `AUTH_REFRESH_TOKEN_COOKIE_SAME_SITE`, and allowed origins carefully.
+- **SMTP is part of the product**, not an optional decoration. Registration and reset flows depend on it.
+- **Redis outages affect rate limiting and caching behavior**, so do not treat Redis as frontend-only infrastructure.
+- **Seeded admin credentials should remain disabled** except in controlled environments.
+
+---
+
+## 📚 Recommended Reading Order
 
 If you are onboarding to the codebase, this order gives the fastest understanding:
 
@@ -256,8 +288,10 @@ If you are onboarding to the codebase, this order gives the fastest understandin
 7. [../frontend/src/context/AuthContext.jsx](../frontend/src/context/AuthContext.jsx)
 8. [../frontend/src/services/api.js](../frontend/src/services/api.js)
 
-## Related Documents
+---
 
-- Project overview: [../README.md](../README.md)
-- Frontend guide: [../frontend/README.md](../frontend/README.md)
-- Backend property reference: [../backend/src/main/resources/application.properties.example](../backend/src/main/resources/application.properties.example)
+## 🔗 Related Documents
+
+- 📄 **Project overview**: [../README.md](../README.md)
+- 🖼️ **Frontend guide**: [../frontend/README.md](../frontend/README.md)
+- ⚙️ **Backend property reference**: [../backend/src/main/resources/application.properties.example](../backend/src/main/resources/application.properties.example)
