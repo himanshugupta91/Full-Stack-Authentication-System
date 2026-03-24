@@ -1,297 +1,97 @@
-# 🏛️ Architecture Guide
+# 🚀 The Agile Architecture Playbook
 
-> [!NOTE]
-> This document is the high-signal technical handoff for the project. It explains how the system is structured, how the main authentication flows work, and where to make changes safely.
-
----
-
-## 🌐 System Context
-
-The application is made of four main pieces:
-
-- 🟢 **Spring Boot backend**: authentication, authorization, token lifecycle, abuse protection, email delivery, user APIs, and admin APIs
-- 🔵 **React frontend**: route rendering, auth/session coordination, protected navigation, and API integration
-- 🐘 **PostgreSQL**: source of truth for users, roles, and persisted token state
-- 🔴 **Redis**: shared cache and rate-limiting/abuse-protection backend
-
----
-
-## ⚙️ Backend Architecture
-
-The backend follows a conventional layered architecture with a few important security-specific support layers.
-
-### 🏗️ Core layers
-
-- `controller`: transport boundary, request validation, response shaping
-- `service`: business workflows and orchestration
-- `repository`: persistence boundary
-- `entity`: database-backed domain model
-- `dto`: request and response contracts
-- `exception`: centralized error model
-
-### 🛡️ Security-specific layers
-
-- `security`: JWT utilities, filter, Spring Security integration, refresh-cookie behavior, OAuth handlers
-- `service/auth`: token issuance, abuse protection, OAuth user provisioning
-- `service/support`: OTP generation, email delivery, password policy, hashing, time abstraction, rate limiting
-- `util`: shared helpers such as email normalization and authenticated principal extraction
-
----
-
-## 🔄 Backend Request Flow
-
-A typical protected request follows this path:
-
-1. `JwtAuthFilter` extracts the bearer token from the request.
-2. `JwtUtil` validates and parses the token.
-3. Spring Security builds an authenticated `SecurityContext`.
-4. The controller accepts the request and delegates immediately to a service.
-5. The service applies business rules and calls repositories or support services.
-6. `GlobalExceptionHandler` translates failures into a stable API response shape.
-
-> [!IMPORTANT]
-> The important design rule is that controllers stay thin. They do not own password checks, token hashing, or rate-limiting decisions.
-
----
-
-## 🔐 Auth Flows
-
-### 📝 Registration and OTP verification
-
-`AuthServiceImpl` handles registration and email verification:
-
-- normalize email
-- reject duplicates
-- validate password policy
-- hash and store password
-- generate OTP
-- hash and store OTP
-- persist user in a disabled state
-- send verification email
-
-Verification then:
-
-- rate-limits the request
-- verifies OTP hash match
-- checks expiry
-- enables the account
-- clears OTP state
-- sends a welcome email
-
-### 🔑 Login and refresh
-
-Login uses Spring Security authentication for password validation and `AuthTokenService` for token issuance.
-
-**Token model:**
-
-- 🎟️ **access token**: JWT, short-lived, stateless, used on API requests
-- 🎫 **refresh token**: random opaque secret, hashed in the database, rotated on use
-
-**Refresh flow:**
-
-1. frontend sends refresh request
-2. backend loads user by refresh-token hash
-3. backend checks expiry
-4. backend issues a new token pair
-5. backend rotates the stored refresh-token hash
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
 
 > [!TIP]
-> This gives the operational simplicity of JWT access tokens without the revocation limitations of long-lived JWT refresh tokens.
+> Welcome to our system's blueprint! We wrote this guide to map out our technical decisions using an Agile lens. This isn't just a dry architecture doc—it's the "why" and "how" behind our Epics and User Stories.
 
-### 🔄 Password reset
+## 🏗️ 1. Our Vision & Rules of the Road
 
-Password reset is deliberately split into two stages:
+**The Goal:** Build a rock-solid, secure-by-default authentication layer that doesn't buckle under heavy load or get rolled over by basic web attacks.
 
-- **request reset**: generate random reset token, hash it, persist it, and email the raw token link
-- **complete reset**: hash presented token, load user, validate expiry, update password, clear token state
+### 🚦 The Guardrails (NFRs)
+- **Scalability:** We keep the backend completely stateless—no sticky sessions here. 🐘 PostgreSQL holds the absolute truth, and 🔴 Redis handles the fast, distributed catching and rate limiting.
+- **Security:** We play strictly by OWASP rules. Think `HttpOnly` cookies to nuke XSS risks, and aggressive Redis rate-limiter to shut down brute-forcers.
+- **Snappy UI:** The ⚛️ React frontend keeps local auth state handy so we aren't hammering the backend on every single page transition.
 
-> [!CAUTION]
-> The public reset request returns a generic success message even if the email is unknown. That prevents account enumeration.
+### 🗺️ The Big Picture
 
-### 🔗 OAuth2 login
+```mermaid
+C4Container
+    title System Container Diagram
 
-OAuth2 is handled by Spring Security plus project-specific handlers:
+    Person(user, "User", "A user of the application")
+    Container(frontend, "React Frontend", "React, Vite", "Manages localized auth state and routing")
+    
+    System_Boundary(backend_boundary, "Backend Capabilities") {
+        Container(backend, "Spring Boot API", "Java", "Orchestrates identity and abuse workflows")
+        ContainerDb(postgres, "PostgreSQL", "Relational Database", "Source of truth for identities")
+        ContainerDb(redis, "Redis", "In-memory Data Store", "Distributed abuse protector")
+    }
 
-1. frontend redirects to `/oauth2/authorization/{provider}`
-2. provider authenticates the user
-3. Spring Security receives the callback
-4. `OAuth2UserProvisioningService` loads or creates the local user
-5. success handler issues the refresh cookie
-6. frontend callback page completes login via `/api/v1/auth/refresh`
-
-> [!TIP]
-> This keeps token issuance consistent across local and social login.
-
----
-
-## 🛡️ Abuse Protection
-
-`AuthAbuseProtectionService` coordinates:
-
-- per-IP and per-email login rate limiting
-- OTP verification rate limiting
-- resend-OTP cooldown and windowed rate limiting
-- password reset request throttling
-- temporary account and OTP lockouts after repeated failures
-
-> [!NOTE]
-> Redis-backed counters are used for distributed enforcement, while user lock state is persisted in PostgreSQL.
+    Rel(user, frontend, "Interacts with", "HTTPS")
+    Rel(frontend, backend, "Fulfills Epics via API", "JSON/HTTPS")
+    Rel(backend, postgres, "Persists User State", "JDBC")
+    Rel(backend, redis, "Enforces Rate Limits", "RESP")
+```
 
 ---
 
-## 🧩 Important Backend Components
+## 📅 2. The Product Backlog
 
-### ⚙️ `AuthServiceImpl`
+Here's how our system chunks down into Epics. For each one, we've outlined the core user stories and exactly how we've built the backend to solve them.
 
-Owns the core auth workflows:
+### 🟢 Epic 1: User Registration & Identity
+**The Vibe:** Getting users on board securely without friction, while making sure they actually own the email they gave us.  
+**Where it lives:** `AuthServiceImpl`
 
-- register
-- verify OTP
-- login
-- reset password
-- update password
-- resend OTP
-- change password
+- **US-1.1:** *As a new user, I want to sign up with my email and password so I can get in.*
+  - **How we built it:** The controller takes the hit, validates the shape of the data, and tosses it to the service layer. `AuthServiceImpl` cleans up the email, enforces our password policy, hashes the password (bcrypt/argon2), and drops a `DISABLED` user record into Postgres.
+- **US-1.2:** *As a registered user, I need to verify my email using an OTP so you know I'm a real person.*
+  - **How we built it:** We generate a spicy, secure OTP and hash it with SHA-256 before saving to the DB. (Never store plain OTPs!) We then email out the raw code. When the user submits it, we verify the hash, check if it's expired, and finally flip the account to active.
 
-*This is the primary workflow orchestration service in the backend.*
+### 🔵 Epic 2: Core Authentication (JWTs)
+**The Vibe:** Keeping users logged in without stateful server sessions dragging us down.  
+**Where it lives:** `JwtAuthFilter`, `AuthTokenService`
 
-### 🎟️ `AuthTokenService`
+- **US-2.1:** *As a user, I want to log in and get my access tokens.*
+  - **How we built it:** We hand back a short-lived **JWT Access Token** directly in the response body. We also generate a heavy, opaque **Refresh Token**, hash it for the DB, and ship the raw value to the browser inside an unreadable, `HttpOnly`, `Secure` cookie.
+- **US-2.2:** *As the frontend app, I want to silently refresh the session before the user even notices.*
+  - **How we built it:** Our React Axios interceptors catch any `401` errors and automatically hit `/api/v1/auth/refresh`. The backend reads the secure cookie, matches it to the DB hash, rotates the DB record, and ships a fresh pair of tokens. Boom.
 
-Owns token lifecycle:
+### 🔴 Epic 3: Abuse Protection & Rate Limiting
+**The Vibe:** Locking the doors against bots, credential stuffers, and spam.  
+**Where it lives:** `AuthAbuseProtectionService` + `Redis`
 
-- issue token pair
-- refresh token pair
-- revoke refresh token
+- **US-3.1:** *As an admin, I need the system to auto-block brute-force IP addresses.*
+  - **How we built it:** Redis keeps tight counters on failed login attempts per-IP and per-account. Go over the limit, and you hit a brick wall.
+- **US-3.2:** *As a dev, I don't want our OTP service used for SMS/email bombing.*
+  - **How we built it:** Redis enforces a strict sliding window on OTP requests. If someone spams the resend button, we temporarily lock the Postgres `User` entity to chill things out.
 
-*It is intentionally separate from `AuthServiceImpl` so token logic does not leak into unrelated business flows.*
+### 🟡 Epic 4: OAuth2 (Social Login)
+**The Vibe:** Let people bypass passwords entirely using Google or GitHub.  
+**Where it lives:** `OAuth2UserProvisioningService`
 
-### 🍪 `RefreshTokenCookieService`
+- **US-4.1:** *As a user, I want to just click "Login with Google" and avoid typing.*
+  - **How we built it:** Spring Security catches the IdP callback. Our provisioning service pulls the email and maps it to a local proxy user in Postgres. We then drop the exact same `HttpOnly` refresh cookie as a local login. Keeps the frontend completely blind to how the sausage is made!
 
-Owns all cookie header behavior for refresh tokens:
+### 🟣 Epic 5: Account Recovery
+**The Vibe:** Because everyone forgets passwords, but we can't leak who has an account here.
 
-- cookie name
-- path
-- secure flag
-- same-site behavior
-- domain
-- clear-cookie behavior
-
-*This prevents cookie policy drift across controllers and handlers.*
-
-### 👤 `CustomUserDetailsService`
-
-Adapts the domain `User` model to Spring Security's `UserDetails` contract.
-
-### 🚨 `GlobalExceptionHandler`
-
-Centralizes error-to-response translation so the frontend can rely on a stable contract.
+- **US-5.1:** *As a locked-out user, I want a secure password reset link.*
+  - **How we built it:** The API always returns a thumbs-up, even if the email doesn't exist (thwarts enumeration bots). If it *does* exist, we generate a time-bombed, hashed reset token and send the link.
 
 ---
 
-## 🗄️ Data Model Notes
+## ✅ 3. Our Definition of Done (DoD)
 
-The `User` entity stores more than profile data. It also carries authentication state such as:
-
-- password hash
-- verification OTP hash and expiry
-- reset-token hash and expiry
-- refresh-token hash and expiry
-- failed login counters
-- account lock timestamps
-- OAuth provider metadata
-
-> [!IMPORTANT]
-> That is intentional. Authentication state is part of the domain model, not just transient session state.
-
----
-
-## 💻 Frontend Architecture
-
-The frontend is intentionally simple in structure but opinionated in auth behavior.
-
-### 🗝️ Key pieces
-
-- `App.jsx`: route definitions
-- `AuthContext.jsx`: auth bootstrap and session state
-- `services/api.js`: Axios client, response unwrapping, refresh retry logic
-- `ProtectedRoute.jsx`: route guard
-- `pages/*`: route-level screens
-
-### 🧠 Session behavior
-
-The frontend stores:
-
-- **access token** in memory
-- **user profile snapshot** in `localStorage`
-- **refresh token** in backend-managed HttpOnly cookie
-
-> [!NOTE]
-> The API layer retries protected requests after refresh and clears local auth state if refresh can no longer succeed.
-
----
-
-## 🛠️ Development Modes
-
-### 🐳 Docker mode
-
-Use Docker Compose when you want the full local stack:
-
-- PostgreSQL
-- Redis
-- backend
-- frontend
-- Adminer
-- Redis Commander
-
-### 💻 Local split-process mode
-
-Use this when iterating quickly on code:
-
-- bring up PostgreSQL and Redis with Docker Compose
-- run backend through Maven
-- run frontend through Vite
-
----
-
-## 🔌 Extension Points
-
-If you need to extend the system, these are good seams:
-
-- **new auth workflow**: `AuthServiceImpl`
-- **new token behavior**: `AuthTokenService`
-- **new abuse-protection rules**: `AuthAbuseProtectionService`
-- **new user/admin read models**: `UserPortalServiceImpl`, `AdminServiceImpl`
-- **new frontend route**: `src/pages`, `src/App.jsx`
-- **new provider-specific auth logic**: `OAuth2UserProvisioningService`
-
----
-
-## ⚠️ Operational Notes
-
-- **Cookie settings matter in production.** Review `AUTH_REFRESH_TOKEN_COOKIE_SECURE`, `AUTH_REFRESH_TOKEN_COOKIE_SAME_SITE`, and allowed origins carefully.
-- **SMTP is part of the product**, not an optional decoration. Registration and reset flows depend on it.
-- **Redis outages affect rate limiting and caching behavior**, so do not treat Redis as frontend-only infrastructure.
-- **Seeded admin credentials should remain disabled** except in controlled environments.
-
----
-
-## 📚 Recommended Reading Order
-
-If you are onboarding to the codebase, this order gives the fastest understanding:
-
-1. [../README.md](../README.md)
-2. [../backend/src/main/resources/application.properties.example](../backend/src/main/resources/application.properties.example)
-3. [../backend/src/main/java/com/auth/entity/User.java](../backend/src/main/java/com/auth/entity/User.java)
-4. [../backend/src/main/java/com/auth/config/SecurityConfig.java](../backend/src/main/java/com/auth/config/SecurityConfig.java)
-5. [../backend/src/main/java/com/auth/service/impl/AuthServiceImpl.java](../backend/src/main/java/com/auth/service/impl/AuthServiceImpl.java)
-6. [../backend/src/main/java/com/auth/service/auth/AuthTokenService.java](../backend/src/main/java/com/auth/service/auth/AuthTokenService.java)
-7. [../frontend/src/context/AuthContext.jsx](../frontend/src/context/AuthContext.jsx)
-8. [../frontend/src/services/api.js](../frontend/src/services/api.js)
-
----
-
-## 🔗 Related Documents
-
-- 📄 **Project overview**: [../README.md](../README.md)
-- 🖼️ **Frontend guide**: [../frontend/README.md](../frontend/README.md)
-- ⚙️ **Backend property reference**: [../backend/src/main/resources/application.properties.example](../backend/src/main/resources/application.properties.example)
+Before any PR merges into these flows, it has to hit these marks:
+- [x] **No Fat Controllers:** All validation, hashing, and rate limiting happens down in the `service` layers. Keep controllers for HTTP mapping only.
+- [x] **Zero Stateful Auth:** We scale horizontally. Every API call needs a valid Bearer JWT.
+- [x] **Hash Everything:** Plaintext tokens, passwords, and OTPs never touch the database.
+- [x] **Survive Redis Drops:** If Redis goes down, we lose rate limiting—we *don't* lock out valid users. Fail open where it makes sense, but log loudly.
+- [x] **Test the Edges:** Security features (like locking an account after 5 bad passwords) must have robust Spring Integration tests attached.
