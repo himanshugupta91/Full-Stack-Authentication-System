@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { OAUTH_PROVIDERS, getOAuthAuthorizationUrl } from '../services/api';
+import { KeyRound, ShieldCheck, Globe, Lock, Zap, RefreshCcw, Leaf, Atom, Shield, Database, Send, Layers } from 'lucide-react';
 
 const Home = () => {
   const { isAuthenticated, user } = useAuth();
@@ -24,20 +25,28 @@ const Home = () => {
           <div className="simple-hero-content">
             <span className="badge bg-primary mb-3 px-4 py-2 rounded-pill simple-hero-badge">
               <i className="bi bi-stars me-2"></i>
-              Version 2.0 Security Stack
+              Production-ready auth platform
             </span>
 
-            <h1 className="simple-hero-title">
-              Next-Generation
-              <br />
-              <span className="simple-hero-highlight">Authentication System</span>
+            <h1 className="simple-hero-title" style={{ fontSize: "clamp(2.5rem, 6vw, 4rem)", fontWeight: 800, lineHeight: 1.1 }}>
+              Authentication &amp;{" "}
+              <span className="simple-hero-highlight" style={{
+                backgroundImage: "linear-gradient(to right, #818cf8, #c084fc)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                color: "transparent"
+              }}>
+                Authorization
+              </span>{" "}
+              done right
             </h1>
 
             {isLoggedIn && <p className="simple-hero-greeting">Welcome back, {displayName}</p>}
 
             {!isLoggedIn && (
-              <p className="simple-hero-copy">
-                Access-token + refresh-token architecture with OAuth2 login providers and role-aware authorization.
+              <p className="simple-hero-copy" style={{ fontSize: "1.125rem", lineHeight: 1.7, maxWidth: "40rem", margin: "0 auto 2.5rem" }}>
+                A full-stack auth system with JWT rotation, OAuth2 social login, OTP email verification, Redis rate limiting, and role-based access control. Built to ship.
               </p>
             )}
 
@@ -92,28 +101,28 @@ const Home = () => {
 
           <div className="tech-grid">
             <div className="tech-card jitter-card">
-              <i className="bi bi-filetype-java tech-icon"></i>
+              <Leaf className="tech-icon mb-3" size={32} color="#22c55e" />
               <span className="tech-name">Java Spring Boot</span>
             </div>
             <div className="tech-card jitter-card">
-              <i className="bi bi-filetype-jsx tech-icon"></i>
+              <Atom className="tech-icon mb-3" size={32} color="#0ea5e9" />
               <span className="tech-name">React + Vite</span>
             </div>
             <div className="tech-card jitter-card">
-              <i className="bi bi-shield-lock tech-icon"></i>
+              <Shield className="tech-icon mb-3" size={32} color="#3b82f6" />
               <span className="tech-name">Spring Security</span>
             </div>
             <div className="tech-card jitter-card">
-              <i className="bi bi-database tech-icon"></i>
-              <span className="tech-name">JPA / Hibernate</span>
+              <Database className="tech-icon mb-3" size={32} color="#6366f1" />
+              <span className="tech-name">PostgreSQL</span>
             </div>
             <div className="tech-card jitter-card">
-              <i className="bi bi-envelope tech-icon"></i>
+              <Send className="tech-icon mb-3" size={32} color="#f59e0b" />
               <span className="tech-name">JavaMailSender</span>
             </div>
             <div className="tech-card jitter-card">
-              <i className="bi bi-bootstrap tech-icon"></i>
-              <span className="tech-name">Bootstrap 5</span>
+              <Layers className="tech-icon mb-3" size={32} color="#ef4444" />
+              <span className="tech-name">Redis</span>
             </div>
           </div>
         </div>
@@ -122,37 +131,67 @@ const Home = () => {
       <div className="features-section py-5 jitter-section">
         <div className="container">
           <div className="text-center mb-5">
-            <h2 className="mb-3">Core Features</h2>
-            <p className="section-muted">Everything you need for a secure application</p>
+            <h2 className="mb-3">Everything you need for auth</h2>
+            <p className="section-muted">The complete account lifecycle, security hardened</p>
           </div>
 
-          <div className="row g-4">
+          <div className="row g-4 mb-4">
             <div className="col-md-4">
               <div className="feature-card h-100 jitter-card">
-                <i className="bi bi-shield-check mb-3"></i>
-                <h4>Access + Refresh Tokens</h4>
+                <KeyRound className="mb-3" size={32} color="#6366f1" />
+                <h4>JWT + Refresh Rotation</h4>
                 <p className="feature-copy">
-                  Short-lived access tokens with secure refresh-token rotation for safer long sessions.
+                  Short-lived access tokens with opaque refresh tokens rotated on every use. Stored as bcrypt hashes in the database.
                 </p>
               </div>
             </div>
 
             <div className="col-md-4">
               <div className="feature-card h-100 jitter-card">
-                <i className="bi bi-person-check mb-3"></i>
+                <ShieldCheck className="mb-3" size={32} color="#10b981" />
+                <h4>OTP Email Verification</h4>
+                <p className="feature-copy">
+                  One-time passwords delivered via email on registration. Resend flow with rate-limit protection.
+                </p>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <div className="feature-card h-100 jitter-card">
+                <Globe className="mb-3" size={32} color="#0ea5e9" />
                 <h4>OAuth2 Social Login</h4>
                 <p className="feature-copy">
-                  Seamless login support for Google, GitHub, Apple, and LinkedIn accounts.
+                  Sign in with Google, GitHub, Apple, and LinkedIn via Spring Security's OAuth2 client integration.
                 </p>
               </div>
             </div>
 
             <div className="col-md-4">
               <div className="feature-card h-100 jitter-card">
-                <i className="bi bi-person-lock mb-3"></i>
-                <h4>Role-Based Access</h4>
+                <Lock className="mb-3" size={32} color="#a855f7" />
+                <h4>Role-Based Access Control</h4>
                 <p className="feature-copy">
-                  Granular permission control with USER and ADMIN role separation.
+                  ROLE_USER and ROLE_ADMIN roles with Spring Security annotations and centralized policy enforcement.
+                </p>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <div className="feature-card h-100 jitter-card">
+                <Zap className="mb-3" size={32} color="#f59e0b" />
+                <h4>Redis Rate Limiting</h4>
+                <p className="feature-copy">
+                  Request counters and temporary lockout protection backed by Redis. Prevents brute-force and abuse.
+                </p>
+              </div>
+            </div>
+
+            <div className="col-md-4">
+              <div className="feature-card h-100 jitter-card">
+                <RefreshCcw className="mb-3" size={32} color="#f43f5e" />
+                <h4>Full Password Lifecycle</h4>
+                <p className="feature-copy">
+                  Reset via email, authenticated change, and BCrypt hashing. Reset tokens stored hashed in the database.
                 </p>
               </div>
             </div>
