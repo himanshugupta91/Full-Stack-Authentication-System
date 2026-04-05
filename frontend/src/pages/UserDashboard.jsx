@@ -149,6 +149,20 @@ const UserDashboard = () => {
                         <p className="mb-0">{dashboardData?.timestamp || new Date().toLocaleString()}</p>
                     </div>
                 </div>
+
+                <div className="col-md-6 col-lg-4">
+                    <div className="dashboard-card">
+                        <div className="card-icon bg-warning">
+                            <i className="bi bi-key"></i>
+                        </div>
+                        <h5>Security</h5>
+                        <p className="text-muted mb-3">Keep your account secure by updating your password regularly.</p>
+                        <Link to="/change-password" className="btn btn-outline-warning btn-sm">
+                            <i className="bi bi-arrow-right me-1"></i>
+                            Change Password
+                        </Link>
+                    </div>
+                </div>
             </div>
 
             {
