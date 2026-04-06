@@ -64,6 +64,9 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Default admin user created: {}", seedAdminEmail);
         }
     }
+    /**
+     * Validates seed admin config.
+     */
 
     private void validateSeedAdminConfig() {
         if (!StringUtils.hasText(seedAdminName)
@@ -73,11 +76,17 @@ public class DataInitializer implements CommandLineRunner {
                     "app.seed.admin.enabled=true requires name, email, and password.");
         }
     }
+    /**
+     * Finds or create role.
+     */
 
     private Role findOrCreateRole(RoleName roleName) {
         return roleRepository.findByName(roleName)
                 .orElseGet(() -> createRole(roleName));
     }
+    /**
+     * Creates role.
+     */
 
     private Role createRole(RoleName roleName) {
         Role role = new Role();

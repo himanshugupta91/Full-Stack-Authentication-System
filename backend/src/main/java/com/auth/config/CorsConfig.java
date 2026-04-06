@@ -39,6 +39,9 @@ public class CorsConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+    /**
+     * Parses allowed origins.
+     */
 
     private List<String> parseAllowedOrigins(String originList) {
         return Arrays.stream(originList.split(","))

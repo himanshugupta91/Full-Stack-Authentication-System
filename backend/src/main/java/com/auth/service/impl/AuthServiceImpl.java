@@ -242,17 +242,26 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────
+    /**
+     * Ensures user by email.
+     */
 
     private User requireUserByEmail(String email) {
         return userService.findByEmail(normalizeEmail(email))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
     }
+    /**
+     * Ensures email not verified.
+     */
 
     private void requireEmailNotVerified(User user) {
         if (user.isEnabled()) {
             throw new UserAlreadyExistsException("Email already verified!");
         }
     }
+    /**
+     * Verifies otp match.
+     */
 
     private void verifyOtpMatch(User user, String rawOtp) {
         if (!tokenHashService.matches(rawOtp, user.getVerificationOtp())) {
@@ -260,6 +269,9 @@ public class AuthServiceImpl implements AuthService {
             throw new TokenValidationException("Invalid OTP!");
         }
     }
+    /**
+     * Ensures token not expired.
+     */
 
     private void requireTokenNotExpired(LocalDateTime expiry, String errorMessage) {
         LocalDateTime now = dateTimeProvider.now();
@@ -267,6 +279,9 @@ public class AuthServiceImpl implements AuthService {
             throw new TokenValidationException(errorMessage);
         }
     }
+    /**
+     * Executes store verification otp logic.
+     */
 
     private String storeVerificationOtp(User user) {
         String otp = otpService.generateOtp();
@@ -274,6 +289,9 @@ public class AuthServiceImpl implements AuthService {
         user.setOtpExpiry(dateTimeProvider.now().plusMinutes(otpExpirationMinutes));
         return otp;
     }
+    /**
+     * Executes store reset token logic.
+     */
 
     private String storeResetToken(User user) {
         String resetToken = otpService.generateResetToken();
@@ -281,11 +299,17 @@ public class AuthServiceImpl implements AuthService {
         user.setResetTokenExpiry(dateTimeProvider.now().plusMinutes(resetTokenExpirationMinutes));
         return resetToken;
     }
+    /**
+     * Clears reset token.
+     */
 
     private void clearResetToken(User user) {
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
     }
+    /**
+     * Executes authenticate credentials logic.
+     */
 
     private void authenticateCredentials(String email, String password) {
         try {
@@ -296,10 +320,16 @@ public class AuthServiceImpl implements AuthService {
             throw ex;
         }
     }
+    /**
+     * Normalizes email.
+     */
 
     private String normalizeEmail(String email) {
         return EmailNormalizer.normalizeOrNull(email);
     }
+    /**
+     * Sends otp email safely.
+     */
 
     private void sendOtpEmailSafely(User user, String otp, String context) {
         try {
@@ -308,6 +338,9 @@ public class AuthServiceImpl implements AuthService {
             log.warn("Failed to send OTP email during {} for {}", context, user.getEmail(), ex);
         }
     }
+    /**
+     * Sends reset email safely.
+     */
 
     private void sendResetEmailSafely(User user, String resetToken) {
         try {
@@ -316,6 +349,9 @@ public class AuthServiceImpl implements AuthService {
             log.warn("Failed to send password reset email for {}", user.getEmail(), ex);
         }
     }
+    /**
+     * Sends welcome email safely.
+     */
 
     private void sendWelcomeEmailSafely(User user) {
         try {
@@ -324,6 +360,9 @@ public class AuthServiceImpl implements AuthService {
             log.warn("Failed to send welcome email for {}", user.getEmail(), ex);
         }
     }
+    /**
+     * Sends password changed email safely.
+     */
 
     private void sendPasswordChangedEmailSafely(User user, String context) {
         try {

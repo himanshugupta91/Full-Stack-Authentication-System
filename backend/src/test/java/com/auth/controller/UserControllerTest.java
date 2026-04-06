@@ -44,7 +44,8 @@ class UserControllerTest {
 
     @Test
     @DisplayName("getDashboard: authenticated user → returns dashboard payload")
-    void getDashboard_whenAuthenticated_returnsDashboardPayload() {
+    void givenAuthenticatedUser_whenGettingDashboard_thenReturnsDashboardPayload() {
+        // Arrange
         UserDashboardDto dashboard = new UserDashboardDto(
                 "Welcome to User Dashboard!",
                 "Alice",
@@ -54,8 +55,10 @@ class UserControllerTest {
         when(authentication.getName()).thenReturn("alice@example.com");
         when(userPortalService.getDashboard("alice@example.com")).thenReturn(dashboard);
 
+        // Act
         ResponseEntity<ApiResponse<UserDashboardDto>> response = userController.getDashboard(authentication);
 
+        // Assert
         verify(userPortalService).getDashboard("alice@example.com");
         assertTrue(response.getBody().isSuccess());
         assertEquals(dashboard, response.getBody().getData());
@@ -63,20 +66,24 @@ class UserControllerTest {
 
     @Test
     @DisplayName("getDashboard: blank principal → throws IllegalArgumentException")
-    void getDashboard_whenPrincipalBlank_throwsIllegalArgumentException() {
+    void givenBlankPrincipal_whenGettingDashboard_thenThrowsIllegalArgumentException() {
+        // Arrange
         when(authentication.getName()).thenReturn("  ");
 
+        // Act + Assert
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> userController.getDashboard(authentication));
 
+        // Assert
         assertEquals("Authenticated principal is required.", exception.getMessage());
         verifyNoInteractions(userPortalService);
     }
 
     @Test
     @DisplayName("getProfile: authenticated user → returns profile DTO")
-    void getProfile_whenAuthenticated_returnsProfilePayload() {
+    void givenAuthenticatedUser_whenGettingProfile_thenReturnsProfilePayload() {
+        // Arrange
         UserDto profile = new UserDto();
         profile.setId(7L);
         profile.setName("Alice");
@@ -89,8 +96,10 @@ class UserControllerTest {
         when(authentication.getName()).thenReturn("alice@example.com");
         when(userPortalService.getProfile("alice@example.com")).thenReturn(profile);
 
+        // Act
         ResponseEntity<ApiResponse<UserDto>> response = userController.getProfile(authentication);
 
+        // Assert
         verify(userPortalService).getProfile("alice@example.com");
         assertTrue(response.getBody().isSuccess());
         assertEquals(profile, response.getBody().getData());
@@ -98,7 +107,8 @@ class UserControllerTest {
 
     @Test
     @DisplayName("changePassword: valid request → returns success message")
-    void changePassword_whenValidRequest_returnsSuccessMessage() {
+    void givenValidChangePasswordRequest_whenChangingPassword_thenReturnsSuccessMessage() {
+        // Arrange
         ChangePasswordRequest request = new ChangePasswordRequest();
         request.setCurrentPassword("OldPass123!");
         request.setNewPassword("NewPass123!");
@@ -108,8 +118,10 @@ class UserControllerTest {
         when(authentication.getName()).thenReturn("alice@example.com");
         when(authService.changePassword("alice@example.com", request)).thenReturn(messageResponse);
 
+        // Act
         ResponseEntity<ApiResponse<MessageResponse>> response = userController.changePassword(authentication, request);
 
+        // Assert
         verify(authService).changePassword("alice@example.com", request);
         assertTrue(response.getBody().isSuccess());
         assertEquals(messageResponse, response.getBody().getData());
@@ -117,15 +129,18 @@ class UserControllerTest {
 
     @Test
     @DisplayName("changePassword: null authentication → throws IllegalArgumentException")
-    void changePassword_whenAuthenticationNull_throwsIllegalArgumentException() {
+    void givenNullAuthentication_whenChangingPassword_thenThrowsIllegalArgumentException() {
+        // Arrange
         ChangePasswordRequest request = new ChangePasswordRequest();
         request.setCurrentPassword("OldPass123!");
         request.setNewPassword("NewPass123!");
 
+        // Act + Assert
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> userController.changePassword(null, request));
 
+        // Assert
         assertEquals("Authenticated principal is required.", exception.getMessage());
         verifyNoInteractions(authService);
     }

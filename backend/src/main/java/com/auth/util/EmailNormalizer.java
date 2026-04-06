@@ -8,6 +8,9 @@ import java.util.Locale;
  * Shared email canonicalization utility used across authentication layers.
  */
 public final class EmailNormalizer {
+    /**
+     * Prevents instantiation.
+     */
 
     private EmailNormalizer() {
     }

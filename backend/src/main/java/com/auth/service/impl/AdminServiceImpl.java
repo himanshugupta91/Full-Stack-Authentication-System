@@ -40,6 +40,9 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Cacheable(cacheNames = CacheNames.ADMIN_DASHBOARD,
             key = "#adminEmail == null ? 'unknown' : #adminEmail.toLowerCase()")
+    /**
+     * Returns dashboard.
+     */
     public AdminDashboardDto getDashboard(String adminEmail) {
         return new AdminDashboardDto(
                 "Welcome to Admin Dashboard!",
@@ -92,6 +95,9 @@ public class AdminServiceImpl implements AdminService {
 
         return spec;
     }
+    /**
+     * Executes search specification logic.
+     */
 
     private Specification<User> searchSpecification(String search) {
         String pattern = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
@@ -99,6 +105,9 @@ public class AdminServiceImpl implements AdminService {
                 cb.like(cb.lower(root.get("name")), pattern),
                 cb.like(cb.lower(root.get("email")), pattern));
     }
+    /**
+     * Executes and logic.
+     */
 
     private Specification<User> and(Specification<User> base, Specification<User> clause) {
         return base == null ? clause : base.and(clause);

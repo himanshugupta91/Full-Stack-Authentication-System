@@ -23,6 +23,9 @@ public class UserPortalServiceImpl implements UserPortalService {
 
     private final UserService userService;
     private final UserMapper userMapper;
+    /**
+     * Returns dashboard.
+     */
 
     @Override
     public UserDashboardDto getDashboard(String email) {
@@ -37,6 +40,9 @@ public class UserPortalServiceImpl implements UserPortalService {
     @Override
     @Cacheable(cacheNames = CacheNames.USER_PROFILE,
             key = "#email == null ? 'unknown' : #email.toLowerCase()")
+    /**
+     * Returns profile.
+     */
     public UserDto getProfile(String email) {
         User user = userService.getUserByEmail(email);
         return userMapper.toDto(user);

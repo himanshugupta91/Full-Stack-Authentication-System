@@ -52,7 +52,8 @@ class AuthControllerTest {
 
     @Test
     @DisplayName("refreshToken: body token provided → prefers body over cookie")
-    void refreshToken_whenBodyTokenProvided_prefersBodyOverCookie() {
+    void givenRefreshTokenInBody_whenRefreshing_thenBodyTokenTakesPrecedenceOverCookie() {
+        // Arrange
         TokenRefreshRequest requestBody = new TokenRefreshRequest();
         requestBody.setRefreshToken("body-refresh-token");
 
@@ -73,9 +74,11 @@ class AuthControllerTest {
         when(refreshTokenCookieService.buildRefreshTokenCookie("new-refresh-token", httpRequest))
                 .thenReturn("set-cookie-value");
 
+        // Act
         ResponseEntity<ApiResponse<AuthResponse>> response = authController.refreshToken(httpRequest,
                 httpResponse, requestBody);
 
+        // Assert
         verify(authTokenService).refreshTokens("body-refresh-token");
         verify(httpResponse).addHeader(HttpHeaders.SET_COOKIE, "set-cookie-value");
         assertEquals(authResponse, response.getBody().getData());
@@ -83,7 +86,8 @@ class AuthControllerTest {
 
     @Test
     @DisplayName("logout: body missing → uses cookie token and clears cookie")
-    void logout_whenBodyMissing_usesCookieTokenAndClearsCookie() {
+    void givenNoRefreshTokenInBody_whenLoggingOut_thenCookieTokenIsRevokedAndCookieCleared() {
+        // Arrange
         when(refreshTokenCookieService.getCookieName()).thenReturn("refreshToken");
         when(httpRequest.getCookies()).thenReturn(new Cookie[] {
                 new Cookie("other", "ignored"),
@@ -91,9 +95,11 @@ class AuthControllerTest {
         });
         when(refreshTokenCookieService.clearRefreshTokenCookie(httpRequest)).thenReturn("expired-cookie");
 
+        // Act
         ResponseEntity<ApiResponse<MessageResponse>> response = authController.logout(httpRequest, httpResponse,
                 null);
 
+        // Assert
         verify(authTokenService).revokeRefreshToken("cookie-refresh-token");
         verify(httpResponse).addHeader(HttpHeaders.SET_COOKIE, "expired-cookie");
 
@@ -103,7 +109,8 @@ class AuthControllerTest {
 
     @Test
     @DisplayName("refreshToken: multiple refresh cookies → uses first valid candidate")
-    void refreshToken_whenMultipleRefreshCookies_usesFirstValidCandidate() {
+    void givenMultipleRefreshTokenCookies_whenRefreshing_thenFirstValidCookieTokenIsUsed() {
+        // Arrange
         when(refreshTokenCookieService.getCookieName()).thenReturn("refreshToken");
         when(httpRequest.getCookies()).thenReturn(new Cookie[] {
                 new Cookie("refreshToken", "stale-refresh-token"),
@@ -130,9 +137,11 @@ class AuthControllerTest {
         when(refreshTokenCookieService.buildRefreshTokenCookie("rotated-refresh-token", httpRequest))
                 .thenReturn("set-cookie-value");
 
+        // Act
         ResponseEntity<ApiResponse<AuthResponse>> response = authController.refreshToken(httpRequest,
                 httpResponse, null);
 
+        // Assert
         verify(authTokenService).refreshTokens("stale-refresh-token");
         verify(authTokenService).refreshTokens("valid-refresh-token");
         verify(httpResponse).addHeader(HttpHeaders.SET_COOKIE, "set-cookie-value");

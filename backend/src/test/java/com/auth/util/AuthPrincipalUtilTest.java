@@ -14,28 +14,34 @@ class AuthPrincipalUtilTest {
 
     @Test
     @DisplayName("requireAuthenticatedEmail: returns trimmed principal name")
-    void requireAuthenticatedEmail_whenPrincipalPresent_returnsTrimmedName() {
+    void givenTrimmedPrincipalName_whenRequiringAuthenticatedEmail_thenReturnsNormalizedEmail() {
+        // Arrange
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("  admin@example.com  ");
 
+        // Act
         String email = AuthPrincipalUtil.requireAuthenticatedEmail(authentication);
 
+        // Assert
         assertEquals("admin@example.com", email);
     }
 
     @Test
     @DisplayName("requireAuthenticatedEmail: blank principal throws IllegalArgumentException")
-    void requireAuthenticatedEmail_whenPrincipalBlank_throwsIllegalArgumentException() {
+    void givenBlankPrincipalName_whenRequiringAuthenticatedEmail_thenThrowsIllegalArgumentException() {
+        // Arrange
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn(" ");
 
+        // Act + Assert
         assertThrows(IllegalArgumentException.class,
                 () -> AuthPrincipalUtil.requireAuthenticatedEmail(authentication));
     }
 
     @Test
     @DisplayName("requireAuthenticatedEmail: null authentication throws IllegalArgumentException")
-    void requireAuthenticatedEmail_whenAuthenticationNull_throwsIllegalArgumentException() {
+    void givenNullAuthentication_whenRequiringAuthenticatedEmail_thenThrowsIllegalArgumentException() {
+        // Act + Assert
         assertThrows(IllegalArgumentException.class,
                 () -> AuthPrincipalUtil.requireAuthenticatedEmail(null));
     }

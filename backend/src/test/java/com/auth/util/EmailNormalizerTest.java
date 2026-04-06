@@ -11,23 +11,28 @@ class EmailNormalizerTest {
 
     @Test
     @DisplayName("normalizeOrNull: trims and lower-cases valid email")
-    void normalizeOrNull_whenEmailPresent_returnsNormalizedValue() {
+    void givenMixedCaseEmail_whenNormalizeOrNull_thenReturnsTrimmedLowercaseEmail() {
+        // Act
         String normalized = EmailNormalizer.normalizeOrNull("  Alice.Example@Gmail.COM  ");
 
+        // Assert
         assertEquals("alice.example@gmail.com", normalized);
     }
 
     @Test
     @DisplayName("normalizeOrNull: blank email returns null")
-    void normalizeOrNull_whenBlank_returnsNull() {
+    void givenBlankEmail_whenNormalizeOrNull_thenReturnsNull() {
+        // Act + Assert
         assertNull(EmailNormalizer.normalizeOrNull("   "));
     }
 
     @Test
     @DisplayName("normalizeOr: blank email returns provided fallback")
-    void normalizeOr_whenBlank_returnsFallback() {
+    void givenBlankEmail_whenNormalizeOr_thenReturnsFallback() {
+        // Act
         String normalized = EmailNormalizer.normalizeOr(" ", "unknown-email");
 
+        // Assert
         assertEquals("unknown-email", normalized);
     }
 }

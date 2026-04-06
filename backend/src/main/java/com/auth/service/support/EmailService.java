@@ -133,6 +133,9 @@ public class EmailService {
                 forgotPasswordUrl);
         sendHtmlEmail(toEmail, subject, plainTextBody, htmlBody, "account lock alert email");
     }
+    /**
+     * Builds otp plain text body.
+     */
 
     private String buildOtpPlainTextBody(String recipientName, String otp) {
         return "Hello " + recipientName + "," +
@@ -140,6 +143,9 @@ public class EmailService {
                 "\n\nThis OTP expires in " + otpExpirationMinutes + " minutes." +
                 "\n\nIf you did not request this code, you can ignore this message.";
     }
+    /**
+     * Builds otp html body from template.
+     */
 
     private String buildOtpHtmlBodyFromTemplate(String toEmail, String recipientName, String otp) {
         Context context = new Context();
@@ -151,6 +157,9 @@ public class EmailService {
         context.setVariable("year", Year.now().getValue());
         return templateEngine.process("emails/otp-verification", context);
     }
+    /**
+     * Builds password reset plain text body.
+     */
 
     private String buildPasswordResetPlainTextBody(String recipientName, String resetLink) {
         return "Hello " + recipientName + "," +
@@ -159,6 +168,9 @@ public class EmailService {
                 "\n\nThis link will expire in " + resetTokenExpirationMinutes + " minutes." +
                 "\n\nIf you did not request this, you can ignore this email.";
     }
+    /**
+     * Builds password reset html body from template.
+     */
 
     private String buildPasswordResetHtmlBodyFromTemplate(String toEmail, String recipientName, String resetLink) {
         Context context = new Context();
@@ -170,6 +182,9 @@ public class EmailService {
         context.setVariable("year", Year.now().getValue());
         return templateEngine.process("emails/password-reset-request", context);
     }
+    /**
+     * Builds welcome plain text body.
+     */
 
     private String buildWelcomePlainTextBody(String recipientName, String loginUrl) {
         return "Hello " + recipientName + "," +
@@ -177,6 +192,9 @@ public class EmailService {
                 "\n\nYou can now sign in here:\n" + loginUrl +
                 "\n\nIf you did not create this account, please contact support immediately.";
     }
+    /**
+     * Builds welcome html body from template.
+     */
 
     private String buildWelcomeHtmlBodyFromTemplate(String toEmail, String recipientName, String loginUrl) {
         Context context = new Context();
@@ -263,6 +281,9 @@ public class EmailService {
         }
         mailSender.send(mimeMessage);
     }
+    /**
+     * Resolves recipient name.
+     */
 
     private String resolveRecipientName(String recipientName, String toEmail) {
         if (StringUtils.hasText(recipientName)) {
@@ -276,12 +297,18 @@ public class EmailService {
         String localPart = toEmail.split("@")[0].trim();
         return StringUtils.hasText(localPart) ? localPart : "there";
     }
+    /**
+     * Builds frontend url.
+     */
 
     private String buildFrontendUrl(String path) {
         String normalizedBaseUrl = normalizeBaseUrl(frontendUrl);
         String normalizedPath = path.startsWith("/") ? path : "/" + path;
         return normalizedBaseUrl + normalizedPath;
     }
+    /**
+     * Normalizes base url.
+     */
 
     private String normalizeBaseUrl(String baseUrl) {
         String fallbackBaseUrl = "http://localhost:5173";
@@ -295,6 +322,9 @@ public class EmailService {
         }
         return StringUtils.hasText(normalizedBaseUrl) ? normalizedBaseUrl : fallbackBaseUrl;
     }
+    /**
+     * Formats date time.
+     */
 
     private String formatDateTime(LocalDateTime value) {
         if (value == null) {
@@ -302,6 +332,9 @@ public class EmailService {
         }
         return value.format(EMAIL_TIME_FORMATTER);
     }
+    /**
+     * Computes remaining lock minutes.
+     */
 
     private long computeRemainingLockMinutes(LocalDateTime lockedUntil) {
         if (lockedUntil == null) {

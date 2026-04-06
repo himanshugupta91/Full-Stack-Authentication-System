@@ -113,6 +113,9 @@ public class AuthTokenService {
                 user.isEnabled(),
                 resolveRoleNames(user));
     }
+    /**
+     * Resolves role names.
+     */
 
     private List<String> resolveRoleNames(User user) {
         return user.getRoles().stream()
@@ -127,11 +130,17 @@ public class AuthTokenService {
         secureRandom.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
+    /**
+     * Checks whether refresh token expired.
+     */
 
     private boolean isRefreshTokenExpired(LocalDateTime expiry) {
         LocalDateTime now = dateTimeProvider.now();
         return expiry == null || expiry.isBefore(now);
     }
+    /**
+     * Clears stored refresh token.
+     */
 
     private void clearStoredRefreshToken(User user) {
         user.setRefreshToken(null);

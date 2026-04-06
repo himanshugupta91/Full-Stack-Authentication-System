@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 public class LinkedInAuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
 
     private final DefaultOAuth2AuthorizationRequestResolver delegate;
+    /**
+     * Creates a new LinkedInAuthorizationRequestResolver instance.
+     */
 
     public LinkedInAuthorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository) {
         this.delegate = new DefaultOAuth2AuthorizationRequestResolver(
@@ -52,6 +55,9 @@ public class LinkedInAuthorizationRequestResolver implements OAuth2Authorization
         OAuth2AuthorizationRequest requestWithoutNonce = removeNonce(authorizationRequest);
         return requestWithoutNonce;
     }
+    /**
+     * Checks whether linked in request.
+     */
 
     private boolean isLinkedInRequest(HttpServletRequest request) {
         String requestUri = request.getRequestURI();

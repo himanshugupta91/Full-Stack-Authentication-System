@@ -28,12 +28,18 @@ public abstract class BaseEntity {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+    /**
+     * Executes on create logic.
+     */
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = DateTimeUtil.nowInIst();
         this.updatedAt = DateTimeUtil.nowInIst();
     }
+    /**
+     * Executes on update logic.
+     */
 
     @PreUpdate
     protected void onUpdate() {

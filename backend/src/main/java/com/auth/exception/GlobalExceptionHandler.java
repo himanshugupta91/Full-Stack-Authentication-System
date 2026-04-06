@@ -91,6 +91,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("An unexpected error occurred. Please try again later."));
     }
+    /**
+     * Builds validation message.
+     */
 
     private String buildValidationMessage(List<FieldError> fieldErrors) {
         String message = fieldErrors.stream()

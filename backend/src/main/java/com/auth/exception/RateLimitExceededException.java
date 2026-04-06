@@ -9,6 +9,9 @@ import lombok.Getter;
 public class RateLimitExceededException extends RuntimeException {
 
     private final long retryAfterSeconds;
+    /**
+     * Creates a new RateLimitExceededException instance.
+     */
 
     public RateLimitExceededException(String message, long retryAfterSeconds) {
         super(message);

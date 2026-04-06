@@ -9,6 +9,9 @@ import lombok.Getter;
 public class AccountLockedException extends RuntimeException {
 
     private final long retryAfterSeconds;
+    /**
+     * Creates a new AccountLockedException instance.
+     */
 
     public AccountLockedException(String message, long retryAfterSeconds) {
         super(message);

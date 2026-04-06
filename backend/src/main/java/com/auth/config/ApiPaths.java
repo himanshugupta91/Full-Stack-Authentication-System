@@ -4,6 +4,9 @@ package com.auth.config;
  * Central API path constants used for URI versioning.
  */
 public final class ApiPaths {
+    /**
+     * Prevents instantiation.
+     */
 
     private ApiPaths() {
     }

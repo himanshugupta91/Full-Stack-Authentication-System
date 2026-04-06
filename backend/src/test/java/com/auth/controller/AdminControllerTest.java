@@ -46,7 +46,8 @@ class AdminControllerTest {
 
     @Test
     @DisplayName("getDashboard: authenticated admin → returns dashboard payload")
-    void getDashboard_whenAuthenticated_returnsDashboardPayload() {
+    void givenAuthenticatedAdmin_whenGettingDashboard_thenReturnsDashboardPayload() {
+        // Arrange
         AdminDashboardDto dashboard = new AdminDashboardDto(
                 "Welcome to Admin Dashboard!",
                 "admin@example.com",
@@ -56,8 +57,10 @@ class AdminControllerTest {
         when(authentication.getName()).thenReturn("admin@example.com");
         when(adminService.getDashboard("admin@example.com")).thenReturn(dashboard);
 
+        // Act
         ResponseEntity<ApiResponse<AdminDashboardDto>> response = adminController.getDashboard(authentication);
 
+        // Assert
         verify(adminService).getDashboard("admin@example.com");
         assertTrue(response.getBody().isSuccess());
         assertEquals(dashboard, response.getBody().getData());
@@ -65,20 +68,24 @@ class AdminControllerTest {
 
     @Test
     @DisplayName("getDashboard: blank principal → throws IllegalArgumentException")
-    void getDashboard_whenPrincipalBlank_throwsIllegalArgumentException() {
+    void givenBlankPrincipal_whenGettingDashboard_thenThrowsIllegalArgumentException() {
+        // Arrange
         when(authentication.getName()).thenReturn(" ");
 
+        // Act + Assert
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> adminController.getDashboard(authentication));
 
+        // Assert
         assertEquals("Authenticated principal is required.", exception.getMessage());
         verifyNoInteractions(adminService);
     }
 
     @Test
     @DisplayName("getAllUsers: query params provided → returns paged user list")
-    void getAllUsers_whenQueryParamsProvided_returnsPagedUsers() {
+    void givenQueryParameters_whenGettingAllUsers_thenReturnsPagedUsers() {
+        // Arrange
         UserDto user = new UserDto();
         user.setId(3L);
         user.setName("Alice");
@@ -92,6 +99,7 @@ class AdminControllerTest {
         when(adminService.getUsers(1, 20, "alice", true, "USER", "createdAt", "desc"))
                 .thenReturn(usersPage);
 
+        // Act
         ResponseEntity<ApiResponse<Page<UserDto>>> response = adminController.getAllUsers(
                 1,
                 20,
@@ -101,6 +109,7 @@ class AdminControllerTest {
                 "createdAt",
                 "desc");
 
+        // Assert
         verify(adminService).getUsers(1, 20, "alice", true, "USER", "createdAt", "desc");
         assertTrue(response.getBody().isSuccess());
         assertEquals(usersPage, response.getBody().getData());
@@ -108,10 +117,12 @@ class AdminControllerTest {
 
     @Test
     @DisplayName("getAllUsers validation: page below zero → violates @Min")
-    void getAllUsersValidation_whenPageIsNegative_reportsViolation() throws Exception {
+    void givenNegativePage_whenValidatingGetAllUsers_thenReportsPageViolation() throws Exception {
+        // Act
         Set<ConstraintViolation<AdminController>> violations = validateGetAllUsersParameters(
                 -1, 20, null, null, "USER", "createdAt", "desc");
 
+        // Assert
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getPropertyPath().toString().contains("getAllUsers.page")));
@@ -119,10 +130,12 @@ class AdminControllerTest {
 
     @Test
     @DisplayName("getAllUsers validation: size above max → violates @Max")
-    void getAllUsersValidation_whenSizeExceedsMaximum_reportsViolation() throws Exception {
+    void givenOversizedPageSize_whenValidatingGetAllUsers_thenReportsSizeViolation() throws Exception {
+        // Act
         Set<ConstraintViolation<AdminController>> violations = validateGetAllUsersParameters(
                 0, 101, null, null, "USER", "createdAt", "desc");
 
+        // Assert
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getPropertyPath().toString().contains("getAllUsers.size")));
@@ -130,10 +143,12 @@ class AdminControllerTest {
 
     @Test
     @DisplayName("getAllUsers validation: unsupported role → violates @Pattern")
-    void getAllUsersValidation_whenRoleUnsupported_reportsViolation() throws Exception {
+    void givenUnsupportedRole_whenValidatingGetAllUsers_thenReportsRoleViolation() throws Exception {
+        // Act
         Set<ConstraintViolation<AdminController>> violations = validateGetAllUsersParameters(
                 0, 20, null, null, "SUPER_ADMIN", "createdAt", "desc");
 
+        // Assert
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getPropertyPath().toString().contains("getAllUsers.role")));
@@ -141,10 +156,12 @@ class AdminControllerTest {
 
     @Test
     @DisplayName("getAllUsers validation: invalid sortDir → violates @Pattern")
-    void getAllUsersValidation_whenSortDirectionInvalid_reportsViolation() throws Exception {
+    void givenInvalidSortDirection_whenValidatingGetAllUsers_thenReportsSortDirectionViolation() throws Exception {
+        // Act
         Set<ConstraintViolation<AdminController>> violations = validateGetAllUsersParameters(
                 0, 20, null, null, "USER", "createdAt", "down");
 
+        // Assert
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(v ->
                 v.getPropertyPath().toString().contains("getAllUsers.sortDir")));
@@ -152,10 +169,12 @@ class AdminControllerTest {
 
     @Test
     @DisplayName("getAllUsers validation: lowercase role and sortDir are accepted")
-    void getAllUsersValidation_whenRoleAndSortDirLowercase_reportsNoViolations() throws Exception {
+    void givenLowercaseRoleAndSortDirection_whenValidatingGetAllUsers_thenReportsNoViolations() throws Exception {
+        // Act
         Set<ConstraintViolation<AdminController>> violations = validateGetAllUsersParameters(
                 0, 20, "alice", true, "role_user", "createdAt", "asc");
 
+        // Assert
         assertTrue(violations.isEmpty());
     }
 

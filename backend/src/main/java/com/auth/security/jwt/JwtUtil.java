@@ -6,9 +6,6 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -38,17 +35,6 @@ public class JwtUtil {
     }
 
     /**
-     * Generates an access token for an authenticated principal.
-     */
-    public String generateToken(Authentication authentication) {
-        UserDetails principal = (UserDetails) authentication.getPrincipal();
-        List<String> roles = principal.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
-        return generateTokenFromEmailAndRoles(principal.getUsername(), roles);
-    }
-
-    /**
      * Generates an access token from an email address and role list.
      */
     public String generateTokenFromEmailAndRoles(String email, List<String> roles) {
@@ -60,13 +46,6 @@ public class JwtUtil {
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSigningKey())
                 .compact();
-    }
-
-    /**
-     * Generates an access token for the given email without role claims (fallback/legacy).
-     */
-    public String generateTokenFromEmail(String email) {
-        return generateTokenFromEmailAndRoles(email, List.of());
     }
 
     /**

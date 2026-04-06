@@ -4,6 +4,9 @@ package com.auth.config;
  * Central cache-name constants used by Spring Cache annotations/configuration.
  */
 public final class CacheNames {
+    /**
+     * Prevents instantiation.
+     */
 
     private CacheNames() {
     }

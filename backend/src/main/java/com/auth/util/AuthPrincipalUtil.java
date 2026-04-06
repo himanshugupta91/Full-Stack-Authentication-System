@@ -7,6 +7,9 @@ import org.springframework.util.StringUtils;
  * Utility helpers for extracting a validated authenticated principal.
  */
 public final class AuthPrincipalUtil {
+    /**
+     * Prevents instantiation.
+     */
 
     private AuthPrincipalUtil() {
     }

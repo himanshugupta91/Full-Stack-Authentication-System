@@ -172,6 +172,9 @@ public class AuthController {
 
         return new ArrayList<>(candidates);
     }
+    /**
+     * Extracts refresh tokens from cookies.
+     */
 
     private List<String> extractRefreshTokensFromCookies(HttpServletRequest request) {
         List<String> tokens = new ArrayList<>();

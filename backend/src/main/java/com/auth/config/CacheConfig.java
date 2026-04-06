@@ -26,6 +26,9 @@ public class CacheConfig {
 
     @Value("${app.cache.admin-dashboard.ttl-seconds:30}")
     private long adminDashboardTtlSeconds;
+    /**
+     * Executes redis cache manager builder customizer logic.
+     */
 
     @Bean
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {

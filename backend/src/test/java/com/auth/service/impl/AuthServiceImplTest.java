@@ -106,18 +106,21 @@ class AuthServiceImplTest {
 
     @Test
     @DisplayName("register: email already exists → throws UserAlreadyExistsException")
-    void register_whenEmailAlreadyExists_throwsUserAlreadyExistsException() {
+    void givenExistingEmail_whenRegistering_thenThrowsUserAlreadyExistsException() {
+        // Arrange
         RegisterRequest request = new RegisterRequest();
         request.setEmail("alice@example.com");
 
         when(userService.existsByEmail(request.getEmail())).thenReturn(true);
 
+        // Act + Assert
         assertThrows(UserAlreadyExistsException.class, () -> authService.register(request));
     }
 
     @Test
     @DisplayName("register: valid request → saves inactive user, sends OTP")
-    void register_whenValidRequest_savesUserAndSendsOtp() {
+    void givenValidRegistrationRequest_whenRegistering_thenSavesInactiveUserAndSendsOtp() {
+        // Arrange
         RegisterRequest request = new RegisterRequest();
         request.setName("Alice");
         request.setEmail("alice@example.com");
@@ -138,8 +141,10 @@ class AuthServiceImplTest {
         when(roleService.findOrCreateRole(RoleName.ROLE_USER)).thenReturn(userRole);
         when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        // Act
         MessageResponse response = authService.register(request);
 
+        // Assert
         assertTrue(response.isSuccess());
         verify(passwordPolicyService).validate(request.getPassword(), request.getEmail());
         verify(emailService).sendOtpEmail(request.getEmail(), request.getName(), "123456");
@@ -158,15 +163,18 @@ class AuthServiceImplTest {
 
     @Test
     @DisplayName("login: user missing → records failed attempt, throws BadCredentialsException")
-    void login_whenUserMissing_recordsFailedAttemptAndThrows() {
+    void givenUnknownUser_whenLoggingIn_thenRecordsFailedAttemptAndThrowsBadCredentials() {
+        // Arrange
         LoginRequest request = new LoginRequest();
         request.setEmail("missing@example.com");
         request.setPassword("Password1");
 
         when(userService.findByEmail(request.getEmail())).thenReturn(Optional.empty());
 
+        // Act + Assert
         assertThrows(BadCredentialsException.class, () -> authService.login(request));
 
+        // Assert
         verify(authAbuseProtectionService).guardLoginAttempt(request.getEmail());
         verify(authAbuseProtectionService).recordFailedLogin(request.getEmail());
         verifyNoInteractions(authenticationManager);
@@ -174,7 +182,8 @@ class AuthServiceImplTest {
 
     @Test
     @DisplayName("login: user email not verified → authenticates and issues tokens")
-    void login_whenUserEmailNotVerified_authenticatesAndIssuesTokens() {
+    void givenUnverifiedUser_whenLoggingIn_thenAuthenticatesAndIssuesTokens() {
+        // Arrange
         LoginRequest request = new LoginRequest();
         request.setEmail("pending@example.com");
         request.setPassword("Password1");
@@ -190,8 +199,10 @@ class AuthServiceImplTest {
         when(userService.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
         when(authTokenService.issueTokens(user)).thenReturn(expectedTokens);
 
+        // Act
         AuthTokens actualTokens = authService.login(request);
 
+        // Assert
         assertEquals(expectedTokens, actualTokens);
         verify(authAbuseProtectionService).guardLoginAttempt(request.getEmail());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
@@ -202,21 +213,25 @@ class AuthServiceImplTest {
 
     @Test
     @DisplayName("resetPassword: user missing → returns generic success message")
-    void resetPassword_whenUserMissing_returnsGenericSuccessMessage() {
+    void givenMissingUser_whenResettingPassword_thenReturnsGenericSuccessMessage() {
+        // Arrange
         ResetPasswordRequest request = new ResetPasswordRequest();
         request.setEmail("missing@example.com");
 
         when(userService.findByEmail(request.getEmail())).thenReturn(Optional.empty());
 
+        // Act
         MessageResponse response = authService.resetPassword(request);
 
+        // Assert
         assertTrue(response.isSuccess());
         assertEquals("If an account exists with this email, a reset link will be sent.", response.getMessage());
     }
 
     @Test
     @DisplayName("updatePassword: token not found → throws TokenValidationException")
-    void updatePassword_whenTokenNotFound_throwsTokenValidationException() {
+    void givenUnknownResetToken_whenUpdatingPassword_thenThrowsTokenValidationException() {
+        // Arrange
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.setToken("reset-token");
         request.setNewPassword("Password2");
@@ -224,12 +239,14 @@ class AuthServiceImplTest {
         when(tokenHashService.hash(request.getToken())).thenReturn("reset-token-hash");
         when(userService.findByResetToken("reset-token-hash")).thenReturn(Optional.empty());
 
+        // Act + Assert
         assertThrows(TokenValidationException.class, () -> authService.updatePassword(request));
     }
 
     @Test
     @DisplayName("changePassword: wrong current password → throws BadCredentialsException")
-    void changePassword_whenCurrentPasswordDoesNotMatch_throwsBadCredentials() {
+    void givenMismatchedCurrentPassword_whenChangingPassword_thenThrowsBadCredentialsException() {
+        // Arrange
         ChangePasswordRequest request = new ChangePasswordRequest();
         request.setCurrentPassword("wrong-current");
         request.setNewPassword("Password2");
@@ -241,6 +258,7 @@ class AuthServiceImplTest {
         when(userService.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())).thenReturn(false);
 
+        // Act + Assert
         assertThrows(BadCredentialsException.class,
                 () -> authService.changePassword("alice@example.com", request));
     }

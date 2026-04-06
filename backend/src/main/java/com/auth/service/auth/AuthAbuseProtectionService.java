@@ -202,6 +202,9 @@ public class AuthAbuseProtectionService {
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
+    /**
+     * Enforces this operation.
+     */
 
     private void enforce(String key, long limit, long windowSeconds, String message) {
         RateLimitService.RateLimitDecision decision =
@@ -210,6 +213,9 @@ public class AuthAbuseProtectionService {
             throw new RateLimitExceededException(message, Math.max(1, decision.retryAfterSeconds()));
         }
     }
+    /**
+     * Asserts login not locked.
+     */
 
     private void assertLoginNotLocked(User user) {
         LocalDateTime lockedUntil = user.getAccountLockedUntil();
@@ -220,6 +226,9 @@ public class AuthAbuseProtectionService {
                     "Account is temporarily locked due to repeated failed logins.", retryAfter);
         }
     }
+    /**
+     * Asserts otp not locked.
+     */
 
     private void assertOtpNotLocked(User user) {
         LocalDateTime lockedUntil = user.getOtpLockedUntil();
@@ -230,6 +239,9 @@ public class AuthAbuseProtectionService {
                     "OTP verification is temporarily locked due to repeated failed attempts.", retryAfter);
         }
     }
+    /**
+     * Executes apply failed login attempt logic.
+     */
 
     private void applyFailedLoginAttempt(User user) {
         int nextAttempts = user.getFailedLoginAttempts() + 1;
@@ -243,6 +255,9 @@ public class AuthAbuseProtectionService {
             userService.save(user);
         }
     }
+    /**
+     * Sends account lock email safely.
+     */
 
     private void sendAccountLockEmailSafely(User user) {
         try {
@@ -251,6 +266,9 @@ public class AuthAbuseProtectionService {
             log.warn("Failed to send account-lock alert email for {}", user.getEmail(), ex);
         }
     }
+    /**
+     * Resolves client ip.
+     */
 
     private String resolveClientIp() {
         ServletRequestAttributes attributes =
@@ -273,10 +291,16 @@ public class AuthAbuseProtectionService {
         String remote = trimToNull(request.getRemoteAddr());
         return remote != null ? remote : "unknown";
     }
+    /**
+     * Normalizes email.
+     */
 
     private String normalizeEmail(String email) {
         return EmailNormalizer.normalizeOr(email, "unknown-email");
     }
+    /**
+     * Trims to null.
+     */
 
     private String trimToNull(String value) {
         if (!StringUtils.hasText(value)) return null;

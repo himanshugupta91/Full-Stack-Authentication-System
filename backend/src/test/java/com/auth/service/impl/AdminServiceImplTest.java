@@ -41,7 +41,8 @@ class AdminServiceImplTest {
 
     @Test
     @DisplayName("getUsers: out-of-range inputs → normalizes paging params and defaults sort field")
-    void getUsers_whenInputsOutOfRange_normalizesPagingAndSort() {
+    void givenOutOfRangePagingInputs_whenGettingUsers_thenNormalizesPagingAndSort() {
+        // Arrange
         User user = new User();
         user.setEmail("alice@example.com");
 
@@ -52,8 +53,10 @@ class AdminServiceImplTest {
                 .thenReturn(new PageImpl<>(List.of(user)));
         when(userMapper.toDto(user)).thenReturn(userDto);
 
+        // Act
         Page<UserDto> result = adminService.getUsers(-5, 500, null, null, null, "unsupportedField", "asc");
 
+        // Assert
         assertEquals(1, result.getContent().size());
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
@@ -70,10 +73,12 @@ class AdminServiceImplTest {
 
     @Test
     @DisplayName("getUsers: invalid role filter → throws IllegalArgumentException")
-    void getUsers_whenRoleFilterInvalid_throwsIllegalArgumentException() {
+    void givenInvalidRoleFilter_whenGettingUsers_thenThrowsIllegalArgumentException() {
+        // Act + Assert
         assertThrows(IllegalArgumentException.class,
                 () -> adminService.getUsers(0, 20, null, null, "manager", "createdAt", "desc"));
 
+        // Assert
         verify(userRepository, never()).findAll(
                 org.mockito.ArgumentMatchers.<Specification<User>>isNull(),
                 any(Pageable.class));

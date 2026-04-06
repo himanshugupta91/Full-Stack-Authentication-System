@@ -34,7 +34,8 @@ class CustomUserDetailsServiceTest {
 
     @Test
     @DisplayName("loadUserByUsername: normalizes email and builds Spring authorities")
-    void loadUserByUsername_normalizesEmailAndBuildsAuthorities() {
+    void givenMixedCaseEmail_whenLoadingUserByUsername_thenNormalizesEmailAndBuildsAuthorities() {
+        // Arrange
         Role userRole = new Role();
         userRole.setName(RoleName.ROLE_USER);
 
@@ -49,8 +50,10 @@ class CustomUserDetailsServiceTest {
 
         when(userService.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
 
+        // Act
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(" Alice@Example.com ");
 
+        // Assert
         verify(userService).findByEmail("alice@example.com");
         assertEquals("alice@example.com", userDetails.getUsername());
         assertEquals(2, userDetails.getAuthorities().size());
@@ -58,16 +61,19 @@ class CustomUserDetailsServiceTest {
 
     @Test
     @DisplayName("loadUserByUsername: unknown email → throws UsernameNotFoundException")
-    void loadUserByUsername_whenUserMissing_throwsUsernameNotFoundException() {
+    void givenUnknownEmail_whenLoadingUserByUsername_thenThrowsUsernameNotFoundException() {
+        // Arrange
         when(userService.findByEmail("missing@example.com")).thenReturn(Optional.empty());
 
+        // Act + Assert
         assertThrows(UsernameNotFoundException.class,
                 () -> customUserDetailsService.loadUserByUsername("missing@example.com"));
     }
 
     @Test
     @DisplayName("loadUserByUsername: disabled account → authentication principal remains enabled")
-    void loadUserByUsername_whenUserDisabled_marksUserDetailsEnabled() {
+    void givenDisabledUserRecord_whenLoadingUserByUsername_thenReturnedPrincipalIsEnabled() {
+        // Arrange
         Role userRole = new Role();
         userRole.setName(RoleName.ROLE_USER);
 
@@ -79,8 +85,10 @@ class CustomUserDetailsServiceTest {
 
         when(userService.findByEmail("disabled@example.com")).thenReturn(Optional.of(user));
 
+        // Act
         UserDetails userDetails = customUserDetailsService.loadUserByUsername("disabled@example.com");
 
+        // Assert
         assertTrue(userDetails.isEnabled());
     }
 }

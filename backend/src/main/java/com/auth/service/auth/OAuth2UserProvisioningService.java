@@ -60,6 +60,9 @@ public class OAuth2UserProvisioningService {
                 .orElseGet(() -> createNewOAuthUser(email, name, provider, providerUserId));
         return user;
     }
+    /**
+     * Creates new oauth user.
+     */
 
     private User createNewOAuthUser(String email, String name, String provider, String providerUserId) {
         User user = new User();
@@ -190,6 +193,9 @@ public class OAuth2UserProvisioningService {
         String stringValue = String.valueOf(value);
         return stringValue;
     }
+    /**
+     * Trims to null.
+     */
 
     private String trimToNull(String value) {
         if (!StringUtils.hasText(value)) {
@@ -198,6 +204,9 @@ public class OAuth2UserProvisioningService {
         String trimmedValue = value.trim();
         return trimmedValue;
     }
+    /**
+     * Normalizes provider.
+     */
 
     private String normalizeProvider(String rawProvider) {
         String provider = trimToNull(rawProvider);
@@ -211,6 +220,9 @@ public class OAuth2UserProvisioningService {
         }
         return normalizedProvider;
     }
+    /**
+     * Extracts provider user id.
+     */
 
     private String extractProviderUserId(String provider, Map<String, Object> attributes) {
         String providerUserId;
@@ -235,6 +247,9 @@ public class OAuth2UserProvisioningService {
         }
         return providerUserId;
     }
+    /**
+     * Builds provider derived email.
+     */
 
     private String buildProviderDerivedEmail(String provider, String providerUserId) {
         if (!StringUtils.hasText(providerUserId)) {

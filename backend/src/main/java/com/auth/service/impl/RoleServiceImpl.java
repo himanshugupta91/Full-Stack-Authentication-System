@@ -34,6 +34,9 @@ public class RoleServiceImpl implements RoleService {
         Optional<Role> roleOpt = roleRepository.findByName(roleName);
         return roleOpt;
     }
+    /**
+     * Creates role.
+     */
 
     private Role createRole(RoleName roleName) {
         Role role = new Role();

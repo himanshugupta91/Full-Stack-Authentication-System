@@ -106,6 +106,9 @@ public class UserServiceImpl implements UserService {
         Optional<User> userOpt = userRepository.findByAuthProviderAndAuthProviderUserId(authProvider, authProviderUserId);
         return userOpt;
     }
+    /**
+     * Normalizes email.
+     */
 
     private String normalizeEmail(String email) {
         return EmailNormalizer.normalizeOrNull(email);

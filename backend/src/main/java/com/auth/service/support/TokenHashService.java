@@ -50,6 +50,9 @@ public class TokenHashService {
         byte[] stored = storedHash.getBytes(StandardCharsets.UTF_8);
         return MessageDigest.isEqual(computed, stored);
     }
+    /**
+     * Executes sha256 logic.
+     */
 
     private byte[] sha256(byte[] payload) {
         try {

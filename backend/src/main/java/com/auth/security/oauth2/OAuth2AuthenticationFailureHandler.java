@@ -60,6 +60,9 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
+    /**
+     * Resolves error message.
+     */
 
     private String resolveErrorMessage(AuthenticationException exception) {
         String message = exception.getMessage();
@@ -73,6 +76,9 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
         }
         return resolvedMessage;
     }
+    /**
+     * Resolves root cause.
+     */
 
     private Throwable resolveRootCause(AuthenticationException exception) {
         Throwable cause = exception.getCause();

@@ -28,22 +28,27 @@ class UserServiceImplTest {
 
     @Test
     @DisplayName("getUserByEmail: user exists → returns User entity")
-    void getUserByEmail_whenUserExists_returnsUser() {
+    void givenExistingUserEmail_whenGettingUserByEmail_thenReturnsUser() {
+        // Arrange
         User user = new User();
         user.setEmail("alice@example.com");
 
         when(userRepository.findByEmailIgnoreCase("alice@example.com")).thenReturn(Optional.of(user));
 
+        // Act
         User result = userService.getUserByEmail("alice@example.com");
 
+        // Assert
         assertEquals(user, result);
     }
 
     @Test
     @DisplayName("getUserByEmail: user missing → throws ResourceNotFoundException")
-    void getUserByEmail_whenUserMissing_throwsResourceNotFoundException() {
+    void givenMissingUserEmail_whenGettingUserByEmail_thenThrowsResourceNotFoundException() {
+        // Arrange
         when(userRepository.findByEmailIgnoreCase("missing@example.com")).thenReturn(Optional.empty());
 
+        // Act + Assert
         assertThrows(ResourceNotFoundException.class, () -> userService.getUserByEmail("missing@example.com"));
     }
 }

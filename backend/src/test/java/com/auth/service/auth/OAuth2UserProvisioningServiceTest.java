@@ -50,7 +50,8 @@ class OAuth2UserProvisioningServiceTest {
 
     @Test
     @DisplayName("loadOrCreateUser: existing user needs no update → returns without saving")
-    void loadOrCreateUser_whenExistingUserNeedsNoUpdate_returnsWithoutSaving() {
+    void givenExistingUserWithNoChanges_whenLoadingOrCreating_thenReturnsWithoutSaving() {
+        // Arrange
         User existing = new User();
         existing.setEmail("alice@example.com");
         existing.setName("Alice");
@@ -65,8 +66,10 @@ class OAuth2UserProvisioningServiceTest {
         when(userService.findByAuthProviderAndAuthProviderUserId("google", "google-sub-1")).thenReturn(Optional.empty());
         when(userService.findByEmail("alice@example.com")).thenReturn(Optional.of(existing));
 
+        // Act
         User resolved = service.loadOrCreateUser(token, token.getPrincipal());
 
+        // Assert
         assertEquals(existing, resolved);
         verify(userService, never()).save(any(User.class));
         verifyNoInteractions(roleService, passwordEncoder);
@@ -74,7 +77,8 @@ class OAuth2UserProvisioningServiceTest {
 
     @Test
     @DisplayName("loadOrCreateUser: existing user has missing data → updates only changed fields")
-    void loadOrCreateUser_whenExistingUserHasMissingData_updatesOnlyChangedFields() {
+    void givenExistingUserWithMissingFields_whenLoadingOrCreating_thenUpdatesOnlyChangedFields() {
+        // Arrange
         User existing = new User();
         existing.setEmail("alice@example.com");
         existing.setName(" ");
@@ -89,8 +93,10 @@ class OAuth2UserProvisioningServiceTest {
         when(userService.findByEmail("alice@example.com")).thenReturn(Optional.of(existing));
         when(userService.save(existing)).thenReturn(existing);
 
+        // Act
         User resolved = service.loadOrCreateUser(token, token.getPrincipal());
 
+        // Assert
         assertTrue(resolved.isEnabled());
         assertEquals("google", resolved.getAuthProvider());
         assertEquals("google-sub-2", resolved.getAuthProviderUserId());
@@ -101,7 +107,8 @@ class OAuth2UserProvisioningServiceTest {
 
     @Test
     @DisplayName("loadOrCreateUser: new user → persists OAuth user with default USER role")
-    void loadOrCreateUser_whenNewUser_persistsOAuthUserWithDefaultRole() {
+    void givenNewOAuthUser_whenLoadingOrCreating_thenPersistsUserWithDefaultRole() {
+        // Arrange
         Role role = new Role();
         role.setName(RoleName.ROLE_USER);
 
@@ -115,8 +122,10 @@ class OAuth2UserProvisioningServiceTest {
         when(roleService.findOrCreateRole(RoleName.ROLE_USER)).thenReturn(role);
         when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        // Act
         User resolved = service.loadOrCreateUser(token, token.getPrincipal());
 
+        // Assert
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userService).save(captor.capture());
         User saved = captor.getValue();
@@ -133,7 +142,8 @@ class OAuth2UserProvisioningServiceTest {
 
     @Test
     @DisplayName("loadOrCreateUser: GitHub email missing → uses no-reply fallback email")
-    void loadOrCreateUser_whenGithubEmailMissing_usesNoReplyFallbackEmail() {
+    void givenGithubUserWithoutEmail_whenLoadingOrCreating_thenUsesNoreplyEmailFallback() {
+        // Arrange
         Role role = new Role();
         role.setName(RoleName.ROLE_USER);
 
@@ -147,26 +157,32 @@ class OAuth2UserProvisioningServiceTest {
         when(roleService.findOrCreateRole(RoleName.ROLE_USER)).thenReturn(role);
         when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        // Act
         User resolved = service.loadOrCreateUser(token, token.getPrincipal());
 
+        // Assert
         assertEquals("octocat@users.noreply.github.com", resolved.getEmail());
         assertEquals("42", resolved.getAuthProviderUserId());
     }
 
     @Test
     @DisplayName("loadOrCreateUser: email unavailable for provider → throws IllegalArgumentException")
-    void loadOrCreateUser_whenEmailUnavailableForProvider_throwsIllegalArgumentException() {
+    void givenProviderWithoutResolvableEmail_whenLoadingOrCreating_thenThrowsIllegalArgumentException() {
+        // Arrange
         OAuth2AuthenticationToken token = oauthToken("google", Map.of("name", "Missing Email"));
 
+        // Act + Assert
         assertThrows(IllegalArgumentException.class, () -> service.loadOrCreateUser(token, token.getPrincipal()));
 
+        // Assert
         verify(userService, never()).save(any(User.class));
         verifyNoInteractions(roleService, passwordEncoder);
     }
 
     @Test
     @DisplayName("loadOrCreateUser: Apple email missing → uses provider-derived email")
-    void loadOrCreateUser_whenAppleEmailMissing_usesProviderDerivedEmail() {
+    void givenAppleUserWithoutEmail_whenLoadingOrCreating_thenUsesProviderDerivedFallbackEmail() {
+        // Arrange
         Role role = new Role();
         role.setName(RoleName.ROLE_USER);
 
@@ -180,8 +196,10 @@ class OAuth2UserProvisioningServiceTest {
         when(roleService.findOrCreateRole(RoleName.ROLE_USER)).thenReturn(role);
         when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        // Act
         User resolved = service.loadOrCreateUser(token, token.getPrincipal());
 
+        // Assert
         assertEquals("apple-apple-user-77@oauth.local", resolved.getEmail());
         assertEquals("apple-user-77", resolved.getAuthProviderUserId());
         assertEquals("apple", resolved.getAuthProvider());
@@ -189,7 +207,8 @@ class OAuth2UserProvisioningServiceTest {
 
     @Test
     @DisplayName("loadOrCreateUser: found by provider ID → skips email lookup")
-    void loadOrCreateUser_whenExistingUserFoundByProviderId_skipsEmailLookup() {
+    void givenUserFoundByProviderId_whenLoadingOrCreating_thenSkipsEmailLookup() {
+        // Arrange
         User existing = new User();
         existing.setEmail("linked@example.com");
         existing.setName("Linked User");
@@ -204,8 +223,10 @@ class OAuth2UserProvisioningServiceTest {
         when(userService.findByAuthProviderAndAuthProviderUserId("linkedin", "linkedin-sub-22"))
                 .thenReturn(Optional.of(existing));
 
+        // Act
         User resolved = service.loadOrCreateUser(token, token.getPrincipal());
 
+        // Assert
         assertEquals(existing, resolved);
         verify(userService, never()).findByEmail(anyString());
         verify(userService, never()).save(any(User.class));

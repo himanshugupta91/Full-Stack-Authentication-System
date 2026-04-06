@@ -64,7 +64,8 @@ class AuthTokenServiceTest {
 
     @Test
     @DisplayName("issueTokens: valid user → persists hashed refresh token and builds auth response")
-    void issueTokens_whenUserIsValid_persistsHashedRefreshTokenAndBuildsResponse() {
+    void givenValidUser_whenIssuingTokens_thenPersistsHashedRefreshTokenAndBuildsResponse() {
+        // Arrange
         User user = buildUser();
 
         when(jwtUtil.generateTokenFromEmailAndRoles(any(String.class), anyList())).thenReturn("access-token");
@@ -72,8 +73,10 @@ class AuthTokenServiceTest {
         when(tokenHashService.hash(any(String.class))).thenReturn("hashed-refresh-token");
         when(userService.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        // Act
         AuthTokens tokens = authTokenService.issueTokens(user);
 
+        // Assert
         assertEquals("access-token", tokens.response().getAccessToken());
         assertEquals("Bearer", tokens.response().getTokenType());
         assertEquals(2, tokens.response().getRoles().size());
@@ -97,22 +100,26 @@ class AuthTokenServiceTest {
 
     @Test
     @DisplayName("refreshTokens: blank token → throws TokenValidationException")
-    void refreshTokens_whenRefreshTokenBlank_throwsTokenValidationException() {
+    void givenBlankRefreshToken_whenRefreshingTokens_thenThrowsTokenValidationException() {
+        // Act + Assert
         assertThrows(TokenValidationException.class, () -> authTokenService.refreshTokens("  "));
     }
 
     @Test
     @DisplayName("refreshTokens: stored token missing → throws TokenValidationException")
-    void refreshTokens_whenStoredTokenMissing_throwsTokenValidationException() {
+    void givenRefreshTokenWithoutStoredMatch_whenRefreshingTokens_thenThrowsTokenValidationException() {
+        // Arrange
         when(tokenHashService.hash("raw-refresh-token")).thenReturn("hashed");
         when(userService.findByRefreshToken("hashed")).thenReturn(Optional.empty());
 
+        // Act + Assert
         assertThrows(TokenValidationException.class, () -> authTokenService.refreshTokens("raw-refresh-token"));
     }
 
     @Test
     @DisplayName("refreshTokens: stored token expired → clears token and throws TokenValidationException")
-    void refreshTokens_whenStoredTokenExpired_clearsTokenAndThrowsTokenValidationException() {
+    void givenExpiredStoredRefreshToken_whenRefreshingTokens_thenClearsTokenAndThrowsTokenValidationException() {
+        // Arrange
         User user = buildUser();
         user.setRefreshToken("hashed");
         user.setRefreshTokenExpiry(FIXED_NOW.minusMinutes(1));
@@ -120,8 +127,10 @@ class AuthTokenServiceTest {
         when(tokenHashService.hash("raw-refresh-token")).thenReturn("hashed");
         when(userService.findByRefreshToken("hashed")).thenReturn(Optional.of(user));
 
+        // Act + Assert
         assertThrows(TokenValidationException.class, () -> authTokenService.refreshTokens("raw-refresh-token"));
 
+        // Assert
         assertEquals(null, user.getRefreshToken());
         assertEquals(null, user.getRefreshTokenExpiry());
         verify(userService).save(user);
@@ -129,9 +138,11 @@ class AuthTokenServiceTest {
 
     @Test
     @DisplayName("revokeRefreshToken: blank token → does not call repository")
-    void revokeRefreshToken_whenTokenBlank_doesNotCallRepository() {
+    void givenBlankRefreshToken_whenRevoking_thenDoesNotCallRepository() {
+        // Act
         authTokenService.revokeRefreshToken(" ");
 
+        // Assert
         verify(tokenHashService, never()).hash(any(String.class));
         verify(userService, never()).findByRefreshToken(any(String.class));
     }

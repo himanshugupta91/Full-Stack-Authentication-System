@@ -79,6 +79,9 @@ public class RefreshTokenCookieService {
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
+    /**
+     * Executes cookie builder logic.
+     */
 
     private ResponseCookie.ResponseCookieBuilder cookieBuilder(String value, CookiePolicy policy) {
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(cookieName, value)
@@ -92,6 +95,9 @@ public class RefreshTokenCookieService {
         }
         return builder;
     }
+    /**
+     * Resolves cookie policy.
+     */
 
     private CookiePolicy resolveCookiePolicy(HttpServletRequest request) {
         boolean secure = resolveSecureFlag(request);
@@ -109,6 +115,9 @@ public class RefreshTokenCookieService {
         }
         return new CookiePolicy(secure, sameSite);
     }
+    /**
+     * Resolves secure flag.
+     */
 
     private boolean resolveSecureFlag(HttpServletRequest request) {
         String normalized = normalizeSetting(cookieSecureSetting);
@@ -120,10 +129,16 @@ public class RefreshTokenCookieService {
                     "auth.refresh-token.cookie-secure must be true, false, or auto.");
         };
     }
+    /**
+     * Resolves auto same site.
+     */
 
     private String resolveAutoSameSite(HttpServletRequest request) {
         return isCrossSiteRequest(request) ? "None" : "Lax";
     }
+    /**
+     * Checks whether cross site request.
+     */
 
     private boolean isCrossSiteRequest(HttpServletRequest request) {
         if (request == null) return false;
@@ -156,6 +171,9 @@ public class RefreshTokenCookieService {
 
         return false;
     }
+    /**
+     * Resolves request host.
+     */
 
     private String resolveRequestHost(HttpServletRequest request) {
         String host = firstHeaderToken(request.getHeader("X-Forwarded-Host"));
@@ -164,16 +182,25 @@ public class RefreshTokenCookieService {
         }
         return stripPort(host);
     }
+    /**
+     * Resolves request scheme.
+     */
 
     private String resolveRequestScheme(HttpServletRequest request) {
         String forwarded = firstHeaderToken(request.getHeader("X-Forwarded-Proto"));
         if (StringUtils.hasText(forwarded)) return forwarded.toLowerCase(Locale.ROOT);
         return request.isSecure() ? "https" : request.getScheme();
     }
+    /**
+     * Checks whether secure request.
+     */
 
     private boolean isSecureRequest(HttpServletRequest request) {
         return request != null && "https".equalsIgnoreCase(resolveRequestScheme(request));
     }
+    /**
+     * Normalizes same site.
+     */
 
     private String normalizeSameSite(String raw) {
         return switch (normalizeSetting(raw)) {
@@ -184,10 +211,16 @@ public class RefreshTokenCookieService {
                     "auth.refresh-token.cookie-same-site must be strict, lax, none, or auto.");
         };
     }
+    /**
+     * Normalizes setting.
+     */
 
     private String normalizeSetting(String value) {
         return StringUtils.hasText(value) ? value.trim().toLowerCase(Locale.ROOT) : "";
     }
+    /**
+     * Parses uri.
+     */
 
     private URI parseUri(String value) {
         if (!StringUtils.hasText(value)) {
@@ -199,6 +232,9 @@ public class RefreshTokenCookieService {
             return null;
         }
     }
+    /**
+     * Checks whether different site.
+     */
 
     private boolean isDifferentSite(String sourceHost, String sourceScheme, String targetHost, String targetScheme) {
         if (!StringUtils.hasText(sourceHost) || !StringUtils.hasText(targetHost)) {
@@ -211,10 +247,16 @@ public class RefreshTokenCookieService {
                 && sourceScheme.equalsIgnoreCase(targetScheme);
         return !(sameHost && sameScheme);
     }
+    /**
+     * Executes first header token logic.
+     */
 
     private String firstHeaderToken(String headerValue) {
         return StringUtils.hasText(headerValue) ? headerValue.split(",")[0].trim() : null;
     }
+    /**
+     * Executes strip port logic.
+     */
 
     private String stripPort(String host) {
         if (!StringUtils.hasText(host)) return host;
